@@ -142,7 +142,7 @@ def _propagate_article_ids(source_layout, source_grid):
 
     src_top = {
         block: source_grid.get(block, {}).get("article_ids", [])
-        for block in ("principal", "suplemento", "especial")
+        for block in ("principal", "suplemento", "especial", "extra_articles")
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
@@ -205,7 +205,7 @@ def _write_audit_log(layout, old_grid, new_grid, triggered_by, user=None):
     entries = []
     save_id = uuid.uuid4()
 
-    for block in ("principal", "suplemento", "especial"):
+    for block in ("principal", "suplemento", "especial", "extra_articles"):
         before = list(old_grid.get(block, {}).get("article_ids", []))
         after = list(new_grid.get(block, {}).get("article_ids", []))
         if before != after:
@@ -1186,18 +1186,70 @@ def _fetch_source_articles_post_5am(source_type, slug, limit, exclude_ids=None):
     return []
 
 
+def _fetch_extra_article_ids_for_preview(today):
+    """Fetch extra article IDs from FSNewsletter for the given date.
+    Returns [] if the model is unavailable or no FSNewsletter exists for today.
+    Isolated into its own function so tests can patch homev4.views._fetch_extra_article_ids_for_preview
+    directly instead of having to intercept builtins.__import__.
+    """
+    try:
+        FSNewsletter = __import__(
+            "utopia_cms_ladiaria.models", fromlist=["FSNewsletter"]
+        ).FSNewsletter
+        fs_nl = FSNewsletter.objects.get(day=today)
+        return [a.id for a in fs_nl.extra_articles.order_by("fs_newsletter_extra_articles")]
+    except Exception:
+        return []
+
+
 def _resolve_today_grid_data(publication):
     """Return a grid_data dict pre-filled with today's article IDs for principal and suplemento,
     bypassing the PUBLISHING_TIME gate. Used by the Preview 5am editor.
-    Base structure is taken from the first existing layout of the publication.
+
+    Base structure (which blocks are active/inactive, sections, componentes) comes from
+    the layout that will actually be active at the next 5am — the same layout the Celery
+    task will write to. This way Pablo sees exactly which blocks are on/off without having
+    to guess, and the editor automatically adapts if the schedule changes.
+
+    "Next 5am" logic:
+      - 00:00–04:59 → 5am of today   (Pablo is working on the upcoming morning)
+      - 05:00–23:59 → 5am of tomorrow (today's 5am already passed)
     """
+    import datetime as _dt
     from core.models import Edition
     today = timezone.localdate()
+    now_time = timezone.localtime().time()
 
-    base_layout = HomeLayout.objects.filter(publication=publication).first()
+    publishing_hour, publishing_minute = [int(x) for x in settings.PUBLISHING_TIME.split(":")]
+    publishing_time = _dt.time(publishing_hour, publishing_minute)
+
+    # Determine the weekday for the NEXT 5am so get_active_layout simulates the
+    # moment the Celery task runs, not the moment Pablo opens the editor.
+    if now_time < publishing_time:
+        # Still before 5am — next publishing is today's 5am.
+        target_weekday = today.weekday()
+    else:
+        # Already past 5am — next publishing is tomorrow's 5am.
+        target_weekday = (today.weekday() + 1) % 7
+
+    base_layout = HomeLayout.get_active_layout(publication, at_time=publishing_time, at_weekday=target_weekday)
     grid = dict(base_layout.grid_data) if base_layout and isinstance(base_layout.grid_data, dict) else get_default_grid_data()
 
-    edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
+    # On weekends (Saturday=5, Sunday=6) the home shows the "Fin de semana" edition
+    # (publication slug "findesemana"), not "la diaria". There is no "ladiaria" edition
+    # on weekends, so filtering by publication=ladiaria would return None every time.
+    # The "Fin de semana" edition is created once per weekend with date_published=Saturday
+    # and kept unchanged through Sunday — so we fetch the most recent one without
+    # filtering by today's date (a date=Sunday filter would miss the Saturday edition).
+    # On weekdays we filter by date_published=today to get exactly today's edition;
+    # no 5am gate is applied here because this function is only called from the
+    # Preview 5am editor, which is explicitly designed to bypass that gate.
+    weekday = today.weekday()
+    if weekday >= 5:
+        fds_pub = Publication.objects.filter(slug="findesemana").first()
+        edition = Edition.objects.filter(publication=fds_pub).order_by("-date_published").first() if fds_pub else None
+    else:
+        edition = Edition.objects.filter(publication=publication, date_published=today).order_by("-date_published").first()
     principal_ids = [a.id for a in edition.top_articles] if edition else []
     principal_block = dict(grid.get("principal") or {})
     principal_block["article_ids"] = principal_ids
@@ -1209,6 +1261,15 @@ def _resolve_today_grid_data(publication):
     suplemento_block = dict(grid.get("suplemento") or {})
     suplemento_block["article_ids"] = suplemento_ids
     grid["suplemento"] = suplemento_block
+
+    # On Saturdays populate extra_articles from FSNewsletter so the Preview 5am editor
+    # shows Pablo the correct content before he saves the pending grid.
+    if today.weekday() == 5:
+        extra_ids = _fetch_extra_article_ids_for_preview(today)
+        if extra_ids:
+            extra_block = dict(grid.get("extra_articles") or {})
+            extra_block["article_ids"] = extra_ids
+            grid["extra_articles"] = extra_block
 
     return grid
 
