@@ -1507,7 +1507,7 @@ class ArticleBase(Model, CT):
     def has_photo(self):
         try:
             return bool(self.photo)
-        except PhotoExtended.DoesNotExist:
+        except (Photo.DoesNotExist, PhotoExtended.DoesNotExist):
             return False
 
     def photo_image_file_exists(self):
