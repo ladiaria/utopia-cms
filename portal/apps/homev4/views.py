@@ -81,7 +81,7 @@ def _resolve_sidebar_template(key):
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
-    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "replace_mode": True, "replace_slots": 3, "sortable_articles": False},
+    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": False},
     {"key": "radio",                "label": "Radio",                    "description": "",                "no_articles": True},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
@@ -366,6 +366,31 @@ def article_search(request):
         qs = qs.exclude(id__in=excluded_ids)
     qs = qs.order_by("-date_published")[:10]
     return JsonResponse([{"id": a.id, "headline": a.headline} for a in qs], safe=False)
+
+
+@never_cache
+@staff_member_required
+def lo_ultimo_latest(request, layout_id):
+    """Return the resolved lo_ultimo article list for the editor 'replace unpinned' button.
+
+    GET params:
+      exclude[]: IDs already placed in principal/suplemento/especial (from editor state).
+      pinned[]:  IDs currently pinned in lo_ultimo — kept at their saved position.
+      saved[]:   current article_ids order — used to preserve pinned positions in the response.
+
+    Returns {articles: [{id, headline}, ...]} with the full resolved list of up to 3 articles.
+    """
+    get_object_or_404(HomeLayout, pk=layout_id)
+    exclude_ids = {int(x) for x in request.GET.getlist("exclude") if x.isdigit()}
+    pinned_ids = {int(x) for x in request.GET.getlist("pinned") if x.isdigit()}
+    saved_ids = [int(x) for x in request.GET.getlist("saved") if x.isdigit()]
+    articles = _fetch_component_articles(
+        "lo_ultimo",
+        saved_ids=saved_ids,
+        pinned_ids=pinned_ids,
+        exclude_ids=exclude_ids,
+    )
+    return JsonResponse({"articles": [{"id": a.id, "headline": a.headline} for a in articles]})
 
 
 def _is_tarde_mode(layout):
@@ -747,8 +772,16 @@ def build_home_data(grid_data, publication=None, layout=None):
             comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
             comp_entry["articles"] = []
         elif key in ("lo_ultimo", "lo_mas_leido", "apuntes_del_dia"):
-            # Dynamic: always fetched fresh; lo_ultimo excludes all static blocks via static_ids
-            articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=static_ids)
+            # Dynamic: always fetched fresh; lo_ultimo respects pinned_ids and excludes static blocks.
+            if key == "lo_ultimo":
+                articles = _fetch_component_articles(
+                    key,
+                    saved_ids=item.get("article_ids", []),
+                    pinned_ids=set(item.get("pinned_ids", [])),
+                    exclude_ids=static_ids,
+                )
+            else:
+                articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=static_ids)
             if key == "lo_ultimo":
                 now = timezone.now()
                 for a in articles:
@@ -875,25 +908,68 @@ _COMPONENTS_AUTO_ORDER = {"lo_mas_leido", "apuntes_del_dia", "radio"}
 
 
 
-def _fetch_component_articles(key, saved_ids=None, exclude_ids=None):
+def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=None):
     """
     Return the article list for a given component key.
     For components not in _COMPONENTS_AUTO_ORDER, saved_ids are used to
     restore the editorial order (same merge logic as PRINCIPAL).
     When exclude_ids is provided, fallback queries skip those articles (deduplication).
 
+    lo_ultimo special behaviour:
+      - pinned_ids: articles the editor explicitly fixed. They stay at their saved position
+        unless they also appear in exclude_ids (i.e. already placed in a higher-priority block)
+        or have been unpublished. In those cases they are evicted and replaced dynamically.
+      - Unpinned slots (and evicted pinned slots) are always filled with the most recently
+        published available articles, excluding exclude_ids and valid pinned articles.
+
     Slugs configurable via settings:
       HOMEV4_OPINION_CATEGORY_SLUG   (default: "opinion")
       HOMEV4_APUNTES_SECTION_SLUG    (default: "apuntes-del-dia")
     """
     if key == "lo_ultimo":
-        if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
-            return [by_id[aid] for aid in saved_ids if aid in by_id]
-        qs = Article.published.select_related(_ARTICLE_AUTH_SELECT_RELATED).order_by("-date_published")
-        if exclude_ids:
-            qs = qs.exclude(id__in=exclude_ids)
-        return list(qs[:3])
+        pinned_set = set(pinned_ids or [])
+        exclude_set = set(exclude_ids or [])
+
+        # Pinned articles that are still published and not in a higher-priority block.
+        valid_pinned = {}
+        if pinned_set and saved_ids:
+            candidate_ids = [aid for aid in saved_ids if aid in pinned_set and aid not in exclude_set]
+            if candidate_ids:
+                valid_pinned = {
+                    a.id: a
+                    for a in Article.published.filter(id__in=candidate_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)
+                }
+
+        # Dynamic articles fill every slot that is not a valid pinned article.
+        dynamic_slots = 3 - len(valid_pinned)
+        dynamic_articles = []
+        if dynamic_slots > 0:
+            dynamic_exclude = exclude_set | set(valid_pinned)
+            qs = Article.published.select_related(_ARTICLE_AUTH_SELECT_RELATED).order_by("-date_published")
+            qs = qs.exclude(id__in=dynamic_exclude)
+            dynamic_articles = list(qs[:dynamic_slots])
+
+        if not saved_ids:
+            # No saved order yet — return all dynamic articles.
+            return dynamic_articles
+
+        # Rebuild in saved order: pinned articles keep their position; every other slot
+        # (unpinned, evicted, or deleted) gets the next dynamic article.
+        result = []
+        dynamic_iter = iter(dynamic_articles)
+        for aid in saved_ids:
+            if aid in valid_pinned:
+                result.append(valid_pinned[aid])
+            else:
+                a = next(dynamic_iter, None)
+                if a:
+                    result.append(a)
+        # Append leftover dynamic articles (e.g. saved_ids had fewer than 3 entries).
+        for a in dynamic_iter:
+            if len(result) >= 3:
+                break
+            result.append(a)
+        return result[:3]
 
     if key == "lo_mas_leido":
         # days=1 → day__gt=yesterday → effectively today only
@@ -1361,23 +1437,30 @@ def build_editor_data(grid_data, publication=None):
                 "description": defn["description"],
                 "active": item.get("active", True),
                 "has_picker": defn.get("has_picker", False),
-                "replace_mode": defn.get("replace_mode", False),
-                "replace_slots": defn.get("replace_slots", 2),
+                "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
                 "sortable_articles": defn.get("sortable_articles", True),
             }
             if defn.get("newsletter_mode"):
                 comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
                 comp_dict["articles"] = []
+            elif key == "lo_ultimo":
+                # Always fetched fresh so the editor reflects the live resolved state.
+                pinned_ids = set(item.get("pinned_ids", []))
+                comp_dict["pinned_ids"] = list(pinned_ids)
+                comp_dict["articles"] = _fetch_component_articles(
+                    key,
+                    saved_ids=item.get("article_ids", []),
+                    pinned_ids=pinned_ids,
+                    exclude_ids=editor_static_ids,
+                )
             else:
                 c_ids = item.get("article_ids", [])
                 if c_ids:
                     by_id = {a.id: a for a in Article.published.filter(id__in=c_ids)}
                     comp_dict["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
                 else:
-                    comp_dict["articles"] = _fetch_component_articles(
-                        key, exclude_ids=editor_static_ids if key == "lo_ultimo" else None
-                    )
+                    comp_dict["articles"] = _fetch_component_articles(key)
             result["componentes"].append(comp_dict)
         for defn in COMPONENT_DEFINITIONS:
             if defn["key"] not in seen_keys:
@@ -1387,18 +1470,20 @@ def build_editor_data(grid_data, publication=None):
                     "description": defn["description"],
                     "active": True,
                     "has_picker": defn.get("has_picker", False),
-                    "replace_mode": defn.get("replace_mode", False),
-                    "replace_slots": defn.get("replace_slots", 2),
+                    "pin_mode": defn.get("pin_mode", False),
                     "newsletter_mode": defn.get("newsletter_mode", False),
                     "sortable_articles": defn.get("sortable_articles", True),
                 }
                 if defn.get("newsletter_mode"):
                     comp_dict["newsletters"] = []
                     comp_dict["articles"] = []
-                else:
+                elif defn["key"] == "lo_ultimo":
+                    comp_dict["pinned_ids"] = []
                     comp_dict["articles"] = _fetch_component_articles(
-                        defn["key"], exclude_ids=editor_static_ids if defn["key"] == "lo_ultimo" else None
+                        defn["key"], pinned_ids=set(), exclude_ids=editor_static_ids
                     )
+                else:
+                    comp_dict["articles"] = _fetch_component_articles(defn["key"])
                 result["componentes"].append(comp_dict)
     else:
         for defn in COMPONENT_DEFINITIONS:
@@ -1409,18 +1494,24 @@ def build_editor_data(grid_data, publication=None):
                 "description": defn["description"],
                 "active": saved.get("active", True),
                 "has_picker": defn.get("has_picker", False),
-                "replace_mode": defn.get("replace_mode", False),
-                "replace_slots": defn.get("replace_slots", 2),
+                "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
                 "sortable_articles": defn.get("sortable_articles", True),
             }
             if defn.get("newsletter_mode"):
                 comp_dict["newsletters"] = _resolve_newsletter_refs(saved.get("newsletter_refs", []))
                 comp_dict["articles"] = []
-            else:
+            elif defn["key"] == "lo_ultimo":
+                pinned_ids = set(saved.get("pinned_ids", []))
+                comp_dict["pinned_ids"] = list(pinned_ids)
                 comp_dict["articles"] = _fetch_component_articles(
-                    defn["key"], exclude_ids=editor_static_ids if defn["key"] == "lo_ultimo" else None
+                    defn["key"],
+                    saved_ids=saved.get("article_ids", []),
+                    pinned_ids=pinned_ids,
+                    exclude_ids=editor_static_ids,
                 )
+            else:
+                comp_dict["articles"] = _fetch_component_articles(defn["key"])
             result["componentes"].append(comp_dict)
 
     return result

@@ -192,6 +192,22 @@ document.addEventListener("DOMContentLoaded", function () {
         initRemoveButton(btn, btn.closest("[data-article-id], [data-newsletter-ref]"));
     });
 
+    // Wire up Lo último pin buttons rendered in the initial HTML
+    document.querySelectorAll(".lo-ultimo-pin-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var row = this.closest("[data-article-id]");
+            if (row) toggleLoUltimoPin(row);
+        });
+    });
+
+    // Wire up Lo último "replace unpinned" buttons
+    document.querySelectorAll(".lo-ultimo-replace-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var container = document.getElementById(this.dataset.container);
+            if (container) replaceLoUltimoUnpinned(container);
+        });
+    });
+
     // Highlight section rows when their replace-radio is checked
     document.querySelectorAll(".section-replace-radio input[type='radio']").forEach(function (radio) {
         radio.addEventListener("change", function () {
@@ -283,8 +299,116 @@ document.addEventListener("DOMContentLoaded", function () {
         checkedRadio.checked = false;
         row.classList.remove("is-marked-for-replace");
 
+        // When replacing in lo_ultimo, the new article is not pinned by default.
+        if (row.dataset.pinned !== undefined) {
+            row.dataset.pinned = "false";
+            var pinBtn = row.querySelector(".lo-ultimo-pin-btn");
+            if (pinBtn) {
+                pinBtn.classList.remove("is-pinned");
+                pinBtn.title = "Fijar artículo";
+            }
+        }
+
         log("picker", "replaced article in section", { id: article.id, headline: article.headline });
         return true;
+    }
+
+    // ── Lo último pin/unpin ───────────────────────────────────────────────────
+    function toggleLoUltimoPin(rowEl) {
+        var isPinned = rowEl.dataset.pinned === "true";
+        rowEl.dataset.pinned = isPinned ? "false" : "true";
+        var btn = rowEl.querySelector(".lo-ultimo-pin-btn");
+        if (btn) {
+            btn.classList.toggle("is-pinned", !isPinned);
+            btn.title = isPinned ? "Fijar artículo" : "Desfijar artículo";
+        }
+        markChanged();
+        log("lo_ultimo", isPinned ? "unpinned" : "pinned", { id: rowEl.dataset.articleId });
+    }
+
+    // ── Lo último replace unpinned ────────────────────────────────────────────
+    // Calls the backend to resolve the latest available articles for unpinned slots,
+    // then updates only those rows in the editor. Pinned rows are left untouched.
+    // The button is disabled while the request is in flight and restored on completion.
+    function replaceLoUltimoUnpinned(container) {
+        var url = DATA && DATA.loUltimoLatestUrl;
+        if (!url) { log("lo_ultimo", "loUltimoLatestUrl not configured"); return; }
+
+        // Find the replace button for this container and put it in loading state.
+        var btn = document.querySelector(".lo-ultimo-replace-btn[data-container='" + container.id + "']");
+        var originalText = btn ? btn.textContent : "";
+        var loadingInterval = null;
+        function setBtnLoading(loading) {
+            if (!btn) return;
+            btn.disabled = loading;
+            if (loading) {
+                // Animate "Buscando." → "Buscando.." → "Buscando..." cycling every 400ms.
+                var dots = 1;
+                btn.textContent = "Buscando.";
+                loadingInterval = setInterval(function () {
+                    dots = (dots % 3) + 1;
+                    btn.textContent = "Buscando" + ".".repeat(dots);
+                }, 400);
+            } else {
+                clearInterval(loadingInterval);
+                btn.textContent = originalText;
+            }
+        }
+
+        var params = new URLSearchParams();
+
+        // Collect IDs already placed in higher-priority blocks so the backend can exclude them.
+        ["principal-articles", "suplemento-articles", "especial-articles"].forEach(function (containerId) {
+            var el = document.getElementById(containerId);
+            if (el) {
+                el.querySelectorAll("[data-article-id]").forEach(function (row) {
+                    params.append("exclude", row.dataset.articleId);
+                });
+            }
+        });
+
+        // Collect the current lo_ultimo state: saved order and pinned IDs.
+        container.querySelectorAll(".comp-article-row[data-article-id]").forEach(function (row) {
+            params.append("saved", row.dataset.articleId);
+            if (row.dataset.pinned === "true") {
+                params.append("pinned", row.dataset.articleId);
+            }
+        });
+
+        // Abort after 8 seconds to avoid leaving the button stuck in loading state.
+        var controller = new AbortController();
+        var timeout = setTimeout(function () { controller.abort(); }, 8000);
+
+        setBtnLoading(true);
+        fetch(url + "?" + params.toString(), { credentials: "same-origin", signal: controller.signal })
+            .then(function (r) {
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                clearTimeout(timeout);
+                if (!Array.isArray(data.articles)) return;
+                var rows = Array.from(container.querySelectorAll(".comp-article-row[data-article-id]"));
+                data.articles.forEach(function (a, i) {
+                    if (i >= rows.length) return;
+                    var row = rows[i];
+                    if (row.dataset.pinned === "true") return; // respect pin
+                    row.dataset.articleId = a.id;
+                    var titleEl = row.querySelector(".section-article-title");
+                    if (titleEl) titleEl.textContent = a.headline;
+                    var editLink = row.querySelector(".article-edit-link");
+                    if (editLink) editLink.href = "/admin/core/article/" + a.id + "/change/";
+                });
+                markChanged();
+                log("lo_ultimo", "replaced unpinned", { count: data.articles.length });
+            })
+            .catch(function (err) {
+                clearTimeout(timeout);
+                log("lo_ultimo", "replace failed", { error: err.message });
+            })
+            .finally(function () {
+                setBtnLoading(false);
+            });
     }
 
     // ── Article picker ────────────────────────────────────────────────────────
@@ -633,6 +757,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 comp.article_ids = Array.from(articleRows).map(function (ar) {
                     return parseInt(ar.dataset.articleId, 10);
                 });
+                // For lo_ultimo, also persist which articles are pinned.
+                if (el.dataset.compKey === "lo_ultimo") {
+                    comp.pinned_ids = Array.from(articleRows)
+                        .filter(function (ar) { return ar.dataset.pinned === "true"; })
+                        .map(function (ar) { return parseInt(ar.dataset.articleId, 10); });
+                }
             }
             var newsletterRows = el.querySelectorAll(".newsletter-row[data-newsletter-ref]");
             if (newsletterRows.length > 0) {
