@@ -418,7 +418,7 @@ class BuildHomeDataLoUltimoTest(SimpleTestCase):
         """
         captured = {}
 
-        def mock_fetch(key, saved_ids=None, exclude_ids=None):
+        def mock_fetch(key, saved_ids=None, pinned_ids=None, exclude_ids=None):
             captured[key] = frozenset(exclude_ids or [])
             return []
 
@@ -1026,3 +1026,140 @@ class GetActiveLayoutAtTimeTest(SimpleTestCase):
             result = HomeLayout.get_active_layout(mock_pub)
         # Must not raise; result is None because no layouts matched.
         self.assertIsNone(result)
+
+
+class FetchComponentArticlesLoUltimoTest(SimpleTestCase):
+    """
+    Unit tests for _fetch_component_articles("lo_ultimo", ...).
+
+    Behaviour contract:
+    - Unpinned slots are always filled with the most recently published available articles
+      (excluding exclude_ids and valid pinned articles).
+    - Pinned articles stay at their saved position IF they are published AND not in exclude_ids.
+    - A pinned article that is in exclude_ids (already placed in a higher-priority block)
+      or no longer published is treated as a dynamic slot.
+    - Up to 3 articles are returned. Fewer if not enough are available.
+    - No saved_ids → returns the 3 latest dynamic articles with no positional constraints.
+
+    Bugs to watch for:
+    - Pinned article silently evicted when it also appears in principal/suplemento.
+    - Pinned article surviving in lo_ultimo even after being added to principal.
+    - Dynamic fill not respecting exclude_ids (articles duplicated across blocks).
+    """
+
+    def _make_published_mock(self, available_ids):
+        """
+        Return a mock for Article.published that supports the exact queryset chains
+        used in _fetch_component_articles for lo_ultimo.
+
+        available_ids: ordered list of IDs — simulates date_published descending order.
+        """
+        articles = {i: _art(i) for i in available_ids}
+
+        class FakeQS:
+            def __init__(self, ids):
+                self._ids = list(ids)
+
+            def filter(self, **kwargs):
+                id__in = list(kwargs.get("id__in", []))
+                return FakeQS([i for i in self._ids if i in id__in])
+
+            def select_related(self, *args):
+                return self
+
+            def order_by(self, *args):
+                return self
+
+            def exclude(self, **kwargs):
+                id__in = set(kwargs.get("id__in", set()))
+                return FakeQS([i for i in self._ids if i not in id__in])
+
+            def __iter__(self):
+                return (articles[i] for i in self._ids if i in articles)
+
+            def __getitem__(self, key):
+                return list(self)[key]
+
+        return FakeQS(available_ids)
+
+    def _call(self, available_ids, saved_ids=None, pinned_ids=None, exclude_ids=None):
+        from homev4.views import _fetch_component_articles
+        with patch("homev4.views.Article") as mock_art:
+            mock_art.published = self._make_published_mock(available_ids)
+            return _fetch_component_articles(
+                "lo_ultimo",
+                saved_ids=saved_ids or [],
+                pinned_ids=set(pinned_ids or []),
+                exclude_ids=set(exclude_ids or []),
+            )
+
+    def _ids(self, articles):
+        return [a.id for a in articles]
+
+    def test_no_saved_ids_returns_three_latest_dynamic(self):
+        """With no saved order, return the 3 most recently published available articles."""
+        result = self._call(available_ids=[10, 11, 12, 13])
+        self.assertEqual(self._ids(result), [10, 11, 12])
+
+    def test_no_saved_ids_respects_exclude(self):
+        """Dynamic fallback excludes articles already in higher-priority blocks."""
+        result = self._call(available_ids=[10, 11, 12, 13], exclude_ids=[10, 11])
+        self.assertEqual(self._ids(result), [12, 13])
+
+    def test_all_unpinned_slots_filled_dynamically(self):
+        """Unpinned articles in saved_ids are replaced by the latest available."""
+        result = self._call(available_ids=[20, 21, 22], saved_ids=[1, 2, 3])
+        self.assertEqual(self._ids(result), [20, 21, 22])
+
+    def test_pinned_article_stays_at_its_saved_position(self):
+        """A pinned article is kept at the same index it occupies in saved_ids."""
+        # saved order: [1, 2, 3], article 2 is pinned and published (id 2 in available)
+        # Positions 0 and 2 get dynamic fill from [20, 21]; position 1 keeps article 2.
+        result = self._call(available_ids=[2, 20, 21], saved_ids=[1, 2, 3], pinned_ids=[2])
+        self.assertEqual(self._ids(result), [20, 2, 21])
+
+    def test_pinned_article_evicted_when_in_exclude_ids(self):
+        """A pinned article that is in exclude_ids (e.g. moved to principal) is evicted
+        and its slot gets a dynamic replacement — no duplicate across blocks."""
+        result = self._call(
+            available_ids=[2, 20, 21, 22],
+            saved_ids=[1, 2, 3],
+            pinned_ids=[2],
+            exclude_ids=[2],
+        )
+        self.assertNotIn(2, self._ids(result))
+        self.assertEqual(len(result), 3)
+
+    def test_pinned_article_evicted_when_not_published(self):
+        """A pinned article not in Article.published is evicted — its slot gets a dynamic fill."""
+        # Article 2 is pinned but not in available_ids (deleted/unpublished).
+        result = self._call(available_ids=[20, 21, 22], saved_ids=[1, 2, 3], pinned_ids=[2])
+        self.assertNotIn(2, self._ids(result))
+        self.assertEqual(len(result), 3)
+
+    def test_multiple_pinned_articles_stay_at_their_positions(self):
+        """Multiple pinned articles each hold their saved position."""
+        # saved=[1,2,3], pinned={1,3}, both published, dynamic fills position 1.
+        result = self._call(available_ids=[1, 3, 20], saved_ids=[1, 2, 3], pinned_ids=[1, 3])
+        self.assertEqual(self._ids(result), [1, 20, 3])
+
+    def test_all_pinned_none_evicted_preserves_order(self):
+        """When all 3 articles are pinned and all are valid, saved order is fully preserved."""
+        result = self._call(
+            available_ids=[1, 2, 3], saved_ids=[1, 2, 3], pinned_ids=[1, 2, 3]
+        )
+        self.assertEqual(self._ids(result), [1, 2, 3])
+
+    def test_dynamic_fill_excludes_valid_pinned_articles(self):
+        """Dynamic articles fetched for unpinned slots never duplicate valid pinned articles."""
+        # saved=[1,2,3], pinned={2} (valid), dynamic pool starts with 2 but must skip it.
+        result = self._call(available_ids=[2, 20, 21], saved_ids=[1, 2, 3], pinned_ids=[2])
+        ids = self._ids(result)
+        # Article 2 appears exactly once (at its pinned position).
+        self.assertEqual(ids.count(2), 1)
+        self.assertEqual(ids.index(2), 1)
+
+    def test_fewer_than_three_available_returns_what_exists(self):
+        """If fewer than 3 articles are available, return as many as possible without error."""
+        result = self._call(available_ids=[10, 11])
+        self.assertEqual(len(result), 2)

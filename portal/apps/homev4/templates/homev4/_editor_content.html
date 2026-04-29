@@ -215,17 +215,26 @@
                     <div class="componente-item" draggable="true" data-comp-key="{{ comp.key }}">
                         <span class="drag-handle">⠿</span>
                         <div class="comp-body">
-                            <label class="comp-header">
-                                <input type="checkbox"
-                                       class="comp-active"
-                                       {% if comp.active %}checked{% endif %}>
-                                <span class="comp-info">
-                                    <span class="comp-name">{{ comp.label }}</span>
-                                    {% if comp.description %}
-                                    <span class="comp-desc">{{ comp.description }}</span>
-                                    {% endif %}
-                                </span>
-                            </label>
+                            <div class="comp-header-row">
+                                <label class="comp-header">
+                                    <input type="checkbox"
+                                           class="comp-active"
+                                           {% if comp.active %}checked{% endif %}>
+                                    <span class="comp-info">
+                                        <span class="comp-name">{{ comp.label }}</span>
+                                        {% if comp.description %}
+                                        <span class="comp-desc">{{ comp.description }}</span>
+                                        {% endif %}
+                                    </span>
+                                </label>
+                                {% if comp.pin_mode %}
+                                <button type="button" class="lo-ultimo-replace-btn"
+                                        data-container="comp-articles-{{ comp.key }}"
+                                        title="Reemplaza los artículos no fijados por los últimos publicados disponibles. Los artículos fijados se mantienen.">
+                                    Últimos disponibles
+                                </button>
+                                {% endif %}
+                            </div>
                             {% if comp.newsletter_mode %}
                             <div class="comp-articles" id="comp-articles-{{ comp.key }}">
                                 {% for nl in comp.newsletters %}
@@ -246,16 +255,24 @@
                                 <input type="text" class="picker-search-input" placeholder="Buscar newsletter…" autocomplete="off">
                                 <div class="picker-results"></div>
                             </div>
-                            {% elif comp.articles or comp.has_picker %}
-                            <div class="comp-articles{% if comp.replace_mode %} section-articles{% endif %}" id="comp-articles-{{ comp.key }}">
-                                {% for title in comp.articles %}
-                                {% if comp.replace_mode %}
-                                <div class="comp-article-row section-article-row comp-article-static" data-article-id="{{ title.id }}">
+                            {% elif comp.pin_mode %}
+                            <div class="comp-articles section-articles" id="comp-articles-{{ comp.key }}">
+                                {% for article in comp.articles %}
+                                <div class="comp-article-row section-article-row comp-article-static"
+                                     data-article-id="{{ article.id }}"
+                                     data-pinned="{% if article.id in comp.pinned_ids %}true{% else %}false{% endif %}">
                                     <label class="section-replace-radio" title="Marcar para reemplazar"><input type="radio" name="comp-replace-{{ comp.key }}"></label>
-                                    <span class="section-article-title">{{ title.headline }}</span>
-                                    <a class="article-edit-link" href="/admin/core/article/{{ title.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                    <span class="section-article-title">{{ article.headline }}</span>
+                                    <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>
+                                    <button type="button"
+                                            class="lo-ultimo-pin-btn{% if article.id in comp.pinned_ids %} is-pinned{% endif %}"
+                                            title="{% if article.id in comp.pinned_ids %}Desfijar artículo{% else %}Fijar artículo{% endif %}">📌</button>
                                 </div>
-                                {% else %}
+                                {% endfor %}
+                            </div>
+                            {% elif comp.articles or comp.has_picker %}
+                            <div class="comp-articles" id="comp-articles-{{ comp.key }}">
+                                {% for title in comp.articles %}
                                 <div class="comp-article-row{% if not comp.sortable_articles %} comp-article-static{% endif %}"
                                      {% if comp.sortable_articles %}draggable="true"{% endif %}
                                      data-article-id="{{ title.id }}">
@@ -264,17 +281,25 @@
                                     <a class="article-edit-link" href="/admin/core/article/{{ title.id }}/change/" target="_blank" title="Editar artículo">✎</a>
                                     {% if comp.has_picker %}<button type="button" class="picker-remove" title="Quitar">×</button>{% endif %}
                                 </div>
-                                {% endif %}
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            {% if comp.has_picker %}
+                            {% if comp.pin_mode %}
                             <div class="article-picker"
                                  data-target="comp-articles-{{ comp.key }}"
                                  data-row-class="comp-article-row"
                                  data-item-selector=".comp-article-row[data-article-id]"
-                                 {% if comp.replace_mode %}data-replace-mode="true" data-max-slots="{{ comp.replace_slots }}"{% endif %}>
-                                {% if comp.replace_mode %}<div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>{% endif %}
+                                 data-replace-mode="true"
+                                 data-max-slots="3">
+                                <div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>
+                                <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
+                                <div class="picker-results"></div>
+                            </div>
+                            {% elif comp.has_picker %}
+                            <div class="article-picker"
+                                 data-target="comp-articles-{{ comp.key }}"
+                                 data-row-class="comp-article-row"
+                                 data-item-selector=".comp-article-row[data-article-id]">
                                 <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                                 <div class="picker-results"></div>
                             </div>
@@ -298,6 +323,7 @@ window.HOMEV4_DATA = {
     csrfToken: "{{ csrf_token }}",
     articleSearchUrl: "{{ article_search_url }}",
     newsletterSearchUrl: "{{ newsletter_search_url }}",
+    {% if lo_ultimo_latest_url %}loUltimoLatestUrl: "{{ lo_ultimo_latest_url }}",{% endif %}
     componentLabels: {
         {% for comp in editor_data.componentes %}"{{ comp.key }}": "{{ comp.label }}"{% if not forloop.last %},{% endif %}
         {% endfor %}

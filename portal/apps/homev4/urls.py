@@ -11,6 +11,7 @@ urlpatterns = [
     path("sections/", views.sections_json, name="sections_json"),
     path("categories/", views.categories_json, name="categories_json"),
     path("article-search/", views.article_search, name="article_search"),
+    path("lo-ultimo-latest/<int:layout_id>/", views.lo_ultimo_latest, name="lo_ultimo_latest"),
     path("newsletter-search/", views.newsletter_search, name="newsletter_search"),
     path("active-layout/", views.active_layout, name="active_layout"),
     path("active-layout/<slug:publication_slug>/", views.active_layout, name="active_layout_pub"),
