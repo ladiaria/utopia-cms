@@ -1,20 +1,13 @@
-{% load bleach_tags core_tags ldml %}
+{% load core_tags homev4_tags %}
 
 {% if secondary %}
 <div class="suplemento-section__secondary-row" data-slider>
-  {% for article in secondary %}
-  <article class="article{% if secondary|length > 3 %}{% if forloop.counter == 3 %} article--slider-right-edge{% elif forloop.counter == 4 %} article--slider-left-edge{% endif %}{% endif %}">
-    {% render_toolbar_for article %}
-    <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
-    <h3 class="article__title">
-      <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
-    </h3>
-    {% if article_card_read_later_enabled and user.is_authenticated %}
-      <div class="article__footer">
-        {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
-      </div>
-    {% endif %}
-  </article>
-  {% endfor %}
+  {% with total=secondary|length %}
+    {% for article in secondary %}
+      {% with slider_class=forloop.counter|slider_position_class:total %}
+        {% render_card article=article variant="card_secondary_manana_home" %}
+      {% endwith %}
+    {% endfor %}
+  {% endwith %}
 </div>
 {% endif %}

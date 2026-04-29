@@ -193,10 +193,11 @@
       qsa(".ld-modal").forEach(function (modal) {
         modal.classList.remove("active");
       });
-      const popup = qs(".js-popup-user-menu");
-      const btn = qs(".js-user-menu-toggle");
-      if (popup) popup.classList.remove("is-open");
-      if (btn) btn.setAttribute("aria-expanded", "false");
+      document.querySelectorAll("[data-activates]").forEach(function (btn) {
+        const target = document.getElementById(btn.dataset.activates);
+        if (target) target.classList.remove("is-open");
+        btn.setAttribute("aria-expanded", "false");
+      });
     });
 
     onAll(".alert-close", "click", function () {
@@ -463,23 +464,24 @@
       }
     });
 
-    // user menu popup toggle
-    onAll(".js-user-menu-toggle", "click", function (event) {
-      const popup = qs(".js-popup-user-menu");
-      if (!popup) return;
-      const isOpen = popup.classList.toggle("is-open");
+    // generic dropdown toggle (data-activates="<id>")
+    onAll("[data-activates]", "click", function (event) {
+      const target = document.getElementById(this.dataset.activates);
+      if (!target) return;
+      const isOpen = target.classList.toggle("is-open");
       this.setAttribute("aria-expanded", String(isOpen));
       event.stopPropagation();
     });
 
     document.addEventListener("click", function (event) {
-      const popup = qs(".js-popup-user-menu");
-      const btn = qs(".js-user-menu-toggle");
-      if (!popup || !popup.classList.contains("is-open")) return;
-      if (!popup.contains(event.target)) {
-        popup.classList.remove("is-open");
-        if (btn) btn.setAttribute("aria-expanded", "false");
-      }
+      document.querySelectorAll("[data-activates]").forEach(function (btn) {
+        const target = document.getElementById(btn.dataset.activates);
+        if (!target || !target.classList.contains("is-open")) return;
+        if (!target.contains(event.target)) {
+          target.classList.remove("is-open");
+          btn.setAttribute("aria-expanded", "false");
+        }
+      });
     });
 
     // Keep variable assignment to preserve previous side effects.
