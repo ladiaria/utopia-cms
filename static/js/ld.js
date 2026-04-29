@@ -155,6 +155,7 @@
         menu.classList.toggle("active", isOpen);
       });
       body.classList.toggle("main-menu-open", isOpen);
+      if (!isOpen) body.classList.remove("mobile-search-open");
       setDocumentScrollLocked(isOpen);
 
       const openButton = qs(".ld-main-menu__open");
@@ -184,6 +185,44 @@
       setMainMenuState(!menuIsOpen);
       event.preventDefault();
     });
+
+    // Header search toggle
+    const headerSearch = qs(".header-search");
+    const headerSearchToggle = headerSearch && qs(".header-search__toggle", headerSearch);
+    const headerSearchInput = headerSearch && qs(".header-search__input", headerSearch);
+    const mobileBreakpoint = window.matchMedia("(max-width: 992px)");
+
+    if (headerSearchToggle) {
+      headerSearchToggle.addEventListener("click", function (event) {
+        event.preventDefault();
+        if (mobileBreakpoint.matches) {
+          const searchIsOpen = document.body.classList.contains("mobile-search-open");
+          if (searchIsOpen) {
+            document.body.classList.remove("mobile-search-open");
+          } else {
+            document.body.classList.add("mobile-search-open");
+            if (!document.body.classList.contains("main-menu-open")) {
+              setMainMenuState(true);
+            }
+            const mobileInput = qs(".mobile-header-search__input");
+            if (mobileInput) mobileInput.focus();
+          }
+        } else {
+          const isOpen = headerSearch.classList.toggle("header-search--open");
+          headerSearchToggle.setAttribute("aria-expanded", String(isOpen));
+          if (isOpen && headerSearchInput) headerSearchInput.focus();
+        }
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        if (!mobileBreakpoint.matches && headerSearch.classList.contains("header-search--open")) {
+          headerSearch.classList.remove("header-search--open");
+          headerSearchToggle.setAttribute("aria-expanded", "false");
+          headerSearchToggle.focus();
+        }
+      });
+    }
 
     document.addEventListener("keyup", function (event) {
       if (event.key !== "Escape" && event.keyCode !== 27) {
