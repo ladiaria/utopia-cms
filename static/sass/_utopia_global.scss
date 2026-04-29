@@ -962,6 +962,7 @@ select.browser-default {
     }
     &.active {
       background-color: $off-black;
+      border-radius: 2px;
       a {
         color: white;
       }
@@ -977,32 +978,6 @@ select.browser-default {
 
       svg {
         fill: #81898b;
-      }
-    }
-  }
-  &.light {
-    li a:not(.disabled) {
-      color: #fff;
-      font-weight: bold;
-    }
-    li.active {
-      background: #fff;
-
-      a {
-        color: $off-black;
-        font-weight: bold;
-      }
-    }
-    li > a[aria-label="Siguiente"],
-    li > a[aria-label="Anterior"] {
-      svg path + path {
-        fill: #fff;
-      }
-    }
-    li.disabled > a[aria-label="Siguiente"],
-    li.disabled > a[aria-label="Anterior"] {
-      svg path + path {
-        fill: #a4a4a4;
       }
     }
   }
@@ -1029,10 +1004,6 @@ select.browser-default {
 [type="radio"].with-gap:checked + label::after {
   background-color: $grey;
   border-color: $grey;
-}
-.dropdown-content li > a,
-.dropdown-content li > span {
-  color: $grey !important;
 }
 
 #contact_form {

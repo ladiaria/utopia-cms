@@ -19,6 +19,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Remove Materialize CSS grid (`row` / `col s12`) from subscribe and login templates
 - [ ] Remove all Materialize CSS dependencies from the project
 - [ ] Remove `collapsible.js` (Materialize) from access pages
+- [ ] Audit `render_article_card` and remove card templates unused in the v4 redesign
 
 ---
 
@@ -154,3 +155,22 @@ dependencias del template.
 ```bash
 grep -r "collapsible" --include="*.html" --include="*.js" --include="*.scss" .
 ```
+
+---
+
+## 13. Audit `render_article_card` and remove card templates unused in the v4 redesign
+
+Once the migration from `render_article_card` to `render_card` is complete (item 1), audit which
+card templates from `core/templates/article/` are no longer referenced anywhere in the v4 redesign
+and can be safely deleted.
+
+```bash
+# Find all variant names currently used via render_card
+grep -r "render_card" --include="*.html" . | grep -o 'variant="[^"]*"' | sort -u
+
+# Find all card templates available
+ls portal/apps/core/templates/article/card_*.html
+```
+
+Cross-reference both lists and remove any template that has no active `render_card` usage and is
+not referenced by `render_article_card` either.

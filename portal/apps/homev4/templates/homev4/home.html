@@ -46,7 +46,7 @@
     {% if articles %}
 
       {% with featured=articles.0 %}
-        {% include "homev4/main_section/_featured.html" %}
+        {% render_card article=featured variant="card_featured_home" %}
       {% endwith %}
 
       {% if tarde_mode %}
@@ -97,40 +97,8 @@
     {% with articles=home_data.suplemento_articles %}
     {% if articles %}
 
-      {# Noticia destacada: header + texto izquierda, imagen derecha #}
       {% with featured=articles.0 %}
-      <div class="suplemento-section__featured">
-        <div class="suplemento-section__header">
-          <a href="{{ suplemento_slug }}">
-            <h2>{{ home_data.suplemento_title }}</h2>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
-          </a>
-        </div>
-        {% if featured.photo %}
-          <a href="{{ featured.get_absolute_url }}" class="suplemento-section__featured-image">
-            <img
-              srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
-              sizes="(min-width: 700px) 616px, 100vw"
-              width="700"
-              height="{{ featured.photo.get_700w_size.1 }}"
-              loading="lazy"
-              alt="{{ featured.photo_caption }}"
-            >
-          </a>
-        {% endif %}
-        <article class="article">
-          {% render_toolbar_for featured %}
-          <span class="article__section-label">{% autoescape off %}{% publication_section featured %}{% endautoescape %}</span>
-          <h3 class="article__title">
-            <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
-          </h3>
-          {% if article_card_read_later_enabled and user.is_authenticated %}
-            <div class="article__footer">
-              {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
-            </div>
-          {% endif %}
-        </article>
-      </div>
+        {% include "homev4/suplemento_section/_featured.html" %}
       {% endwith %}
 
       {% if articles|length >= 7 %}
@@ -220,28 +188,8 @@
         {% if section.articles %}
         <div class="home-block__articles">
           {% for article in section.articles %}
-          {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
-          <article class="article">
-            {% render_toolbar_for article %}
-            {% if article.photo %}
-              <a href="{{ article.get_absolute_url }}" class="article__image-container">
-                <img
-                  class="article__image"
-                  srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
-                  sizes="(min-width: 700px) 284px, 100vw"
-                  width="700"
-                  height="{{ article.photo.get_700w_size.1 }}"
-                  loading="lazy"
-                  title="{{ article.photo_caption }}"
-                  alt="{{ article.photo_caption }}"
-                >
-              </a>
-            {% endif %}
-            <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
-            <h3 class="article__title">
-              <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
-            </h3>
-          </article>
+            {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
+            {% render_card article=article variant="card_tertiary_home" %}
           {% endfor %}
         </div>
         {% endif %}

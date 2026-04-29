@@ -2,6 +2,10 @@
 
 Acciones manuales a realizar en el momento del deploy del nuevo diseño.
 
+## Deploy de `utopia-cms-library`
+
+El rediseño de la portada de Libros y la Comunidad de libros incluye cambios en el template `book_detail.html` del repositorio `utopia-cms-library` (directorio separado: `web/utopia-cms-library/`). Este repo tiene su propio ciclo de deploy y hay que acordarse de incluirlo explícitamente.
+
 ## Limpiar `local_settings.py`
 
 Settings que quedaron sin consumidor tras eliminar código de la home vieja (homev3):
