@@ -236,3 +236,20 @@ TWILIO_FROM_NUMBER = ''        # Your Twilio phone number (e.g., '+1234567890')
 # =============================================================================
 # End of Sentry Configuration
 # =============================================================================
+
+# =============================================================================
+# Django Admin Locking Configuration
+# =============================================================================
+# Prevents concurrent editing conflicts by locking change forms when a user is
+# editing them. Others see a warning banner and all fields are disabled until
+# the lock expires or the first user leaves.
+#
+# Requires django-admin-locking==0.10.0 (already in requirements.txt).
+# Uses Django's default cache (Redis/Memcached) to store lock state.
+#
+# ADMIN_PAGE_LOCK_ENABLED = True
+# INSTALLED_APPS += ('admin_locking',)
+# ADMIN_LOCKING_TIMEOUT = 10  # minutes before an idle lock expires
+# =============================================================================
+# End of Django Admin Locking Configuration
+# =============================================================================
