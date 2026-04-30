@@ -145,8 +145,8 @@
         </a>
         {% if article.photo.caption %}
           <div class="especial-section__caption">
-          <p class="especial-section__caption">{{ article.photo.caption|ldmarkup|bleach }}</p>
-          {% if article.photo_author %}<p class="especial-section__caption">{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
+            <p class="">{{ article.photo.caption|ldmarkup|bleach }}</p>
+            {% if article.photo_author %}<p class="">{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
           </div>
         {% endif %}
       </div>
