@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.staticfiles import finders
 from django.db.models import Case, IntegerField, Value, When
@@ -10,6 +11,21 @@ from django.utils.html import format_html
 
 from .models import HomeLayout, HomeLayoutAuditLog, _DAY_CODE_TO_WEEKDAYS
 from .views import get_default_grid_data, LAYOUT_BLOCKS_CONFIG, build_editor_data, _static_hash
+
+# Conditional import: when ADMIN_PAGE_LOCK_ENABLED=True in local_settings.py,
+# use AdminLockingMixin to show a warning banner if another user already has the
+# layout editor open. Falls back to an empty mixin so no code change is needed
+# when the library is not installed or the feature is disabled.
+if getattr(settings, 'ADMIN_PAGE_LOCK_ENABLED', False):
+    try:
+        from admin_locking.admin import AdminLockingMixin
+        AdminLockingBase = AdminLockingMixin
+    except ImportError:
+        class AdminLockingBase:
+            pass
+else:
+    class AdminLockingBase:
+        pass
 
 
 def _static_hash_admin(filename):
@@ -39,7 +55,7 @@ _SCHEDULE_FIELDS = ("name", "day", "start_time", "end_time", "ends_next_day", "i
 
 
 @admin.register(HomeLayout)
-class HomeLayoutAdmin(admin.ModelAdmin):
+class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
     change_form_template = "homev4/admin_change_form.html"
     list_display = ("name", "publication", "day", "start_time", "end_time", "ends_next_day", "is_manual_override", "modified")
     list_filter = ("is_manual_override",)
@@ -119,6 +135,9 @@ class HomeLayoutAdmin(admin.ModelAdmin):
             obj.grid_data = get_default_grid_data()
         super().save_model(request, obj, form, change)
         self._warn_if_overlap(request, obj)
+
+    class Media:
+        js = ('admin_locking/admin_locking.js', 'js/admin_locking_custom.js')
 
     def _warn_if_overlap(self, request, obj):
         """Show a non-blocking warning if the saved layout overlaps with another scheduled one."""
