@@ -334,32 +334,36 @@ def categories_json(request):
 @staff_member_required
 def article_search(request):
     """Return up to 10 published articles matching the ?q= headline search (for the picker widget).
-    Excludes articles already assigned to any zone of the current layout (?layout_id=).
+    When the JS editor sends exclude_ids it represents the authoritative live DOM state — use it
+    exclusively and skip the DB lookup. Fall back to layout_id DB lookup only when exclude_ids is absent.
     """
     q = request.GET.get("q", "").strip()
     if len(q) < 2:
         return JsonResponse([], safe=False)
 
     excluded_ids = set()
-    layout_id = request.GET.get("layout_id")
-    if layout_id:
-        try:
-            layout = HomeLayout.objects.get(pk=layout_id)
-            gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
-            for block in ("principal", "suplemento", "especial"):
-                excluded_ids.update(gd.get(block, {}).get("article_ids", []))
-            for sec in gd.get("sections", []):
-                excluded_ids.update(sec.get("article_ids", []))
-            for comp in gd.get("componentes", []):
-                excluded_ids.update(comp.get("article_ids", []))
-        except HomeLayout.DoesNotExist:
-            pass
-
-    for raw_id in request.GET.get("exclude_ids", "").split(","):
-        try:
-            excluded_ids.add(int(raw_id))
-        except ValueError:
-            pass
+    if "exclude_ids" in request.GET:
+        # JS sends current editor state — authoritative; DB lookup would re-exclude removed articles.
+        for raw_id in request.GET["exclude_ids"].split(","):
+            try:
+                excluded_ids.add(int(raw_id))
+            except ValueError:
+                pass
+    else:
+        # No JS state available — fall back to DB to prevent cross-zone duplicates.
+        layout_id = request.GET.get("layout_id")
+        if layout_id:
+            try:
+                layout = HomeLayout.objects.get(pk=layout_id)
+                gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+                for block in ("principal", "suplemento", "especial"):
+                    excluded_ids.update(gd.get(block, {}).get("article_ids", []))
+                for sec in gd.get("sections", []):
+                    excluded_ids.update(sec.get("article_ids", []))
+                for comp in gd.get("componentes", []):
+                    excluded_ids.update(comp.get("article_ids", []))
+            except HomeLayout.DoesNotExist:
+                pass
 
     qs = Article.published.filter(headline__icontains=q)
     if excluded_ids:

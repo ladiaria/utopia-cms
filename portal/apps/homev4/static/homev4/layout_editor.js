@@ -507,8 +507,8 @@ document.addEventListener("DOMContentLoaded", function () {
         var sep = baseUrl.indexOf("?") >= 0 ? "&" : "?";
         var url = baseUrl + sep + "q=" + encodeURIComponent(q);
         if (!isNewsletterMode) {
-            var editorIds = getEditorArticleIds();
-            if (editorIds.length) url += "&exclude_ids=" + editorIds.join(",");
+            // Always send exclude_ids (even empty) so the backend knows JS state is driving and skips the DB lookup.
+            url += "&exclude_ids=" + getEditorArticleIds().join(",");
         }
         fetch(url, { credentials: "same-origin", signal: signal })
             .then(function (r) { return r.json(); })
