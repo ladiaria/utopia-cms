@@ -292,9 +292,13 @@ def user_read_history(user, include_viewed_at=False, limit=None, date_from=None,
         dbquery = dbquery.exclude(article_id__in=mids).order_by('-viewed_at')
         if limit:
             dbquery = dbquery[:limit - len(mids)]
-        historial += [
-            ((avb.article, avb.viewed_at.astimezone(ctz)) if include_viewed_at else avb.article) for avb in dbquery
-        ]
+        for avb in dbquery:
+            try:
+                historial.append(
+                    (avb.article, avb.viewed_at.astimezone(ctz)) if include_viewed_at else avb.article
+                )
+            except Article.DoesNotExist:
+                pass
     return historial
 
 

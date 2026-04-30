@@ -1,5 +1,14 @@
 {% load homev3_tags thedaily_tags %}
 
+<div class="mobile-header-search">
+  <form action="{% url 'search' %}" method="get" role="search">
+    <input type="search" name="q" class="mobile-header-search__input" placeholder="Buscar" autocomplete="off" aria-label="Buscar">
+    <button type="submit" class="mobile-header-search__submit" aria-label="Buscar">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".3" stroke-width="1.5" d="m14 20 4-4-4-4"/></svg>
+    </button>
+  </form>
+</div>
+
 {% if not is_subscriber_any %}
   <div class="mobile-login-items">
     {% if not user.is_authenticated %}

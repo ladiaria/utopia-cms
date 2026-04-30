@@ -22,7 +22,7 @@
           {% endif %}
         </div>
       {% else %}
-        {% if is_portada and category and category.newsletter %}
+        {% if is_portada and category and category.newsletter or is_portada and category and category.has_newsletter %}
           <div class="fixed-items">
             <button type="button" class="newsletter-header">
               <svg class="newsletter-header__icon-default" xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
@@ -47,16 +47,21 @@
       {% block header_pill %}{% endblock %}
     </div>
     <div class="upper-right-content">
-      <a href="{% url 'search' %}" class="search-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
-      </a>
+      <div class="header-search">
+        <form class="header-search__form" action="{% url 'search' %}" method="get" role="search">
+          <input type="search" name="q" class="header-search__input" placeholder="Buscar" autocomplete="off" aria-label="Buscar">
+        </form>
+        <button type="button" class="search-btn header-search__toggle" aria-label="Buscar" aria-expanded="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
+        </button>
+      </div>
       {% if user.is_authenticated %}
         <div class="user-menu-container">
-          <button class="user-menu-button js-user-menu-toggle" aria-expanded="false" aria-controls="popup-user-menu">
+          <button class="user-menu-button" data-activates="popup-user-menu" aria-expanded="false" aria-controls="popup-user-menu">
             <span>{{ user.first_name }}</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
           </button>
-          <div class="popup-user-menu js-popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
+          <div class="popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
             <div class="popup-user-menu__account-data">
               <span class="popup-user-menu__email">{{ user.email }}</span>
               {% if not is_subscriber_any %}
@@ -93,7 +98,3 @@
     </div>
   </div>
 </div>
-
-{% if extra_header_template %}
-  {% include extra_header_template %}
-{% endif %}

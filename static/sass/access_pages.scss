@@ -1,5 +1,240 @@
 @import "variables";
-@import "utopia_materialize/variables";
+
+body {
+  background-color: #f1f4f5;
+}
+
+main#main-content {
+  flex: 1;
+}
+
+p {
+  margin: 0;
+}
+
+.ld-content {
+  max-width: px-to-rem(390px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+
+  .google-auth {
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid $color-divider;
+  }
+
+  .forgot-password {
+    padding-top: 8px;
+    text-align: right;
+  }
+  .submit {
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 32px;
+  }
+
+  /* Forgot password page */
+  .forgot-password & {
+    .ld-title-huge {
+      padding-bottom: 24px;
+    }
+    > p {
+      padding-bottom: 64px;
+    }
+    #reset_password #div_id_username_or_email {
+      padding-bottom: 64px;
+    }
+    @media #{$medium-and-down} {
+      .ld-title-huge {
+        padding-bottom: 16px;
+      }
+      > p {
+        padding-bottom: 48px;
+      }
+      #reset_password #div_id_username_or_email {
+        padding-bottom: 48px;
+      }
+    }
+  }
+
+  /* Logged out page */
+  .logged-out & {
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    @media #{$medium-and-down} {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      > div {
+        width: max-content;
+      }
+    }
+  }
+}
+
+@media #{$medium-and-down} {
+  .ld-content {
+    padding-top: 16px;
+    .google-auth {
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+  }
+}
+
+#div_id_terms_and_conds_accepted {
+  padding-top: 32px;
+  padding-bottom: 48px;
+
+  a {
+    text-decoration: underline;
+  }
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+
+  &.modal--open {
+    display: flex;
+  }
+}
+
+#terms-conditions-modal {
+  @extend .modal-overlay;
+
+  .content {
+    background-color: #fff;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  p {
+    padding-bottom: 12px;
+  }
+
+  .align-center {
+    display: flex;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: px-to-rem(26px);
+
+    @media #{$medium-and-down} {
+      font-size: px-to-rem(22px);
+    }
+  }
+}
+
+// Styles previously in subscription.scss
+
+.subscription-header {
+  margin-top: 25px;
+  margin-bottom: 35px;
+  text-align: center;
+
+  .ld-title {
+    font-size: 38px;
+    font-family: $sans-title;
+    margin-bottom: 0;
+    padding: 0 10px;
+
+    @media #{$medium-and-down} {
+      font-size: 30px;
+    }
+  }
+
+  .subtitle {
+    font-size: 24px;
+    font-family: $sans-title;
+    line-height: 30px;
+    margin-left: 15px;
+    margin-right: 15px;
+
+    @media #{$medium-and-down} {
+      font-size: 22px;
+    }
+  }
+}
+
+.subscribe-header {
+  position: relative;
+  padding: 0 10px 20px;
+
+  @media (min-width: 769px) {
+    padding: 0 0 20px;
+    margin-top: -25px;
+  }
+
+  .ld-title-big {
+    margin-bottom: 10px;
+    font-family: AntennaCond, sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+  }
+
+  .price {
+    font-size: 26px;
+    font-weight: bold;
+    font-family: AntennaCond, sans-serif;
+    color: $primary-color-accent;
+  }
+  small.exp {
+    display: block;
+  }
+  .ld-text-secondary {
+    display: block;
+    margin: 0 auto;
+  }
+  .cancel {
+    display: block;
+    font-size: px-to-rem(14px);
+    color: #fa4f4f;
+  }
+}
+
+.subscribe-body .close-window-container {
+  text-align: right;
+  button {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+  }
+}
+
+body.subscribe.activation {
+  background-color: white !important;
+
+  .ld-content {
+    margin: 0 auto;
+
+    @media #{$medium-and-down} {
+      padding: 32px 16px;
+    }
+  }
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+// End of styles previously in subscription.scss
+
+// Styles previously in hard_paywall.scss
 
 body.hard-paywall {
   background-color: #edf6f5;
@@ -434,3 +669,5 @@ body.hard-paywall {
     }
   }
 }
+
+// End of styles previously in hard_paywall.scss

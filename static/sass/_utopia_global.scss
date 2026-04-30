@@ -22,13 +22,6 @@ body {
   }
 }
 
-button {
-  background-color: transparent;
-  padding: 0;
-  border: none;
-  font-size: px-to-rem(16px);
-}
-
 .btn {
   font-size: 1rem;
   line-height: normal;
@@ -39,6 +32,9 @@ button {
   border: 1px solid $off-black;
   text-align: center;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 
   &__dark {
     background-color: $off-black;
@@ -52,6 +48,26 @@ button {
       background-color: #262626;
     }
   }
+
+  &__light {
+    background-color: white;
+  }
+
+  &--medium {
+    font-weight: 500;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .ld-heading {
@@ -108,13 +124,6 @@ a.ld-text-secondary,
 .ld-text-secondary a:not(.ut-btn) {
   color: $grey;
   text-decoration: underline;
-}
-
-.ld-title-big {
-  font-size: 38px;
-  font-weight: 500;
-  margin: 0 0 25px 0;
-  color: $off-black;
 }
 
 .ld-title {
@@ -476,15 +485,8 @@ a.ladiaria {
 
 @media #{$medium-and-down} {
   .section-detail {
-    &__head {
-      padding-top: 24px;
-      margin-bottom: 24px;
-      gap: 8px;
-    }
-
     &__title {
       font-size: px-to-rem(28px);
-      line-height: px-to-rem(24.36px);
       letter-spacing: px-to-rem(0.28px);
     }
     &__subtitle {
@@ -670,8 +672,9 @@ a.ladiaria {
 
     &.interior {
       .container {
-        width: 700px;
+        width: 616px;
         max-width: 100%;
+        padding: 0;
       }
       .footer-portada {
         .container {
@@ -938,52 +941,50 @@ select.browser-default {
   margin-top: 10px;
 }
 
-#div_id_province {
-  margin: 40px 0 20px;
-}
-
 /* rebranding pagination */
 .pagination {
-  margin: 50px 0;
+  margin: 48px 0;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 
   li {
+    &:first-child a,
+    &:last-child a {
+      padding: 0;
+    }
+    a {
+      padding: 8px 12px;
+      display: flex;
+      line-height: normal;
+    }
     &.active {
       background-color: $off-black;
+      border-radius: 2px;
+      a {
+        color: white;
+      }
     }
 
     &.disabled {
-      color: $lightGrey-2;
+      color: #81898b;
+
+      a {
+        cursor: default;
+        pointer-events: none;
+      }
 
       svg {
-        fill: $lightGrey-2;
+        fill: #81898b;
       }
     }
   }
-  &.light {
-    li a:not(.disabled) {
-      color: #fff;
-      font-weight: bold;
-    }
-    li.active {
-      background: #fff;
-
-      a {
-        color: $off-black;
-        font-weight: bold;
-      }
-    }
-    li > a[aria-label="Siguiente"],
-    li > a[aria-label="Anterior"] {
-      svg path + path {
-        fill: #fff;
-      }
-    }
-    li.disabled > a[aria-label="Siguiente"],
-    li.disabled > a[aria-label="Anterior"] {
-      svg path + path {
-        fill: #a4a4a4;
-      }
+  @media #{$medium-and-down} {
+    gap: 16px;
+    li a {
+      font-size: px-to-rem(18px);
     }
   }
 }
@@ -1003,10 +1004,6 @@ select.browser-default {
 [type="radio"].with-gap:checked + label::after {
   background-color: $grey;
   border-color: $grey;
-}
-.dropdown-content li > a,
-.dropdown-content li > span {
-  color: $grey !important;
 }
 
 #contact_form {

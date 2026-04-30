@@ -99,11 +99,17 @@ h3,
 h4,
 h5 {
   font-weight: bold;
+  margin: 0;
+}
+
+p {
+  margin: 0;
 }
 
 a {
   color: $link-color;
   text-decoration: none;
+  cursor: pointer;
 
   &:hover {
     color: $link-color-hover;
@@ -115,12 +121,32 @@ a {
     }
   }
 }
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 button,
 input[type="button"],
 input[type="reset"],
 input[type="submit"] {
   cursor: pointer;
 }
+
+button {
+  background-color: transparent;
+  padding: 0;
+  border: none;
+  font-size: px-to-rem(16px);
+}
+
+small {
+  font-size: px-to-rem(12px);
+}
+
 ul {
   margin: 0;
   padding: 0;
@@ -236,16 +262,10 @@ figure {
 }
 
 .ld-title-big {
-  font-size: 28px;
+  font-size: px-to-rem(24px);
   font-family: $sans;
-  line-height: 1.1;
-  color: $off-black;
   font-weight: 500;
-  margin: 0 0 30px 0;
-
-  @media (min-width: 769px) {
-    font-size: 38px;
-  }
+  margin: 0;
 }
 
 .ld-bold-chbx {
@@ -397,10 +417,6 @@ a.skip-main:active {
   }
 }
 
-article a {
-  text-decoration: underline;
-}
-
 p {
   a {
     text-decoration: underline;
@@ -450,43 +466,5 @@ fieldset {
 
   &.visibility-on {
     background-image: url(../img/icon-visibility_off.svg);
-  }
-}
-
-// terms and conditions
-#div_id_terms_and_conds_accepted {
-  margin: 30px 0 40px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-
-  label {
-    height: 22px;
-    line-height: 22px;
-
-    a {
-      text-decoration: underline;
-    }
-  }
-  .error {
-    display: block;
-    position: relative;
-    top: 5px;
-  }
-}
-
-/* Checked checkboxes bg color */
-[type="checkbox"].filled-in:checked + label:after {
-  background-color: $off-black;
-  border-color: $off-black;
-}
-
-// Tabs
-.tabs {
-  li.tab {
-    font-weight: bold;
-    .active {
-      font-size: 125%;
-    }
   }
 }

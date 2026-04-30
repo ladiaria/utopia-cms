@@ -33,6 +33,11 @@ article a {
   gap: $gap-2;
   position: relative;
 
+  &:hover,
+  &:hover a:not(.btn__dark) {
+    color: $link-color-hover;
+  }
+
   &__body {
     display: flex;
     flex-direction: column;

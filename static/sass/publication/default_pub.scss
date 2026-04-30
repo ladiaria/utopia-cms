@@ -2,31 +2,6 @@
 @import "../cardv4.scss";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
-}
-
-article a {
-  text-decoration: none;
-}
 
 // ─── Home layout ─────────────────────────────────────────────────────────────
 .home {
@@ -343,6 +318,11 @@ article a {
         height: auto;
         display: block;
       }
+
+      &:hover ~ article.article,
+      &:hover ~ article.article a {
+        color: $link-color-hover;
+      }
     }
 
     > .article {
@@ -430,6 +410,7 @@ article a {
   // Texto izquierda + foto grande derecha
   &__featured {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     gap: $gap-6;
   }

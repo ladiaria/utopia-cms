@@ -7,16 +7,6 @@ function edit_profile_open_modal() {
 $(function () {
 
   $('.scrollspy').scrollSpy();
-  const mainHeight = $('#main-content').height();
-  const tableHeight = $('.table-of-contents').height();
-  const bottomOffset = mainHeight - tableHeight;
-
-  $('.table-of-contents').pushpin({
-    offset: 75,
-    top: 320,
-    bottom: bottomOffset,
-    scrollOffset: 0
-  });
 
   setTimeout(() => {
     if (document.querySelector(".alert.alert-success.ld-message")) {

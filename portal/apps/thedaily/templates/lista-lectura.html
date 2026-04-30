@@ -1,11 +1,9 @@
 {% extends base_template %}
-{% load static favit_tags thedaily_tags %}
+{% load static favit_tags thedaily_tags ldml bleach_tags %}
 
 {% block page_title %}
   {% if leer_despues != None %}
-    Leer después | Lista de lectura | {{ site.name }}
-  {% elif favoritos != None %}
-    Favoritos | Lista de lectura | {{ site.name }}
+    Guardados | Lista de lectura | {{ site.name }}
   {% elif historial != None %}
     Historial | Lista de lectura | {{ site.name }}
   {% endif %}
@@ -13,9 +11,15 @@
 
 {% block header_scripts %}
   <script type="text/javascript">
-    $(function(){
-      $.each($("li.tab a").not(".active"), function(k, v){
-        $(".count > span", v).load($(v).attr("href"));
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('li.tab a:not(.active)').forEach(function(a) {
+        const span = a.querySelector('.count > span');
+        if (!span) return;
+        fetch(a.getAttribute('href'), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then(res => res.text())
+          .then(text => { span.textContent = text; });
       });
     });
   </script>
@@ -27,36 +31,33 @@
 
 {% block body_class %}static{% endblock %}
 
-{% block container_class %}container--narrow{% endblock %}
-
 {% block content %}
   <div class="section-detail__head">
     <a class="section-detail__toplink" href="{% url 'edit-profile' %}">
-      <svg xmlns="http://www.w3.org/2000/svg"  width="8" height="13" viewBox="15451.996 -3655.987 6.105 9.902"><path d="M773.155,7312l3.8,3.8,3.8-3.8,1.155,1.155-4.951,4.951L772,7313.155l1.155-1.155" transform="translate(22770.102 -4427.987) rotate(90)" fill="#595959"></path></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#81898b" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m14 16-4-4 4-4"/></svg>
       Perfil
     </a>
     <h1 class="section-detail__title">Lista de lectura</h1>
     <ul class="lista-lectura_nav">
-      <li class="tab"><a href="{% url 'lista-lectura-leer-despues' %}"{% if leer_despues != None %} class="active"{% endif %}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path  d="M17,3H7A2.006,2.006,0,0,0,5,5V21l7-3,7,3V5A2.006,2.006,0,0,0,17,3Z" fill="#262626"/></svg>Leer después<span class="count"> (<span>{{ leer_despues_count }}</span>)</span></a></li>
-      <li class="tab"><a href="{% url 'lista-lectura-favoritos' %}"{% if favoritos != None %} class="active"{% endif %}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M0,0H24V24H0Z" fill="none"/><path d="M12,17.27l4.15,2.51a1,1,0,0,0,1.49-1.08l-1.1-4.72,3.67-3.18a1,1,0,0,0-.57-1.75l-4.83-.41L12.92,4.18a1,1,0,0,0-1.84,0L9.19,8.63l-4.83.41a1,1,0,0,0-.57,1.75l3.67,3.18-1.1,4.72a1,1,0,0,0,1.49,1.08Z" fill="#262626" /></svg>Favoritos <span class="count"> (<span>{{ favoritos_count }}</span>)</span></a></li>
-      <li class="tab"><a href="{% url 'lista-lectura-historial' %}"{% if historial != None %} class="active"{% endif %}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none" /><path d="M13.26,3A9.009,9.009,0,0,0,4,12H2.21a.5.5,0,0,0-.35.85l2.79,2.8a.5.5,0,0,0,.71,0l2.79-2.8A.5.5,0,0,0,7.79,12H6a7,7,0,0,1,7.1-7A7.089,7.089,0,0,1,20,11.9,7,7,0,0,1,13,19a6.9,6.9,0,0,1-4.28-1.48,1,1,0,0,0-1.24,1.57A8.858,8.858,0,0,0,13,21a9.009,9.009,0,0,0,9-9.26A9.106,9.106,0,0,0,13.26,3Zm-.51,5a.755.755,0,0,0-.75.75v3.68a1.012,1.012,0,0,0,.49.86l3.12,1.85a.751.751,0,1,0,.77-1.29L13.5,12.14V8.74A.753.753,0,0,0,12.75,8Z" fill="#262626"/></svg>Historial<span class="count"> (<span>{% if historial == None %}<svg class="spinner"><circle cx="8" cy="8" r="6"></circle></svg>{% endif %}{{ historial_count }}</span>)</span></a></li>
+      <li class="tab">
+        <a href="{% url 'lista-lectura-leer-despues' %}"{% if leer_despues != None %} class="active"{% endif %}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><g clip-path="url(#clip0_3466_22059)"><path fill="#000" stroke="#000" stroke-width="1.5" d="M4.666 2.75h6.667c.322 0 .583.261.583.583v9.53L8.69 11.48a1.75 1.75 0 0 0-1.38 0l-3.227 1.382V3.333c0-.322.261-.583.583-.583Z"/></g><defs><clipPath id="clip0_3466_22059"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+          Guardados<span class="count"> (<span>{{ leer_despues_count }}</span>)</span>
+        </a>
+      </li>
+      <li class="tab">
+        <a href="{% url 'lista-lectura-historial' %}"{% if historial != None %} class="active"{% endif %}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#000" stroke="#000" stroke-width=".5" d="M8.474 14q-2.295 0-4-1.492T2.5 8.75h.762a5.25 5.25 0 0 0 1.77 3.217q1.464 1.283 3.442 1.283 2.204 0 3.738-1.528Q13.746 10.195 13.747 8t-1.535-3.722T8.474 2.75q-1.17 0-2.198.492a5.9 5.9 0 0 0-1.815 1.354H6.33v.75H3.2V2.232h.754v1.79a6.3 6.3 0 0 1 2.047-1.487A5.9 5.9 0 0 1 8.474 2a5.9 5.9 0 0 1 2.349.47 6.1 6.1 0 0 1 1.914 1.285q.82.816 1.291 1.907.473 1.09.472 2.338 0 1.248-.472 2.339a6.04 6.04 0 0 1-3.205 3.191Q9.728 14 8.474 14Zm2.413-3.11L8.14 8.156V4.25h.754v3.594l2.526 2.516z"/></svg>
+          Historial<span class="count"> (<span>{% if historial == None %}<svg class="spinner"><circle cx="8" cy="8" r="6"></circle></svg>{% endif %}{{ historial_count }}</span>)</span>
+        </a>
+      </li>
     </ul>
   </div>
 
   <div class="section-detail__body">
     <div class="lista-lectura-tab">
-      <div class="feed-info">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M11,7h2V9H11Zm0,4h2v6H11Zm1-9A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8.011,8.011,0,0,1,12,20Z" fill="#262626"/></svg>
-        {% if leer_despues != None %}
-          Lista con todos los artículos que guardaste para leer después.
-        {% elif favoritos != None %}
-          Lista con todos los artículos que guardaste como favoritos.
-        {% elif historial != None %}
-          Historial con todos los artículos que visitaste.
-        {% endif %}
-      </div>
 
-      {% if leer_despues and leer_despues.object_list|length == 0 %}
+      {% if leer_despues != None and leer_despues.object_list|length == 0 %}
         <div class="empty-feed">
           <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path  d="M17,3H7A2.006,2.006,0,0,0,5,5V21l7-3,7,3V5A2.006,2.006,0,0,0,17,3Z" fill="#262626"/></svg>
           <span class="msg">No tenés artículos guardados para leer después</span>
@@ -64,7 +65,26 @@
         </div>
       {% else %}
         {% for article in leer_despues.object_list %}
-          {% include 'article/card_fav.html' %}
+          <article class="ll-card">
+            <div class="ll-card__content">
+              {% if article.main_section %}
+                <span class="ll-card__section">{{ article.main_section.section.name }}</span>
+              {% endif %}
+              <h3 class="ll-card__title">
+                <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+              </h3>
+              <div class="ll-card__footer">
+                {% with authors=article.get_authors %}
+                  {% if authors %}
+                    <div class="ll-card__author">Por {% for author in authors %}<a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                  {% else %}
+                    <div></div>
+                  {% endif %}
+                {% endwith %}
+                {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+              </div>
+            </div>
+          </article>
         {% endfor %}
         {% if leer_despues.has_other_pages %}
           {% with pager=leer_despues %}
@@ -73,24 +93,7 @@
         {% endif %}
       {% endif %}
 
-      {% if favoritos and favoritos.object_list|length == 0 %}
-        <div class="empty-feed">
-          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none"/><path d="M0,0H24V24H0Z" fill="none"/><path d="M12,17.27l4.15,2.51a1,1,0,0,0,1.49-1.08l-1.1-4.72,3.67-3.18a1,1,0,0,0-.57-1.75l-4.83-.41L12.92,4.18a1,1,0,0,0-1.84,0L9.19,8.63l-4.83.41a1,1,0,0,0-.57,1.75l3.67,3.18-1.1,4.72a1,1,0,0,0,1.49,1.08Z" fill="#262626" /></svg>
-          <span class="msg">No tenés artículos guardados como favoritos</span>
-          <a href="{% url 'home' %}">Encontrar algo para leer</a>
-        </div>
-      {% else %}
-        {% for article in favoritos.object_list %}
-          {% include 'article/card_fav.html' %}
-        {% endfor %}
-        {% if favoritos.has_other_pages %}
-          {% with pager=favoritos %}
-            {% include "pagination.html" %}
-          {% endwith %}
-        {% endif %}
-      {% endif %}
-
-      {% if historial and historial.object_list|length == 0 %}
+      {% if historial != None and historial.object_list|length == 0 %}
         <div class="empty-feed">
           <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0,0H24V24H0Z" fill="none" /><path d="M13.26,3A9.009,9.009,0,0,0,4,12H2.21a.5.5,0,0,0-.35.85l2.79,2.8a.5.5,0,0,0,.71,0l2.79-2.8A.5.5,0,0,0,7.79,12H6a7,7,0,0,1,7.1-7A7.089,7.089,0,0,1,20,11.9,7,7,0,0,1,13,19a6.9,6.9,0,0,1-4.28-1.48,1,1,0,0,0-1.24,1.57A8.858,8.858,0,0,0,13,21a9.009,9.009,0,0,0,9-9.26A9.106,9.106,0,0,0,13.26,3Zm-.51,5a.755.755,0,0,0-.75.75v3.68a1.012,1.012,0,0,0,.49.86l3.12,1.85a.751.751,0,1,0,.77-1.29L13.5,12.14V8.74A.753.753,0,0,0,12.75,8Z" fill="#262626"/></svg>
           <span class="msg">Tu historial de lectura está vacío</span>
@@ -98,7 +101,26 @@
         </div>
       {% else %}
         {% for article in historial.object_list %}
-          {% include 'article/card_fav.html' %}
+          <article class="ll-card">
+            <div class="ll-card__content">
+              {% if article.main_section %}
+                <span class="ll-card__section">{{ article.main_section.section.name }}</span>
+              {% endif %}
+              <h3 class="ll-card__title">
+                <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+              </h3>
+              <div class="ll-card__footer">
+                {% with authors=article.get_authors %}
+                  {% if authors %}
+                    <div class="ll-card__author">Por {% for author in authors %}<a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+                  {% else %}
+                    <div></div>
+                  {% endif %}
+                {% endwith %}
+                {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+              </div>
+            </div>
+          </article>
         {% endfor %}
         {% if historial.has_other_pages %}
           {% with pager=historial %}

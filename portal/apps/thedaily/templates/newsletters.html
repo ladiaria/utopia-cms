@@ -47,7 +47,7 @@
 
     <div class="grid-nl-cards">
       {% for nl_item in unsubscribed_newsletters %}
-        <div class="edit_profile_card__inner-section">
+        <div class="edit_profile_card__inner-section edit_profile_card__inner-section--secondary">
           <div class="edit_profile_card__inner-section_header">
             <label class="title" for="id_newsletters_1">{{ nl_item.profile_newsletter_name|default:nl_item.name }}</label>
             <div class="switch-container">
