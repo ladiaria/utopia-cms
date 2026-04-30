@@ -90,6 +90,6 @@ git+https://github.com/ladiaria/django-tagging-autocomplete-tag-it.git
 git+https://github.com/ladiaria/django-amp-tools.git
 git+https://github.com/ladiaria/django-updown.git
 
-# Django Admin Locking - prevents concurrent editing conflicts
-# Shows a warning banner when another user is editing the same object
+# Prevents concurrent editing conflicts in Django Admin (pessimistic locking).
+# Shows a warning banner and disables fields when another user has the page open.
 django-admin-locking==0.10.0
