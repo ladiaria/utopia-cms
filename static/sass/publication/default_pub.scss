@@ -329,6 +329,7 @@
       grid-column: 1;
       grid-row: 2;
       align-self: center;
+      width: 100%;
     }
   }
 
@@ -614,7 +615,7 @@
 }
 
 // ─── Mobile (≤ 767px) ─────────────────────────────────────────────────────────
-@media (max-width: $breakpoint-mobile) {
+@media #{$medium-and-down} {
   #header-pub .ad_banner {
     width: 300px;
     height: 250px;
@@ -733,7 +734,8 @@
   }
 
   .suplemento-section {
-    padding-block: 24px;
+    padding-top: 24px;
+    padding-bottom: 0;
     &__featured {
       display: flex;
       flex-direction: column;

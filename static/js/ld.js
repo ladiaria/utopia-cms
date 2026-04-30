@@ -523,6 +523,59 @@
       });
     });
 
+    // Category navbar: show overflow arrows when items don't fit (desktop only)
+    qsa(".category-navbar__scrollable").forEach(function (wrapper) {
+      const list = qs("ul", wrapper);
+      if (!list) return;
+      const leftBtn = qs(".category-navbar__arrow--left", wrapper);
+      const rightBtn = qs(".category-navbar__arrow--right", wrapper);
+
+      function update() {
+        const hasOverflowLeft = list.scrollLeft > 1;
+        const hasOverflowRight = list.scrollLeft + list.clientWidth < list.scrollWidth - 1;
+        wrapper.classList.toggle("has-overflow-left", hasOverflowLeft);
+        wrapper.classList.toggle("has-overflow-right", hasOverflowRight);
+      }
+
+      list.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+
+      if (leftBtn) {
+        leftBtn.addEventListener("click", function () {
+          list.scrollBy({ left: -list.clientWidth * 0.8, behavior: "smooth" });
+        });
+      }
+      if (rightBtn) {
+        rightBtn.addEventListener("click", function () {
+          list.scrollBy({ left: list.clientWidth * 0.8, behavior: "smooth" });
+        });
+      }
+
+      update();
+    });
+
+    // Newsletter tooltip — toggle on trigger click, close on outside click
+    qsa("[data-nl-tooltip-host]").forEach(function (host) {
+      const trigger = qs("[data-nl-tooltip-trigger]", host);
+      const tooltip = qs(".nl-tooltip", host);
+      if (!trigger || !tooltip) return;
+
+      trigger.addEventListener("click", function (event) {
+        event.preventDefault();
+        tooltip.toggleAttribute("hidden");
+      });
+    });
+
+    document.addEventListener("click", function (event) {
+      qsa(".nl-tooltip").forEach(function (tooltip) {
+        if (tooltip.hasAttribute("hidden")) return;
+        const host = tooltip.closest("[data-nl-tooltip-host]");
+        if (host && !host.contains(event.target)) {
+          tooltip.setAttribute("hidden", "");
+        }
+      });
+    });
+
     // Keep variable assignment to preserve previous side effects.
     void isMobile;
   }); // end of document ready

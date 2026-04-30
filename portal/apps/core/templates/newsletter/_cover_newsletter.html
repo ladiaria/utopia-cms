@@ -1,0 +1,38 @@
+{% comment %}
+  Cover newsletter subscribe component.
+  Required: title, slug, nltype ('c' or 'p').
+  Optional: tagline, preview_blank (bool), preview_url (overrides default preview link).
+{% endcomment %}
+<div class="cover-newsletter">
+  <div class="cover-newsletter__badge">
+    <span>Newsletter</span>
+  </div>
+  <div class="cover-newsletter__body">
+    <div class="cover-newsletter__header"{% if user.is_anonymous %} data-nl-tooltip-host{% endif %}>
+      <h2 class="cover-newsletter__title">{{ title }}</h2>
+      <label class="cover-newsletter__switch"{% if user.is_anonymous %} data-nl-tooltip-trigger{% endif %}>
+        {% if not user.is_anonymous %}
+          <input type="checkbox"
+            id="id_cover_newsletter_{{ slug }}"
+            name="{{ slug }}"
+            data-url="{% url 'nl-auth-subscribe' nltype=nltype nlslug=slug %}"
+            data-key="nl_subscribe"
+            data-bouncer="false"
+          >
+        {% endif %}
+        <span class="cover-newsletter__slider slider"></span>
+      </label>
+      {% if user.is_anonymous %}
+        {% include "newsletter/_nl_tooltip.html" %}
+      {% endif %}
+    </div>
+    {% if tagline %}
+      <p class="cover-newsletter__description">{{ tagline }}</p>
+    {% endif %}
+    {% if preview_url %}
+      <a class="cover-newsletter__preview"{% if preview_blank %} target="_blank" rel="noopener noreferrer"{% endif %} href="{{ preview_url }}">Previsualizar</a>
+    {% elif nltype == 'c' %}
+      <a class="cover-newsletter__preview"{% if preview_blank %} target="_blank" rel="noopener noreferrer"{% endif %} href="{% url 'c-nl-browser-authpreview' slug=slug %}">Previsualizar</a>
+    {% endif %}
+  </div>
+</div>
