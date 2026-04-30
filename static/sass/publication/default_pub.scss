@@ -329,6 +329,7 @@
       grid-column: 1;
       grid-row: 2;
       align-self: center;
+      width: 100%;
     }
   }
 
@@ -497,8 +498,9 @@
       font-family: $sans-title;
       font-size: px-to-rem(32px);
       font-weight: 700;
-      line-height: 0.87em;
-      letter-spacing: 0.01em;
+      line-height: px-to-rem(27.84px);
+      letter-spacing: px-to-rem(0.32px);
+      display: flex;
     }
   }
 
@@ -613,7 +615,7 @@
 }
 
 // ─── Mobile (≤ 767px) ─────────────────────────────────────────────────────────
-@media (max-width: $breakpoint-mobile) {
+@media #{$medium-and-down} {
   #header-pub .ad_banner {
     width: 300px;
     height: 250px;
@@ -732,7 +734,8 @@
   }
 
   .suplemento-section {
-    padding-block: 24px;
+    padding-top: 24px;
+    padding-bottom: 0;
     &__featured {
       display: flex;
       flex-direction: column;
@@ -777,17 +780,22 @@
   }
 
   .especial-section {
+    padding-bottom: 0;
     &__featured {
       flex-direction: column;
+      gap: $gap-4;
     }
     &__featured-body {
+      flex: 0 0 auto;
+      width: 100%;
       .article__title {
         @include featured-article-title(mobile);
       }
     }
-    &__featured-body,
     &__image-wrap {
+      order: -1;
       flex: 0 0 auto;
+      max-width: unset;
       width: 100%;
     }
   }

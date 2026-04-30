@@ -101,59 +101,9 @@
   </div>
 
   {% if category %}
-  <div class="cover-newsletter">
-    <div class="cover-newsletter__badge">
-      <span>Newsletter</span>
-    </div>
-    <div class="cover-newsletter__body">
-      <div class="cover-newsletter__header">
-        <h2 class="cover-newsletter__title">{{ category.name }}</h2>
-        <label class="cover-newsletter__switch">
-          {% if not user.is_anonymous %}
-            <input type="checkbox"
-              id="id_cover_newsletter_{{ category.slug }}"
-              name="{{ category.slug }}"
-              data-url="{% url 'nl-auth-subscribe' nltype='c' nlslug=category.slug %}"
-              data-key="nl_subscribe"
-              data-bouncer="false"
-            >
-          {% endif %}
-          <span class="cover-newsletter__slider slider"></span>
-        </label>
-      </div>
-      {% if category.newsletter_tagline %}
-        <p class="cover-newsletter__description">{{ category.newsletter_tagline }}</p>
-      {% endif %}
-      <a href="{% url 'c-nl-browser-authpreview' slug=category.slug %}" class="cover-newsletter__preview">Previsualizar</a>
-    </div>
-  </div>
+    {% include "newsletter/_cover_newsletter.html" with title=category.name slug=category.slug nltype="c" tagline=category.newsletter_tagline %}
   {% elif publication and publication != default_pub %}
-  <div class="cover-newsletter">
-    <div class="cover-newsletter__badge">
-      <span>Newsletter</span>
-    </div>
-    <div class="cover-newsletter__body">
-      <div class="cover-newsletter__header">
-        <h2 class="cover-newsletter__title">{{ publication.name }}</h2>
-        <label class="cover-newsletter__switch">
-          {% if not user.is_anonymous %}
-            <input type="checkbox"
-              id="id_cover_newsletter_{{ publication.slug }}"
-              name="{{ publication.slug }}"
-              data-url="{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}"
-              data-key="nl_subscribe"
-              data-bouncer="false"
-            >
-          {% endif %}
-          <span class="cover-newsletter__slider slider"></span>
-        </label>
-      </div>
-      {% if publication.newsletter_tagline %}
-        <p class="cover-newsletter__description">{{ publication.newsletter_tagline }}</p>
-      {% endif %}
-      {% block cover_newsletter_publication_preview %}{% endblock %}
-    </div>
-  </div>
+    {% include "newsletter/_cover_newsletter.html" with title=publication.name slug=publication.slug nltype="p" tagline=publication.newsletter_tagline preview_url=cover_newsletter_publication_preview_url %}
   {% endif %}
 
   <!-- TA1–TA5: Noticias terciarias (destacados 4–8) -->

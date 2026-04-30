@@ -71,7 +71,8 @@ header {
 
   @media #{$medium-and-down} {
     padding: 16px 20px;
-    header.sticky & {
+    header.sticky &,
+    header.category-pub-header & {
       padding: 16px 20px;
     }
     body.article & {
@@ -154,7 +155,7 @@ header {
 
     // On category/publication portada headers (non-home), logo is 32px and
     // shrinks to 26px (default) when sticky.
-    header.category-pub-header:not(.sticky):not(.home-header) & {
+    body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
       padding-bottom: 31px;
       img {
         height: 32px;
@@ -234,7 +235,7 @@ header {
       // When sticky kicks in, this selector stops matching and the logo
       // transitions back to 26px via the transition above.
       header.home-header:not(.sticky) &,
-      header.category-pub-header:not(.sticky):not(.home-header) & {
+      body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
         padding-bottom: 0;
         img {
           height: 26px;
@@ -413,6 +414,44 @@ header {
       padding-left: 48px;
       @include scroll-navbar;
     }
+
+    // Scrollable area + overflow arrows (desktop only)
+    .category-navbar__scrollable {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .category-navbar__arrow {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      z-index: 2;
+
+      svg {
+        display: block;
+      }
+
+      &--left {
+        left: 0;
+      }
+      &--right {
+        right: -1px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .category-navbar__scrollable.has-overflow-left .category-navbar__arrow--left,
+      .category-navbar__scrollable.has-overflow-right .category-navbar__arrow--right {
+        display: flex;
+      }
+    }
   }
 
   .nav-wrapper {
@@ -440,7 +479,7 @@ header {
   }
 
   // Navbar Links
-  > ul {
+  ul {
     margin: 0;
     display: flex;
     gap: 48px;

@@ -8,13 +8,13 @@
     <article class="article">
       {% render_toolbar_for article %}
       {% if article.main_section %}
-        <span class="article__section-label">{{ article.main_section.section.name }}</span>
+        <div class="article__section-label">{{ article.main_section.section.name }}</div>
       {% endif %}
       <h3 class="article__title">
         <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
       </h3>
       {% if article.minutes_ago %}
-        <span class="article__time-ago">{{ article.minutes_ago }}</span>
+        <span class="article__time-ago">Hace {{ article.minutes_ago }} min</span>
       {% endif %}
     </article>
   {% endfor %}
