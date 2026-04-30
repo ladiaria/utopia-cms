@@ -413,6 +413,20 @@ def render_supplements():
     return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
 
 
+def _resolve_section_name_override(section, article):
+    """
+    Resolves the display name for a section using CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES.
+    If the override value ends in `.html`, it is rendered as a template with `section` and
+    `article` in context. Otherwise it is returned as-is. Falls back to `section.name`.
+    """
+    override = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug)
+    if not override:
+        return section.name
+    if override.endswith('.html'):
+        return loader.render_to_string(override, {'section': section, 'article': article})
+    return override
+
+
 @register.simple_tag(takes_context=True)
 def publication_section(context, article, pub=None):
     """
@@ -427,7 +441,7 @@ def publication_section(context, article, pub=None):
         )
         if section:
             use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-            s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+            s_name = _resolve_section_name_override(section, article)
             if use_section_link:
                 result = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
             else:
@@ -478,7 +492,7 @@ def render_hierarchy(context, article, force_use_links=False):
             parent.append(article.main_section.edition.publication)
         else:
             return publication_section(context, article)
-        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+        s_name = _resolve_section_name_override(section, article)
         if use_section_link:
             child = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
         else:

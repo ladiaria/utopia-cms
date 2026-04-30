@@ -497,8 +497,9 @@
       font-family: $sans-title;
       font-size: px-to-rem(32px);
       font-weight: 700;
-      line-height: 0.87em;
-      letter-spacing: 0.01em;
+      line-height: px-to-rem(27.84px);
+      letter-spacing: px-to-rem(0.32px);
+      display: flex;
     }
   }
 
