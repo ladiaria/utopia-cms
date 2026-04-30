@@ -49,28 +49,25 @@ function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
   });
 }
 
-// initialize newsletter header subscribe button
+// initialize newsletter header subscribe button. For anonymous users, the
+// tooltip handler in ld.js takes over (toggles a tooltip on click) — skip here.
 function nl_header_subscribe_init() {
   const config = window.NL_HEADER_CONFIG;
   const btn = document.querySelector('.newsletter-header');
-  if (!config || !btn) return;
+  if (!config || !btn || config.isAnonymous) return;
 
-  btn.addEventListener('click', function() {
+  btn.addEventListener('click', function () {
     const textSpan = btn.querySelector('.newsletter-header__text');
-    if (config.isAnonymous) {
-      if (textSpan) textSpan.textContent = config.anonymousMessage;
-      return;
-    }
     $.ajax({
       type: 'POST',
       url: config.subscribeUrl,
       data: { [config.dataKey]: true },
-      success: function() {
+      success: function () {
         if (textSpan) textSpan.textContent = config.successMessage;
         btn.classList.add('newsletter-header--active');
         btn.disabled = true;
       },
-      error: function() {
+      error: function () {
         if (textSpan) textSpan.textContent = 'No se pudo suscribir, intentá de nuevo';
       }
     });
