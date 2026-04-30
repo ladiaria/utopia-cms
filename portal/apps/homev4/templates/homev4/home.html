@@ -125,7 +125,7 @@
     <article class="article especial-section__featured">
       {% render_toolbar_for article %}
       <div class="especial-section__featured-body">
-        <span class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</span>
+        <div class="article__section-label">{% autoescape off %}{% publication_section article %}{% endautoescape %}</div>
         <h2 class="article__title">
           <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
         </h2>

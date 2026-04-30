@@ -51,6 +51,9 @@ article a {
     display: flex;
     align-items: center;
     gap: 8px;
+    span {
+      display: flex;
+    }
   }
   &__title {
     font-family: $serif;

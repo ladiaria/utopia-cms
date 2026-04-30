@@ -18,7 +18,7 @@
   {% endif %}
   <div class="article__body">
     {% block article_section_label %}
-      <span class="article__section-label">{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}</span>
+      <div class="article__section-label">{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}</div>
     {% endblock %}
     <h3 class="article__title">
       <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
