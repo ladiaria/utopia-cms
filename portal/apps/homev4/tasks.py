@@ -201,7 +201,20 @@ def refresh_home_layouts_task():
         old_grid = copy.deepcopy(layout.grid_data) if isinstance(layout.grid_data, dict) else {}
 
         # Step 1: merge new edition articles into principal at their top_position index.
-        edition = get_current_edition(publication=publication)
+        # On weekends (Saturday=5, Sunday=6) the relevant edition is "Fin de semana"
+        # (publication slug "findesemana"), not "la diaria". Without this branch,
+        # get_current_edition(ladiaria) returns Friday's edition and its articles would
+        # be injected into the weekend home every time a journalist saves an article —
+        # silently overwriting whatever Pablo prepared for the weekend.
+        # get_current_edition applies the 5am gate (date_published <= today after 5am),
+        # so on Sunday it correctly picks up Saturday's "Fin de semana" edition because
+        # date_published=Saturday satisfies date_published <= Sunday.
+        weekday = timezone.localdate().weekday()
+        if weekday >= 5:
+            fds_pub = Publication.objects.filter(slug="findesemana").first()
+            edition = get_current_edition(publication=fds_pub) if fds_pub else None
+        else:
+            edition = get_current_edition(publication=publication)
         edition_ids = [a.id for a in edition.top_articles] if edition else []
         current_principal = old_grid.get("principal", {})
         current_principal_ids = current_principal.get("article_ids", []) if isinstance(current_principal, dict) else []
