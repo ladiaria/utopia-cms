@@ -40,6 +40,7 @@
 {% block css %}
   <link href="{% static 'sass/utopia_article.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   <link href="{% static 'sass/article/comments.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/cardv4.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block header_scripts %}
@@ -57,7 +58,7 @@
 {% endblock %}
 
 {% block body_class %}{# TODO: custom types conditions should not be evaluated or used #}
-  article
+  article-detail
   {% if article.public %}is-public{% endif %}
   {% if publication %}{{ publication.slug }}-pub{% endif %}
   {% if article.is_suscriber_article %}
@@ -544,44 +545,6 @@
 
           {% block after_content %}{% endblock %}
 
-          {% if report_form %}
-            <div id="send-feedback" class="send-feedback">
-              {% if report_form_sent %}
-                <p class="success-message">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
-                  </svg>
-                  Muchas gracias. El mensaje fue enviado correctamente.
-                </p>
-              {% else %}
-                {% include "article/feedback_form_header.html" %}
-                <form method="post" action="#send-feedback">
-                  {% csrf_token %}
-                  {{ report_form.article_token }}
-                  {% for field in report_form reversed %}
-                    <div class="form-control">
-                      {{ field.errors }}
-                      {% if not field.is_hidden %}
-                        <label for="id_{{ field.name }}">
-                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
-                        </label>
-                      {% endif %}
-                      {{ field }}
-                    </div>
-                  {% endfor %}
-                  <button type="submit">Enviar</button>
-                  {% if report_form.non_field_errors %}
-                    <div class="feedback-error">
-                      <p class="error-message">
-                        {{ report_form.render_non_field_errors }}
-                      </p>
-                    </div>
-                  {% endif %}
-                </form>
-              {% endif %}
-            </div>
-          {% endif %}
-
           {% block subscribe_box %}
             {% if publication in publication_newsletters %}
               {% if publication.slug in user.subscriber.get_newsletters_slugs %}
@@ -615,9 +578,9 @@
                   <p class="desc">Suscribite para guardar este artículo como favorito</p>
                   <!-- caso leer después -->
                   <p class="desc">Suscribite para guardar este artículo para leer después</p>
-                  <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">Suscribite</a>
+                  <a href="{% url 'subscribe-default' %}" class="btn btn__dark">Suscribite</a>
                   <p class="desc">¿Ya tenés suscripción?</p>
-                  <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
+                  <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn btn__dark">
                     Ingresá
                   </a>
                 </div>
@@ -632,7 +595,7 @@
                           Suscribite para guardar este artículo para leer después
                         </div>
                         <div class="ld-snackbar__block">
-                          <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">
+                          <a href="{% url 'subscribe-default' %}" class="btn btn__dark">
                             Suscribite
                           </a>
                         </div>
@@ -640,7 +603,7 @@
                       <div class="ld-snackbar--option">
                         <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
                         <div class="ld-snackbar__block">
-                          <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
+                          <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn btn__dark">
                             Ingresá
                           </a>
                         </div>
@@ -679,6 +642,45 @@
               </ul>
             </div>
           {% endif %}
+
+          {% if report_form %}
+            <div id="send-feedback" class="send-feedback">
+              {% if report_form_sent %}
+                <p class="success-message">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
+                  </svg>
+                  Muchas gracias. El mensaje fue enviado correctamente.
+                </p>
+              {% else %}
+                {% include "article/feedback_form_header.html" %}
+                <form method="post" action="#send-feedback">
+                  {% csrf_token %}
+                  {{ report_form.article_token }}
+                  {% for field in report_form reversed %}
+                    <div class="form-control">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                        <label for="id_{{ field.name }}">
+                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                        </label>
+                      {% endif %}
+                      {{ field }}
+                    </div>
+                  {% endfor %}
+                  <button type="submit" class="btn btn__dark">Enviar</button>
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          {% endif %}
+
 
         {% endif %}{# opened in line 317 #}
 
@@ -733,10 +735,10 @@
               <div class="talk-login align-center display-hidden">
                 {% if user.is_authenticated %}
                   {% if not is_subscriber %}
-                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="btn btn__dark ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   {% endif %}
                 {% else %}
-                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="btn btn__dark ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   <span class="ld-caption ld-caption-subscribe-to-comment">
                     ¿Ya tenés suscripción?
                     <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
@@ -750,12 +752,6 @@
         {% block featured_content %}{% endblock %}
 
         {% if article.show_related_articles %}{% render_related article %}{% endif %}
-
-        {% if not is_subscriber %}
-          <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
-            <div id="ad-container" class="container"></div>
-          </section>
-        {% endif %}
 
       {% endif %}{# end restricted content2 #}
 

@@ -189,7 +189,7 @@
         <div class="home-block__articles">
           {% for article in section.articles %}
             {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
-            {% render_card article=article variant="card_tertiary_home" %}
+            {% render_card article=article variant="card_category_pub_home" %}
           {% endfor %}
         </div>
         {% endif %}

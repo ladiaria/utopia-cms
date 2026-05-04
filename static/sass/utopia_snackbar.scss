@@ -24,21 +24,12 @@ $minWidth: 1040px;
   background-color: white;
   bottom: 0;
   color: $off-black;
-  font-family: $sans;
   left: 0;
   position: fixed;
   width: 99%;
   z-index: 1010;
-  font-weight: 400;
-  box-shadow:
-    0 2px 2px 0 rgba(0, 0, 0, 0.14),
-    0 1px 5px 0 rgba(0, 0, 0, 0.12),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   padding-top: 0;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  border: 1px solid #c3c3c3;
 
   -webkit-backface-visibility: hidden;
   left: 50%;
@@ -50,9 +41,6 @@ $minWidth: 1040px;
   animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
 
   @media (min-width: $minWidth) {
-    background-color: white;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
     padding-top: 0;
     max-width: 700px;
   }
@@ -72,10 +60,6 @@ $minWidth: 1040px;
       max-width: 700px;
       border-bottom: 0;
       padding-bottom: 0;
-    }
-
-    .ld-snackbar__col {
-      padding-bottom: 40px;
     }
   }
 
@@ -116,15 +100,12 @@ $minWidth: 1040px;
   }
 
   &__title {
-    background-color: $secondary-color;
     text-align: center;
-    padding: 15px 60px;
-    font-size: 18px;
+    font-size: px-to-rem(28px);
     font-weight: 400;
-    font-family: AntennaCond, sans-serif;
+    font-family: $sans-title;
 
-    @media (min-width: 600px) {
-      padding: 15px 40px;
+    @media #{$medium-and-down} {
     }
   }
 
@@ -226,7 +207,7 @@ $minWidth: 1040px;
     z-index: 1;
     transform: none;
     left: 0;
-    margin: 0 20px 50px;
+    margin: 0 auto 50px;
     border-radius: 10px;
     animation: none;
     display: none;
@@ -242,12 +223,6 @@ $minWidth: 1040px;
         position: relative;
         top: 3px;
       }
-    }
-
-    @media (min-width: 700px) {
-      left: calc((100% - 700px) / 2);
-      width: 700px;
-      margin: 0 0 50px;
     }
   }
   &--active.softwall {

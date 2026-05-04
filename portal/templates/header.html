@@ -98,7 +98,7 @@
     <div class="modal-content">
       <nav class="ld-main-menu__wrap">
         {% block resume %}
-          {% include 'core/templates/edition/resume.html' %}
+          {% include 'core/templates/edition/resume.html' with show_search=True %}
         {% endblock %}
       </nav>
     </div>

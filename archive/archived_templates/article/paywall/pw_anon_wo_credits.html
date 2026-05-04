@@ -13,7 +13,7 @@
     {% include "article/paywall/pw_subscribe_block.html" %}
     <div class="ld-snackbar__text u-mb-10">Si ya tenés una cuenta</div>
     <div class="ld-snackbar__block">
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="ut-btn ut-btn-outline">ingresá</a>
+      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn">ingresá</a>
     </div>
     <div class="ld-snackbar__text">
       o

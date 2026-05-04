@@ -7,7 +7,7 @@
       <div class="ld-grid-4-3">
         {% for article in articles %}
           {% with hide_date_published=True %}
-            {% render_article_card article=article media=article.home_display card_size="FD"  %}
+            {% render_card article=article variant="card_tertiary_home" %}
           {% endwith %}
         {% endfor %}
       </div>
