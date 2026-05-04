@@ -170,16 +170,17 @@ def _propagate_article_ids(source_layout, source_grid):
             if comp.get("key") in src_componentes:
                 comp["article_ids"] = src_componentes[comp["key"]]
 
-        # SUPLEMENTO_EXTRA: propagate as a full block (create / update article_ids only / delete)
+        # SUPLEMENTO_EXTRA: propagate as a full block (create / update / delete)
         if src_se is not None:
             existing_se = gd.get("suplemento_extra")
             if not isinstance(existing_se, dict):
                 # Sibling has no block yet — copy full block from source (including source fields).
                 gd["suplemento_extra"] = dict(src_se)
             else:
-                # Sibling already has the block — only article_ids propagate; sibling's own
-                # active flag and source_type/source_slug are intentionally preserved.
+                # article_ids and active propagate so enabling/disabling in one layout syncs all.
+                # source_type and source_slug are per-layout metadata and are intentionally preserved.
                 existing_se["article_ids"] = list(src_se.get("article_ids", []))
+                existing_se["active"] = src_se.get("active", True)
         else:
             # Source removed suplemento_extra — sync siblings (delete the block).
             gd.pop("suplemento_extra", None)

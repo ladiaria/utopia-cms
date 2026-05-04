@@ -289,14 +289,22 @@ class SupplementoExtraPropagateTest(SimpleTestCase):
         self.assertEqual(result["suplemento_extra"]["source_slug"], "cultura")
         self.assertTrue(result["suplemento_extra"]["active"])
 
-    def test_propagate_updates_article_ids_preserves_sibling_active_flag(self):
-        """When sibling already has suplemento_extra, article_ids are updated but active is kept."""
+    def test_propagate_syncs_active_flag_from_source(self):
+        """active propagates from source so enabling/disabling in one layout syncs all siblings."""
         result = self._run_propagate(
-            source_grid={"suplemento_extra": _suplemento_extra([10, 20])},
+            source_grid={"suplemento_extra": _suplemento_extra([10, 20], active=True)},
             sibling_grid_data={"suplemento_extra": _suplemento_extra([], active=False)},
         )
         self.assertEqual(result["suplemento_extra"]["article_ids"], [10, 20])
-        # Sibling had active=False — must be preserved, not overwritten with source's True
+        # Source had active=True — sibling's active=False must be overwritten.
+        self.assertTrue(result["suplemento_extra"]["active"])
+
+    def test_propagate_syncs_deactivation_to_siblings(self):
+        """Deactivating in the source layout propagates active=False to all siblings."""
+        result = self._run_propagate(
+            source_grid={"suplemento_extra": _suplemento_extra([10, 20], active=False)},
+            sibling_grid_data={"suplemento_extra": _suplemento_extra([10, 20], active=True)},
+        )
         self.assertFalse(result["suplemento_extra"]["active"])
 
     def test_propagate_preserves_sibling_source_fields(self):
