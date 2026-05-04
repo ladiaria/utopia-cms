@@ -1,5 +1,5 @@
-#!/bin/sh
-TEST_MODULES="homev3 core dashboard photologue_ladiaria"
+#!/bin/bash
+TEST_MODULES="homev3 core dashboard photologue_ladiaria homev4.tests"
 SVACTIVE="systemctl is-active --quiet supervisord"
 # exit now if we are being sourced by another script or shell
 [[ "${#BASH_SOURCE[@]}" -gt "1" ]] && { return 0; }
