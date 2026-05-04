@@ -1360,31 +1360,16 @@ aside {
 .mid-article-notice {
   text-align: center;
   position: relative;
-  padding: 20px 0;
-  font-family: AntennaCond, sans-serif;
-  font-size: 16px;
-  line-height: 22px;
+  padding: 16px 0;
+  font-family: $sans-title;
+  width: max-content;
+  margin: 0 auto;
+  border-top: $border-divider;
+  border-bottom: $border-divider;
 
-  a,
-  b {
+  a {
     font-weight: bold;
-  }
-
-  &::before,
-  &::after {
-    content: "";
-    display: block;
-    width: 98px;
-    height: 1px;
-    background: $lightGrey;
-    position: absolute;
-    left: calc(50% - 49px);
-  }
-  &::before {
-    top: 0;
-  }
-  &::after {
-    bottom: 0;
+    text-decoration: underline;
   }
 }
 
@@ -1488,7 +1473,7 @@ header.with-article-counter-container {
 
   p,
   p a {
-    font-family: AntennaCond, sans-serif;
+    font-family: $sans-title;
     margin: 0;
   }
   p a {
