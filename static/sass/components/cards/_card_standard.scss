@@ -63,9 +63,7 @@
     flex-direction: column-reverse;
     align-items: stretch;
     gap: $gap-4;
-    padding: 0 0 $gap-6;
-    border-top: none;
-    border-bottom: $border-divider;
+    padding: $gap-6 0;
 
     &__img-link {
       width: 100%;
