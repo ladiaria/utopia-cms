@@ -25,8 +25,6 @@ $max-article-width: px-to-rem(700px);
 }
 
 article#main-article {
-  padding-top: 32px;
-
   p {
     margin: 0;
   }
@@ -1098,27 +1096,24 @@ article#main-article {
 
 .send-feedback {
   max-width: 500px;
-  margin: 0 auto;
+  margin: 48px auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 30px;
 
   @media #{$medium-and-down} {
     padding: 0 20px;
   }
 
-  p {
-    font-family: Roboto, sans-serif;
-  }
   p:first-child {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: px-to-rem(24px);
+    font-weight: 500;
     text-align: center;
   }
   form {
     display: flex;
     flex-direction: column;
+    gap: 16px;
 
     .form-control {
       display: flex;
@@ -1131,16 +1126,8 @@ article#main-article {
     }
 
     button {
-      border-radius: 100px;
-      background: $off-black;
-      color: var(--B8, #fff);
-      font-family: Roboto;
-      font-weight: 700;
-      line-height: normal;
-      text-transform: uppercase;
       align-self: center;
-      padding: 10.5px 21px;
-      margin-top: 24px;
+      margin-top: 16px;
     }
   }
   .feedback-error {
@@ -1348,7 +1335,6 @@ aside {
   .ld-related-inner-container {
     padding: 32px 0;
     border-top: 0.5px solid #ababab;
-    border-bottom: 0.5px solid #ababab;
   }
 
   h2 {

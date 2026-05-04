@@ -99,7 +99,7 @@
     <nav class="ld-main-menu__wrap fullnav">
       <div class="row">
         {% block resume %}
-          {% include 'core/templates/edition/resume.html' %}
+          {% include 'core/templates/edition/resume.html' with show_search=True %}
         {% endblock %}
       </div>
     </nav>

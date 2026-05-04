@@ -3,6 +3,9 @@
 
 main#main-content {
   padding-block: 64px;
+  @media #{$medium-and-down} {
+    padding-block: 48px;
+  }
 }
 
 .search-form {
