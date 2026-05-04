@@ -76,10 +76,11 @@
     overflow: visible;
 }
 
-/* PRINCIPAL/SUPLEMENTO/ESPECIAL: allow picker results dropdown to overflow the card */
+/* PRINCIPAL/SUPLEMENTO/ESPECIAL/SUPLEMENTO-EXTRA: allow picker results dropdown to overflow the card */
 #homev4-editor .block-principal,
 #homev4-editor .block-suplemento,
-#homev4-editor .block-especial {
+#homev4-editor .block-especial,
+#homev4-editor .block-suplemento-extra {
     overflow: visible;
 }
 
@@ -386,6 +387,9 @@
 
 /* ── Badge especial ──────────────────────────────────────── */
 #homev4-editor .badge-especial { background: #2631ff; }
+
+/* ── Badge suplemento extra ──────────────────────────────── */
+#homev4-editor .badge-suplemento-extra { background: #16a085; }
 
 /* ── Fila 2 badge ────────────────────────────────────────── */
 #homev4-editor .row-badge {

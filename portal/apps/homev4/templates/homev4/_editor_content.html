@@ -150,6 +150,78 @@
                 </div>
             </div>
 
+            <!-- SUPLEMENTO EXTRA: optional manual block, single per layout -->
+            <!-- data-present drives serializeGrid(): "true" → include in payload; "false" → omit -->
+            <div id="suplemento-extra-wrapper"
+                 data-present="{% if editor_data.suplemento_extra %}true{% else %}false{% endif %}">
+
+                <!-- Add button — shown only when block is absent -->
+                <div id="suplemento-extra-add-row"
+                     {% if editor_data.suplemento_extra %}style="display:none"{% endif %}>
+                    <button type="button" id="btn-add-suplemento-extra" class="button btn-add-block">
+                        + Agregar Suplemento Extra
+                    </button>
+                </div>
+
+                <!-- Full block — shown only when block is present -->
+                <div class="editor-block block-suplemento-extra" id="block-suplemento-extra"
+                     {% if not editor_data.suplemento_extra %}style="display:none"{% endif %}>
+                    <div class="block-header">
+                        <label class="block-active-toggle">
+                            <input type="checkbox" class="block-active" data-block="suplemento_extra"
+                                   {% if editor_data.suplemento_extra and editor_data.suplemento_extra.active %}checked{% endif %}>
+                            <span class="block-badge badge-suplemento-extra">SUPLEMENTO EXTRA</span>
+                        </label>
+                        <select id="suplemento-extra-source" class="suplemento-extra-source-select">
+                            <option value="publication:deporte"
+                                {% if editor_data.suplemento_extra.source_type == "publication" and editor_data.suplemento_extra.source_slug == "deporte" %}selected{% endif %}>
+                                Deporte
+                            </option>
+                            <option value="category:mundo"
+                                {% if editor_data.suplemento_extra.source_type == "category" and editor_data.suplemento_extra.source_slug == "mundo" %}selected{% endif %}>
+                                Mundo
+                            </option>
+                            <option value="publication:economia"
+                                {% if editor_data.suplemento_extra.source_type == "publication" and editor_data.suplemento_extra.source_slug == "economia" %}selected{% endif %}>
+                                Economía
+                            </option>
+                            <option value="category:cultura"
+                                {% if editor_data.suplemento_extra.source_type == "category" and editor_data.suplemento_extra.source_slug == "cultura" %}selected{% endif %}>
+                                Cultura
+                            </option>
+                        </select>
+                        <button type="button" id="btn-remove-suplemento-extra"
+                                class="btn-remove-block" title="Quitar bloque Suplemento Extra">×</button>
+                        <span class="block-hint">Arrastrá para reordenar los artículos</span>
+                    </div>
+                    <div class="articles-sortable" id="suplemento-extra-articles">
+                        {% for article in editor_data.suplemento_extra_articles %}
+                        <div class="article-row" draggable="true" data-article-id="{{ article.id }}">
+                            <span class="drag-handle">⠿</span>
+                            <span class="article-num">{{ forloop.counter }}</span>
+                            <span class="article-title">{{ article.headline }}</span>
+                            <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/"
+                               target="_blank" title="Editar artículo">✎</a>
+                            <button type="button" class="picker-remove" title="Quitar">×</button>
+                        </div>
+                        {% empty %}
+                        <div class="empty-hint">Sin artículos de suplemento extra</div>
+                        {% endfor %}
+                    </div>
+                    <div class="article-picker"
+                         id="suplemento-extra-picker"
+                         data-target="suplemento-extra-articles"
+                         data-row-class="article-row"
+                         data-item-selector=".article-row[data-article-id]"
+                         data-source-type="{% if editor_data.suplemento_extra %}{{ editor_data.suplemento_extra.source_type }}{% else %}publication{% endif %}"
+                         data-source-slug="{% if editor_data.suplemento_extra %}{{ editor_data.suplemento_extra.source_slug }}{% else %}deporte{% endif %}">
+                        <input type="text" class="picker-search-input"
+                               placeholder="Buscar artículo…" autocomplete="off">
+                        <div class="picker-results"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ÁREAS Y PUBLICACIONES: sections locked (auto from DB) -->
             <div class="editor-block block-areas">
                 <div class="block-header">
