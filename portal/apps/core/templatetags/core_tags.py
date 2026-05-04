@@ -453,7 +453,6 @@ def render_hierarchy(context, article, force_use_links=False):
     a Publication and render a hierarchy structure with a possible parent can result redundant.
     """
     publication, category = context.get("publication"), context.get("category")
-    print(article.id)
     section = article.publication_section(publication) if publication else article.get_section(category)
     if section:
         use_section_link = (
