@@ -146,6 +146,8 @@ def _propagate_article_ids(source_layout, source_grid):
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
     src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
+    # None means absent (delete from siblings); a dict means create/update in siblings.
+    src_se = source_grid.get("suplemento_extra")
 
     now = timezone.now()
     old_grids = {}
@@ -167,6 +169,20 @@ def _propagate_article_ids(source_layout, source_grid):
         for comp in gd.get("componentes", []):
             if comp.get("key") in src_componentes:
                 comp["article_ids"] = src_componentes[comp["key"]]
+
+        # SUPLEMENTO_EXTRA: propagate as a full block (create / update article_ids only / delete)
+        if src_se is not None:
+            existing_se = gd.get("suplemento_extra")
+            if not isinstance(existing_se, dict):
+                # Sibling has no block yet — copy full block from source (including source fields).
+                gd["suplemento_extra"] = dict(src_se)
+            else:
+                # Sibling already has the block — only article_ids propagate; sibling's own
+                # active flag and source_type/source_slug are intentionally preserved.
+                existing_se["article_ids"] = list(src_se.get("article_ids", []))
+        else:
+            # Source removed suplemento_extra — sync siblings (delete the block).
+            gd.pop("suplemento_extra", None)
 
         layout.grid_data = gd
         layout.modified = now
@@ -366,6 +382,16 @@ def article_search(request):
                 pass
 
     qs = Article.published.filter(headline__icontains=q)
+
+    # Optional source filter for suplemento_extra picker: narrow results to publication or category.
+    source_type = request.GET.get("source_type", "").strip()
+    source_slug = request.GET.get("source_slug", "").strip()
+    if source_type == "publication" and source_slug:
+        qs = qs.filter(main_section__edition__publication__slug=source_slug)
+    elif source_type == "category" and source_slug:
+        # home_articles is the related_name on CategoryHomeArticle.article
+        qs = qs.filter(home_articles__home__category__slug=source_slug).distinct()
+
     if excluded_ids:
         qs = qs.exclude(id__in=excluded_ids)
     qs = qs.order_by("-date_published")[:10]
@@ -604,6 +630,16 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
         especial["article_ids"] = e_ids
     seen_ids.update(e_ids)
 
+    # SUPLEMENTO_EXTRA — purely manual; accumulate active IDs into seen_ids so areas don't repeat
+    # them. dedup_populated filters its own article_ids against higher-priority blocks first.
+    se_data = resolved.get("suplemento_extra")
+    if se_data and se_data.get("active", True):
+        se_ids = se_data.get("article_ids") or []
+        if dedup_populated:
+            se_ids = [i for i in se_ids if i not in seen_ids]
+            se_data["article_ids"] = se_ids
+        seen_ids.update(se_ids)
+
     # 4. RECOMENDADAS — purely manual, accumulate before processing Áreas (active only)
     for comp in resolved.get("componentes", []):
         if comp.get("key") in ("recomendadas_lv", "recomendadas_domingo") and comp.get("active", True):
@@ -718,6 +754,10 @@ def build_home_data(grid_data, publication=None, layout=None):
                 result["suplemento_title"] = "Extra"
     static_ids.update(a.id for a in result["suplemento_articles"])
     static_ids.update(a.id for a in result["extra_articles"])
+    # SUPLEMENTO_EXTRA — exclude active article IDs from lo_ultimo (same rule as especial)
+    se_data = resolved.get("suplemento_extra")
+    if se_data and _block_active("suplemento_extra", se_data.get("active", True)):
+        static_ids.update(se_data.get("article_ids", []))
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # ESPECIAL
@@ -1397,6 +1437,16 @@ def build_editor_data(grid_data, publication=None):
         by_id = {a.id: a for a in Article.published.filter(id__in=e_ids)}
         result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
 
+    # SUPLEMENTO_EXTRA — optional block; None when absent (no block rendered)
+    se_data = resolved.get("suplemento_extra")
+    result["suplemento_extra"] = se_data
+    result["suplemento_extra_articles"] = []
+    if se_data:
+        se_ids = se_data.get("article_ids", [])
+        if se_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=se_ids)}
+            result["suplemento_extra_articles"] = [by_id[aid] for aid in se_ids if aid in by_id]
+
     # ÁREAS — resolved dict already has all default areas merged and article_ids populated
     for area in resolved.get("sections", []):
         area_type = area.get("type", "section")
@@ -1416,12 +1466,13 @@ def build_editor_data(grid_data, publication=None):
             sec_info["preview_articles"] = [by_id[aid] for aid in a_ids if aid in by_id]
         result["sections"].append(sec_info)
 
-    # IDs already placed in principal/suplemento/especial — used to exclude them from lo_ultimo
+    # IDs already placed in principal/suplemento/especial/suplemento_extra — exclude from lo_ultimo
     # preview, mirroring the same deduplication that build_home_data applies at request time.
     editor_static_ids = (
         {a.id for a in result["principal_articles"]}
         | {a.id for a in result["suplemento_articles"]}
         | {a.id for a in result["especial_articles"]}
+        | {a.id for a in result["suplemento_extra_articles"]}
     )
 
     # COMPONENTES — all defined components in order; dynamic blocks fetch fresh since

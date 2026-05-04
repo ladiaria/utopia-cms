@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Renumber position indicators after reorder
     function renumberArticles() {
-        ["principal-articles", "suplemento-articles", "especial-articles"].forEach(function (containerId) {
+        ["principal-articles", "suplemento-articles", "especial-articles", "suplemento-extra-articles"].forEach(function (containerId) {
             var container = document.getElementById(containerId);
             if (!container) return;
             container.querySelectorAll(".article-num").forEach(function (el, i) {
@@ -148,6 +148,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Init: article sorting within SUPLEMENTO
     makeSortable(document.getElementById("suplemento-articles"), ".article-row[data-article-id]");
 
+    // Init: article sorting within SUPLEMENTO EXTRA (always init even if block is hidden)
+    makeSortable(document.getElementById("suplemento-extra-articles"), ".article-row[data-article-id]");
+
     // Init: article sorting within each section block (only within its own container)
     document.querySelectorAll("#sections-list .section-sortable").forEach(function (container) {
         makeSortable(container, ".section-article-row[data-article-id]");
@@ -161,6 +164,52 @@ document.addEventListener("DOMContentLoaded", function () {
         makeSortable(container, ".comp-article-row[data-article-id]");
         makeSortable(container, ".newsletter-row[data-newsletter-ref]");
     });
+
+    // ── SUPLEMENTO EXTRA: add / remove block ─────────────────────────────────
+    // The block DOM is always present in the HTML; data-present controls serialization.
+    var btnAddSE = document.getElementById("btn-add-suplemento-extra");
+    var btnRemoveSE = document.getElementById("btn-remove-suplemento-extra");
+    var seWrapper = document.getElementById("suplemento-extra-wrapper");
+
+    if (btnAddSE && seWrapper) {
+        btnAddSE.addEventListener("click", function () {
+            seWrapper.dataset.present = "true";
+            document.getElementById("suplemento-extra-add-row").style.display = "none";
+            var block = document.getElementById("block-suplemento-extra");
+            block.style.display = "";
+            // Activate the block immediately so it shows as enabled on add
+            var cb = block.querySelector(".block-active[data-block='suplemento_extra']");
+            if (cb) { cb.checked = true; applyActiveState(cb); }
+            markChanged();
+            log("toggle", "added suplemento_extra block");
+        });
+    }
+
+    if (btnRemoveSE && seWrapper) {
+        btnRemoveSE.addEventListener("click", function () {
+            if (!confirm("¿Quitar el bloque Suplemento Extra? Se borrará de todos los layouts al guardar.")) return;
+            seWrapper.dataset.present = "false";
+            document.getElementById("block-suplemento-extra").style.display = "none";
+            document.getElementById("suplemento-extra-add-row").style.display = "";
+            markChanged();
+            log("toggle", "removed suplemento_extra block");
+        });
+    }
+
+    // When source changes: mark grid dirty and sync data-source-* attrs on the picker
+    // so the next search uses the newly selected source.
+    var seSourceSelect = document.getElementById("suplemento-extra-source");
+    if (seSourceSelect) {
+        seSourceSelect.addEventListener("change", function () {
+            markChanged();
+            var parts = this.value.split(":");
+            var picker = document.getElementById("suplemento-extra-picker");
+            if (picker) {
+                picker.dataset.sourceType = parts[0];
+                picker.dataset.sourceSlug = parts[1];
+            }
+        });
+    }
 
     // ── Fallback notice for PRINCIPAL block ───────────────────────────────────
     function updatePrincipalFallbackNotice() {
@@ -358,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var params = new URLSearchParams();
 
         // Collect IDs already placed in higher-priority blocks so the backend can exclude them.
-        ["principal-articles", "suplemento-articles", "especial-articles"].forEach(function (containerId) {
+        ["principal-articles", "suplemento-articles", "especial-articles", "suplemento-extra-articles"].forEach(function (containerId) {
             var el = document.getElementById(containerId);
             if (el) {
                 el.querySelectorAll("[data-article-id]").forEach(function (row) {
@@ -509,6 +558,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!isNewsletterMode) {
             // Always send exclude_ids (even empty) so the backend knows JS state is driving and skips the DB lookup.
             url += "&exclude_ids=" + getEditorArticleIds().join(",");
+            // Source filter for suplemento_extra picker (narrows results to publication or category).
+            if (picker.dataset.sourceType && picker.dataset.sourceSlug) {
+                url += "&source_type=" + encodeURIComponent(picker.dataset.sourceType);
+                url += "&source_slug=" + encodeURIComponent(picker.dataset.sourceSlug);
+            }
         }
         fetch(url, { credentials: "same-origin", signal: signal })
             .then(function (r) { return r.json(); })
@@ -720,6 +774,25 @@ document.addEventListener("DOMContentLoaded", function () {
             especialContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
                 result.especial.article_ids.push(parseInt(el.dataset.articleId, 10));
             });
+        }
+
+        // SUPLEMENTO_EXTRA — only included when the block is present (data-present="true")
+        var seWrapper = document.getElementById("suplemento-extra-wrapper");
+        if (seWrapper && seWrapper.dataset.present === "true") {
+            var seSourceSelect = document.getElementById("suplemento-extra-source");
+            var seSourceParts = seSourceSelect ? seSourceSelect.value.split(":") : ["publication", "deporte"];
+            result.suplemento_extra = {
+                active: readBlockActive("suplemento_extra"),
+                source_type: seSourceParts[0],
+                source_slug: seSourceParts[1],
+                article_ids: []
+            };
+            var seContainer = document.getElementById("suplemento-extra-articles");
+            if (seContainer) {
+                seContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (el) {
+                    result.suplemento_extra.article_ids.push(parseInt(el.dataset.articleId, 10));
+                });
+            }
         }
 
         // Sections with their article order, active state, slug and row
