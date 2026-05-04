@@ -274,7 +274,6 @@ def render_card(context, article, variant, media=None, img_load_lazy=True):
     flatten_ctx.update(
         {
             'article': article,
-            'media': media or article.home_display,
             'card_type': card_type,
             'img_load_lazy': img_load_lazy,
         }
