@@ -208,6 +208,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 picker.dataset.sourceType = parts[0];
                 picker.dataset.sourceSlug = parts[1];
             }
+            // Clear articles — they belong to the previous source and are no longer valid
+            var articlesContainer = document.getElementById("suplemento-extra-articles");
+            if (articlesContainer) {
+                articlesContainer.querySelectorAll(".article-row[data-article-id]").forEach(function (row) {
+                    row.remove();
+                });
+                var emptyHint = articlesContainer.querySelector(".empty-hint");
+                if (!emptyHint) {
+                    emptyHint = document.createElement("div");
+                    emptyHint.className = "empty-hint";
+                    emptyHint.textContent = "Sin artículos de suplemento extra";
+                    articlesContainer.appendChild(emptyHint);
+                }
+                renumberArticles();
+            }
         });
     }
 
