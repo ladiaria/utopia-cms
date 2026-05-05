@@ -222,7 +222,7 @@ def _write_audit_log(layout, old_grid, new_grid, triggered_by, user=None):
     entries = []
     save_id = uuid.uuid4()
 
-    for block in ("principal", "suplemento", "especial", "extra_articles"):
+    for block in ("principal", "suplemento", "especial", "extra_articles", "suplemento_extra"):
         before = list(old_grid.get(block, {}).get("article_ids", []))
         after = list(new_grid.get(block, {}).get("article_ids", []))
         if before != after:
@@ -712,6 +712,11 @@ def build_home_data(grid_data, publication=None, layout=None):
         "extra_articles": [],
         "especial_active": False,
         "especial_articles": [],
+        "suplemento_extra_active": False,
+        "suplemento_extra_articles": [],
+        "suplemento_extra_source_type": "",
+        "suplemento_extra_source_slug": "",
+        "suplemento_extra_title": "",
         "sections": [],
         "componentes": [],
     }
@@ -755,10 +760,22 @@ def build_home_data(grid_data, publication=None, layout=None):
                 result["suplemento_title"] = "Extra"
     static_ids.update(a.id for a in result["suplemento_articles"])
     static_ids.update(a.id for a in result["extra_articles"])
-    # SUPLEMENTO_EXTRA — exclude active article IDs from lo_ultimo (same rule as especial)
+    # SUPLEMENTO_EXTRA — fetch articles for the template and exclude from lo_ultimo
     se_data = resolved.get("suplemento_extra")
-    if se_data and _block_active("suplemento_extra", se_data.get("active", True)):
-        static_ids.update(se_data.get("article_ids", []))
+    result["suplemento_extra_active"] = bool(
+        se_data and _block_active("suplemento_extra", se_data.get("active", True))
+    )
+    if result["suplemento_extra_active"]:
+        se_ids = se_data.get("article_ids", [])
+        if se_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=se_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+            result["suplemento_extra_articles"] = [by_id[aid] for aid in se_ids if aid in by_id]
+        result["suplemento_extra_source_type"] = se_data.get("source_type", "")
+        result["suplemento_extra_source_slug"] = se_data.get("source_slug", "")
+        result["suplemento_extra_title"] = _area_name_by_source.get(
+            (se_data.get("source_type", ""), se_data.get("source_slug", "")), ""
+        )
+    static_ids.update(a.id for a in result["suplemento_extra_articles"])
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # ESPECIAL
