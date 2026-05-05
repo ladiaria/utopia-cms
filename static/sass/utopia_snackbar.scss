@@ -79,34 +79,28 @@ $minWidth: 1040px;
     animation: none;
   }
 
-  &__body {
-    padding: $paddingDefault;
-    @media (min-width: $minWidth) {
-      background-color: white;
-      color: #262626;
-    }
-
-    .container {
-      width: 100% !important;
-    }
-  }
-
   &__block {
-    margin-bottom: 20px;
+    padding-bottom: 24px;
 
     &:last-of-type {
-      margin-bottom: 0;
+      padding-bottom: 0;
     }
   }
 
   &__title {
     text-align: center;
     font-size: px-to-rem(28px);
-    font-weight: 400;
+    font-weight: 500;
     font-family: $sans-title;
+    line-height: normal;
 
     @media #{$medium-and-down} {
     }
+  }
+
+  &__text a {
+    text-decoration: underline;
+    font-weight: 700;
   }
 
   &__cross {
@@ -136,34 +130,16 @@ $minWidth: 1040px;
     }
   }
 
-  &__btn {
-    margin: 0 auto 10px auto;
-    max-width: 320px;
-    font-size: 18px !important;
-    min-width: 170px;
-
-    &--white.ld-snackbar__btn {
-      display: inline-block;
-    }
-  }
-
-  strong {
-    font-weight: 500;
-  }
-
   &__close {
     display: block;
     text-align: center;
-    margin: 0 auto;
     padding: 0;
-    text-decoration: none;
-    background: none !important;
+    background: transparent;
     outline: 0;
     position: absolute;
-    right: 0;
-    top: 0;
+    right: 16px;
+    top: 32px;
     border: none;
-    border-radius: 36px;
     vertical-align: middle;
     width: 36px;
     height: 36px;
@@ -181,10 +157,6 @@ $minWidth: 1040px;
         font-size: 32px;
       }
     }
-  }
-
-  .row {
-    margin-bottom: 0;
   }
 
   &--option {
@@ -208,10 +180,12 @@ $minWidth: 1040px;
     transform: none;
     left: 0;
     margin: 0 auto 50px;
-    border-radius: 10px;
     animation: none;
     display: none;
     width: auto;
+    padding: 32px 16px;
+    border-top: 1px solid #ababab;
+    border-bottom: 1px solid #ababab;
 
     .ld-snackbar__close {
       transition: background 0.2s ease-in-out;
@@ -226,7 +200,23 @@ $minWidth: 1040px;
     }
   }
   &--active.softwall {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  @media #{$medium-and-down} {
+    &.softwall {
+      padding: 24px;
+      max-width: calc(100dvw - #{$padding-inline} * 2);
+    }
+    &__title {
+      padding-top: 24px;
+    }
+    &__close {
+      top: 24px;
+      right: 0;
+    }
   }
 }
 

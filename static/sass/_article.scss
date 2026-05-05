@@ -1357,7 +1357,7 @@ aside {
   }
 }
 
-.mid-article-notice {
+article#main-article .mid-article-notice {
   text-align: center;
   position: relative;
   padding: 16px 0;
@@ -1370,6 +1370,13 @@ aside {
   a {
     font-weight: bold;
     text-decoration: underline;
+  }
+
+  + p {
+    margin-top: 32px;
+  }
+  @media #{$medium-and-down} {
+    width: 100%;
   }
 }
 

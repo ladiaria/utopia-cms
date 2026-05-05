@@ -3,21 +3,15 @@
 <div class="ld-snackbar ld-snackbar--active js-ld-snackbar softwall">
   <div class="ld-snackbar__title">
     Nuestro periodismo depende de vos
-    <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false"
-      aria-label="Cerrar">
+    <button class="js-close-ld-snackbar ld-snackbar__close ld-snackbar__close-top" type="button" aria-pressed="false" aria-label="Cerrar">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#ababab" stroke-linecap="round" stroke-width="1.5" d="m5 1 14 14m0-14L5 15"/></svg>
     </button>
   </div>
   <div class="ld-snackbar__body">
     {% include "article/paywall/pw_subscribe_block.html" %}
-    <div class="ld-snackbar__text u-mb-10">Si ya tenés una cuenta</div>
+
     <div class="ld-snackbar__block">
-      <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}" class="btn btn__dark">ingresá</a>
-    </div>
-    <div class="ld-snackbar__text">
-      <a
-        href="{% if category_signup %}{% url 'account-signup' category_slug=category.slug %}{% else %}{% url 'account-signup' %}{% endif %}">Registrate</a>
-      para acceder a {{ signupwall_max_credits }} artículos gratis por mes
+      <p class="ld-snackbar__text">Si ya tenés una cuenta <a href="{% url 'account-login' %}?next={% firstof request.path '/' %}">Ingresá</a></p>
     </div>
   </div>
 </div>

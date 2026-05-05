@@ -50,18 +50,8 @@
                   <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup }}</a>
                 </h3>
               </div>
-              {% if article.photo %}
-                <a class="ld-card-standard__img-link" href="{{ article.get_absolute_url }}">
-                  <img
-                    class="ld-card-standard__img"
-                    src="{{ article.photo.get_700w_url }}"
-                    width="700"
-                    height="{{ article.photo.get_700w_size.1 }}"
-                    title="{{ article.photo_caption }}"
-                    alt="{{ article.photo_caption }}"
-                  >
-                </a>
-              {% endif %}
+              {# Photo not shown: ArticleDocument does not index photo fields. #}
+              {# To enable, add photo_700w_url and photo_caption to documents.py and reindex. #}
             </article>
           {% endfor %}
         </div>
