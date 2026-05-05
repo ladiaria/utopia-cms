@@ -349,8 +349,8 @@
       </div>
 
       <div class="article-aditional-info article-container">
-        <p class="article-author">
-          {% with authors=article.get_authors %}
+        {% with authors=article.get_authors %}
+          <p class="article-author">
             {% if authors %}
               {% for author in authors %}
                 {% if not forloop.first and not forloop.last %}, {% elif forloop.last and not forloop.first %} y {% endif %}
@@ -358,35 +358,59 @@
               {% endfor %}
               <span> - </span>
             {% else %}
+              {# Refactor date published html because is duplicated outside this condition #}
+              <span>
+                {% if date_published_use_main_publication %}
+                  <span>{{ article.main_section.edition.date_published_verbose }}</span>
+                {% else %}
+                  {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                    {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
+                  {% endif %}
+                  <span>
+                    <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
+                  </span>
+                {% endif %}
+
+                {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+                  {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                    <span class="ld-info-tooltip time">
+                      <span class="ld-info-tooltip-content">
+                        {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                      </span>
+                    </span>
+                  {% endif %}
+                {% endif %}
+                -
+              </span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="#000" d="M9 2.126c-3.858 0-7 3.142-7 7s3.142 7 7 7 7-3.143 7-7-3.142-7-7-7m0 1.4a5.59 5.59 0 0 1 5.6 5.6 5.59 5.59 0 0 1-5.6 5.6 5.59 5.59 0 0 1-5.6-5.6 5.59 5.59 0 0 1 5.6-5.6m-.7 1.4v4.49l3.005 3.005.99-.99L9.7 8.836v-3.91z"/></svg>
             {% endif %}
-          {% endwith %}
-          <span class="reading-time">{{ article.reading_time }} de lectura</span>
-        </p>
-        {% if article.date_published %}
-          <p class="article-date">
-            {% if date_published_use_main_publication %}
-              <span>{{ article.main_section.edition.date_published_verbose }}</span>
-            {% else %}
-              {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
-                {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
-              {% endif %}
-              <span>
-                <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
-              </span>
-            {% endif %}
-
-            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
-              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-                <span class="ld-info-tooltip time">
-                  <span class="ld-info-tooltip-content">
-                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
-                  </span>
+            <span class="reading-time">{{ article.reading_time }} de lectura</span>
+          </p>
+          {% if authors and article.date_published %}
+            <p class="article-date">
+              {% if date_published_use_main_publication %}
+                <span>{{ article.main_section.edition.date_published_verbose }}</span>
+              {% else %}
+                {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                  {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
+                {% endif %}
+                <span>
+                  <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
                 </span>
               {% endif %}
-            {% endif %}
-          </p>
-        {% endif %}
+
+              {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+                {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                  <span class="ld-info-tooltip time">
+                    <span class="ld-info-tooltip-content">
+                      {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                    </span>
+                  </span>
+                {% endif %}
+              {% endif %}
+            </p>
+          {% endif %}
+        {% endwith %}
       </div>
 
       {# begin restricted content #}
