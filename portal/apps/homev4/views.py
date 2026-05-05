@@ -286,6 +286,18 @@ def save_grid(request, layout_id):
         # requiring the editor to click "Vista previa" again.
         request.session["preview_grid_data"] = layout.grid_data
         request.session["preview_grid_saved"] = True
+
+        # Sync RadioGeneralConfig.show_banner when the editor toggles the radio block.
+        # Uses .update() (no signals) to avoid triggering the post_save cycle.
+        old_radio = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == "radio"), None)
+        new_radio = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == "radio"), None)
+        if old_radio is not None and new_radio is not None and old_radio != new_radio:
+            try:
+                from utopia_cms_radio.models import RadioGeneralConfig
+                RadioGeneralConfig.objects.update(show_banner="Y" if new_radio else "N")
+            except ImportError:
+                pass
+
         return JsonResponse({"status": "ok", **stats})
     except Exception as e:
         import traceback

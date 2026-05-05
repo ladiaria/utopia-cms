@@ -246,6 +246,59 @@ def refresh_home_layouts_task():
         logger.info("refresh_home_layouts_task: publication=%s layout=%d refreshed", publication.slug, layout.pk)
 
 
+@celery_app.task(name="toggle-radio-block")
+def toggle_radio_block_task(active):
+    """
+    Activate or deactivate the radio component in all home layouts for all publications.
+    Runs at 7am (activate) and 10pm (deactivate) via Celery Beat.
+    Updates every layout — not just the active one — so the state stays consistent
+    when the scheduler switches between layouts.
+    """
+    from core.models import Publication
+
+    publications = list(HomeLayout.objects.order_by().values_list("publication", flat=True).distinct())
+    if not publications:
+        logger.info("toggle_radio_block_task: no publications with layouts found")
+        return
+
+    for pub_id in publications:
+        try:
+            publication = Publication.objects.get(pk=pub_id)
+        except Publication.DoesNotExist:
+            continue
+
+        updated = 0
+        for layout in HomeLayout.objects.filter(publication=publication):
+            gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+            componentes = gd.get("componentes", [])
+            changed = False
+            for comp in componentes:
+                if comp.get("key") == "radio" and comp.get("active") != active:
+                    comp["active"] = active
+                    changed = True
+                    break
+            if changed:
+                layout.grid_data = gd
+                layout.save(update_fields=["grid_data"])
+                updated += 1
+
+        logger.info(
+            "toggle_radio_block_task: publication=%s active=%s updated=%d layouts",
+            publication.slug,
+            active,
+            updated,
+        )
+
+    # Sync RadioGeneralConfig.show_banner to reflect the scheduled toggle.
+    # Uses .update() (no signals) to avoid re-triggering the post_save cycle.
+    try:
+        from utopia_cms_radio.models import RadioGeneralConfig
+        RadioGeneralConfig.objects.update(show_banner="Y" if active else "N")
+        logger.info("toggle_radio_block_task: synced RadioGeneralConfig show_banner=%s", "Y" if active else "N")
+    except ImportError:
+        pass
+
+
 def refresh_home_layouts():
     """Enqueue refresh-home-layouts task unless one is already active or scheduled."""
     task_name = refresh_home_layouts_task.name

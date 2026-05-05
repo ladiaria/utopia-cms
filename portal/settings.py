@@ -367,6 +367,7 @@ CELERY_TASK_ROUTES = {
     "send-push-notification": {"queue": "concurrent_tasks"},
     "resolve-daily-layouts": {"queue": "concurrent_tasks"},
     "refresh-home-layouts": {"queue": "concurrent_tasks"},
+    "toggle-radio-block": {"queue": "concurrent_tasks"},
 }
 CELERY_TASK_QUEUES = []  # will be populated after local settings imports
 CELERY_RESULT_EXTENDED = True
