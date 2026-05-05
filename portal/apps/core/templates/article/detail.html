@@ -290,7 +290,7 @@
             {% if not article_restricted_cf or restricted_access %}
               <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
-                <span>Leer después</span>
+                <span>Guardar</span>
               </button>
               <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
@@ -559,64 +559,6 @@
             {% endif %}
           {% endblock %}
 
-          {% if not user.is_authenticated %}
-            <!-- Modal Structure -->
-            <div id="paywallmodal" class="modal">
-              <!-- paywall begin -->
-              <div class="ld-snackbar ld-snackbar--active ld-snackbar--static">
-                <div class="ld-snackbar__title">
-                  Suscribite o ingresá
-                  <button class="ld-snackbar__close ld-snackbar__close-top modal-close"
-                          type="button" aria-pressed="false" aria-label="Cerrar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                      <path fill="none" d="M0 0h24v24H0V0z"/>
-                      <path fill="#fff"
-                            d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="ld-snackbar__body ld-snackbar__body-sm">
-                  <!-- caso favorito -->
-                  <p class="desc">Suscribite para guardar este artículo como favorito</p>
-                  <!-- caso leer después -->
-                  <p class="desc">Suscribite para guardar este artículo para leer después</p>
-                  <a href="{% url 'subscribe-default' %}" class="btn btn__dark">Suscribite</a>
-                  <p class="desc">¿Ya tenés suscripción?</p>
-                  <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn btn__dark">
-                    Ingresá
-                  </a>
-                </div>
-                <div class="ld-snackbar__body ld-snackbar__body-lg">
-                  <div class="container">
-                    <div class="row">
-                      <div class="ld-snackbar--option">
-                        <div class="ld-snackbar__text ld-snackbar__block">
-                          <!-- caso favorito -->
-                          Suscribite para guardar este artículo como favorito
-                          <!-- caso leer después -->
-                          Suscribite para guardar este artículo para leer después
-                        </div>
-                        <div class="ld-snackbar__block">
-                          <a href="{% url 'subscribe-default' %}" class="btn btn__dark">
-                            Suscribite
-                          </a>
-                        </div>
-                      </div>
-                      <div class="ld-snackbar--option">
-                        <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
-                        <div class="ld-snackbar__block">
-                          <a href="{% url 'account-login' %}?next={{ request.path }}" class="btn btn__dark">
-                            Ingresá
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <!-- paywall end -->
-            </div>
-          {% endif %}
 
           <div class="article-container flex justify-center">
             <button class="btn btn__dark btn-comments">
@@ -840,7 +782,7 @@
     {% if not article.is_published %}
       <span class="ld-tag-draft">Borrador</span>
     {% endif %}
-    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ut-btn ut-admin-edit">
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="btn btn__dark ut-admin-edit">
       <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#ffffff"/></svg> Editar
     </a>
   {% endif %}
