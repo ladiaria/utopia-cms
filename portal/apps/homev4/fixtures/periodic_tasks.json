@@ -12,6 +12,30 @@
     }
   },
   {
+    "model": "django_celery_beat.crontabschedule",
+    "pk": 2,
+    "fields": {
+      "minute": "0",
+      "hour": "7",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*",
+      "timezone": "America/Montevideo"
+    }
+  },
+  {
+    "model": "django_celery_beat.crontabschedule",
+    "pk": 3,
+    "fields": {
+      "minute": "0",
+      "hour": "22",
+      "day_of_week": "*",
+      "day_of_month": "*",
+      "month_of_year": "*",
+      "timezone": "America/Montevideo"
+    }
+  },
+  {
     "model": "django_celery_beat.periodictask",
     "pk": 1,
     "fields": {
@@ -37,6 +61,62 @@
       "total_run_count": 0,
       "date_changed": "2026-04-01T00:00:00Z",
       "description": "Resolves suplemento and extra_articles for all layouts daily at 5am."
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 2,
+    "fields": {
+      "name": "Activate radio block",
+      "task": "toggle-radio-block",
+      "interval": null,
+      "crontab": 2,
+      "solar": null,
+      "clocked": null,
+      "args": "[]",
+      "kwargs": "{\"active\": true}",
+      "queue": "concurrent_tasks",
+      "exchange": null,
+      "routing_key": null,
+      "headers": "{}",
+      "priority": null,
+      "expires": null,
+      "expire_seconds": null,
+      "one_off": false,
+      "start_time": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2026-05-05T00:00:00Z",
+      "description": "Activates the radio component in all home layouts daily at 7am."
+    }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 3,
+    "fields": {
+      "name": "Deactivate radio block",
+      "task": "toggle-radio-block",
+      "interval": null,
+      "crontab": 3,
+      "solar": null,
+      "clocked": null,
+      "args": "[]",
+      "kwargs": "{\"active\": false}",
+      "queue": "concurrent_tasks",
+      "exchange": null,
+      "routing_key": null,
+      "headers": "{}",
+      "priority": null,
+      "expires": null,
+      "expire_seconds": null,
+      "one_off": false,
+      "start_time": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2026-05-05T00:00:00Z",
+      "description": "Deactivates the radio component in all home layouts daily at 10pm."
     }
   }
 ]
