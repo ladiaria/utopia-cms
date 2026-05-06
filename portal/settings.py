@@ -597,6 +597,9 @@ ADMIN_PAGE_LOCK_ENABLED = False
 # ====================================================================================== visual separator =============
 
 
+# homev4 — fallback URL for the papel (print edition) reader when no edition with PDF is found
+PAPEL_FALLBACK_URL = "https://papel.ladiaria.com.uy/library"
+
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
 
