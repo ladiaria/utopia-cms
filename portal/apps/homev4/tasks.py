@@ -10,7 +10,10 @@ from django.utils import timezone
 from celeryapp import celery_app
 
 from .models import HomeLayout
-from .views import _fetch_source_articles, _SUPLEMENTO_SOURCE_BY_WEEKDAY, _propagate_article_ids, _write_audit_log
+from .views import (
+    _fetch_source_articles, _SUPLEMENTO_SOURCE_BY_WEEKDAY, _propagate_article_ids, _write_audit_log,
+    get_papel_url, _PAPEL_CACHE_KEY,
+)
 
 logger = logging.getLogger("homev4")
 
@@ -146,6 +149,11 @@ def resolve_daily_layouts_task():
             len(suplemento_ids),
             len(extra_ids),
         )
+
+    # Invalidate yesterday's cached papel_url and recalculate for today's edition.
+    from django.core.cache import cache
+    cache.delete(_PAPEL_CACHE_KEY)
+    get_papel_url()
 
 
 def _sort_sections_by_recency(grid_data):
