@@ -14,10 +14,11 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import get_template
+from django.core.cache import cache
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.vary import vary_on_cookie
 
-from core.models import Article, Publication, Section, Category, get_current_edition
+from core.models import Article, Edition, Publication, Section, Category, get_current_edition
 from core.views.masleidos import mas_leidos
 from thedaily.utils import unsubscribed_newsletters
 
@@ -124,6 +125,44 @@ def get_default_grid_data():
 
 def get_default_publication():
     return Publication.objects.get(slug=settings.DEFAULT_PUB)
+
+
+_PAPEL_CACHE_KEY = "homev4:papel_url"
+_PAPEL_DAY_NAMES = {0: "lunes", 1: "martes", 2: "miercoles", 3: "jueves", 4: "viernes", 5: "sabado", 6: "domingo"}
+
+
+def get_papel_url():
+    """
+    Returns the URL for today's papel edition (or the most recent one with a PDF).
+    Reads from cache; on miss, queries Edition, saves to cache, and returns the URL.
+    Falls back to settings.PAPEL_FALLBACK_URL if no edition with PDF is found or on error.
+    """
+    cached = cache.get(_PAPEL_CACHE_KEY)
+    if cached:
+        return cached
+
+    try:
+        today = timezone.localdate()
+        publication = get_default_publication()
+        # Prefer today's edition with PDF; fall back to the most recent one with PDF.
+        edition = (
+            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        )
+        if not edition:
+            return settings.PAPEL_FALLBACK_URL
+        url = (
+            "https://papel.ladiaria.com.uy/reader/"
+            f"la-diaria-{_PAPEL_DAY_NAMES[edition.date_published.weekday()]}-"
+            f"{edition.date_published.strftime('%d%m%Y')}?location=1"
+        )
+        try:
+            cache.set(_PAPEL_CACHE_KEY, url)
+        except Exception:
+            pass
+        return url
+    except Exception:
+        return settings.PAPEL_FALLBACK_URL
 
 
 def _propagate_article_ids(source_layout, source_grid):
@@ -1180,6 +1219,7 @@ def active_layout(request, publication_slug=None):
         allow_ads = getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True)
     else:
         allow_ads = True
+    papel_url = get_papel_url()
     context = {
         "layout": layout,
         "publication": publication,
@@ -1187,6 +1227,7 @@ def active_layout(request, publication_slug=None):
         "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
         "allow_ads": allow_ads,
+        "papel_url": papel_url,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
@@ -1282,9 +1323,9 @@ def active_layout(request, publication_slug=None):
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(context)
+    #import pprint
+    #pp = pprint.PrettyPrinter(indent=4)
+    #pp.pprint(context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
 
     if is_preview:
@@ -1683,6 +1724,7 @@ def preview_5am_render(request):
     any_layout = HomeLayout.objects.filter(publication=publication).first()
     home_data = build_home_data(grid_data, publication=publication, layout=any_layout)
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    papel_url = get_papel_url()
     return render(request, home_template, {
         "layout": any_layout,
         "publication": publication,
@@ -1691,6 +1733,7 @@ def preview_5am_render(request):
         "tarde_mode": False,
         "is_portada": True,
         "allow_ads": False,
+        "papel_url": papel_url,
     })
 
 
