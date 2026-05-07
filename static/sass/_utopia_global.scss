@@ -70,30 +70,30 @@ body {
   border: 0;
 }
 
+.flex-start {
+  align-self: flex-start;
+}
+
 .ld-heading {
   margin: 10px 0 35px 0;
   font-size: 50px;
-  color: #262626;
   font-weight: 500;
 }
 
 .ld-subheading {
   font-size: 25px;
   margin: 0 0 25px;
-  color: #262626;
   font-weight: bold;
 }
 
 .ld-subheading-light {
   font-size: 24px;
   margin: 0 0 24px;
-  color: #262626;
   font-weight: 400;
 }
 
 .ld-body {
   font-size: 18px;
-  color: #262626;
   margin: 0 0 18px;
 }
 
@@ -1119,12 +1119,13 @@ blockquote.tiktok-embed {
   position: relative;
 }
 
-.nl-tooltip {
+.nl-tooltip,
+.upper-content .upper-left-content .fixed-items .nl-tooltip {
   position: absolute;
   top: 100%;
   right: 0;
   margin-top: 16px;
-  width: 100%;
+  width: 332px;
   max-width: 332px;
   background-color: #fab04f;
   border-radius: 5px;
@@ -1158,17 +1159,15 @@ blockquote.tiktok-embed {
   }
 
   &__body {
-    font-family: $sans;
-    font-weight: 400;
     font-size: px-to-rem(15px);
     letter-spacing: 0.01em;
     line-height: 1.35em;
     margin: 0;
-    color: #000;
 
     a {
       color: inherit;
       text-decoration: underline;
+      display: inline-flex;
     }
   }
 }

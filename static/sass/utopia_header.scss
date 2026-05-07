@@ -155,7 +155,7 @@ header {
 
     // On category/publication portada headers (non-home), logo is 32px and
     // shrinks to 26px (default) when sticky.
-    body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+    header.category-pub-header:not(.sticky):not(.home-header) & {
       padding-bottom: 31px;
       img {
         height: 32px;
@@ -393,7 +393,8 @@ header {
     display: flex;
 
     .home-link {
-      padding-right: 48px;
+      padding: 8px;
+      padding-right: 24px;
       font-weight: 500;
       position: relative;
       display: flex;
@@ -411,7 +412,8 @@ header {
     }
 
     ul {
-      padding-left: 48px;
+      justify-content: center;
+      width: 100%;
       @include scroll-navbar;
     }
 
@@ -420,6 +422,8 @@ header {
       position: relative;
       flex: 1 1 0;
       min-width: 0;
+      display: flex;
+      align-items: center;
     }
 
     .category-navbar__arrow {
