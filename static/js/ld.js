@@ -157,16 +157,6 @@
       body.classList.toggle("main-menu-open", isOpen);
       if (!isOpen) body.classList.remove("mobile-search-open");
       setDocumentScrollLocked(isOpen);
-
-      const openButton = qs(".ld-main-menu__open");
-      if (openButton) {
-        openButton.classList.toggle("hidden", isOpen);
-      }
-
-      const closeButton = qs(".ld-main-menu__close");
-      if (closeButton) {
-        closeButton.classList.toggle("hidden", !isOpen);
-      }
     }
 
     if (window.M && window.M.Modal) {

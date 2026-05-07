@@ -1382,11 +1382,10 @@ body {
   z-index: 1000;
   overflow: auto;
   scrollbar-width: none;
-  font-size: 18px;
   font-weight: 400;
   width: 100%;
   max-height: 100%;
-  top: $headerMinHeight;
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
@@ -1406,14 +1405,6 @@ body {
     opacity: 1;
     pointer-events: all;
     visibility: visible;
-  }
-
-  header.home-header:not(.sticky) & {
-    top: px-to-rem(120px);
-
-    @media #{$medium-and-down} {
-      top: px-to-rem(75px);
-    }
   }
 
   &__title {
@@ -1460,11 +1451,15 @@ body {
     }
   }
 
+  .upper-right-content {
+    min-height: px-to-rem(39px);
+  }
+
   &__wrap {
     display: grid;
     grid-template-columns: repeat(5, auto);
     justify-content: space-between;
-    @include utopia-container;
+    padding-top: 80px;
   }
 
   &__col {
@@ -1517,6 +1512,8 @@ body {
 
   .modal-content {
     padding: 0;
+    margin: 0 auto;
+    @include utopia-container;
   }
 
   .ld-main-menu__wrap {
@@ -1524,8 +1521,6 @@ body {
   }
 
   @media #{$medium-and-down} {
-    top: px-to-rem(50px);
-
     body.homepage & {
       top: px-to-rem(150px);
     }
@@ -1534,10 +1529,15 @@ body {
       height: 27px;
     }
 
+    .upper-right-content {
+      min-height: unset;
+    }
+
     &__wrap {
       grid-template-columns: 1fr;
       gap: 48px;
       padding-bottom: 24px;
+      padding-top: 48px;
     }
 
     &__col {

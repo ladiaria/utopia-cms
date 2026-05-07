@@ -6,9 +6,6 @@
       <button class="ld-main-menu__open js-ld-main-menu-toggle">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#181818" stroke-width="1.298" d="M2 7.351h28m-28 8h28m-28 8h28"/></svg>
       </button>
-      <button class="ld-main-menu__close js-ld-main-menu-toggle hidden" aria-label="Cerrar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#000" stroke-linecap="round" d="m7 7 18 18m0-18L7 25"/></svg>
-      </button>
       {% if article %}
         <div class="article-breadcrumb">
           {% if category %}
@@ -96,6 +93,7 @@
   {# Menú desktop extendido #}
   <div id="nav-principal-full" class="full ld-main-menu js-ld-main-menu">
     <div class="modal-content">
+      {% include "header/_header_upper_content.html" %}
       <nav class="ld-main-menu__wrap">
         {% block resume %}
           {% include 'core/templates/edition/resume.html' with show_search=True %}

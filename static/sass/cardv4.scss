@@ -42,6 +42,7 @@ article a {
     display: flex;
     flex-direction: column;
     gap: $gap-3;
+    height: 100%;
   }
 
   &__section-label {
