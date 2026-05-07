@@ -1,0 +1,67 @@
+{% load static homev3_tags %}
+
+<div class="ld-main-menu__upper-content">
+  <div class="upper-content">
+    <div class="upper-left-content">
+      <button class="ld-main-menu__close js-ld-main-menu-toggle" aria-label="Cerrar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32"><path stroke="#000" stroke-linecap="round" d="m7 7 18 18m0-18L7 25"/></svg>
+      </button>
+      <div class="fixed-items">
+        <a href="{% url "user_newsletters" %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.313 3.085c0-.566-.463-1.028-1.029-1.028H2.057c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.057a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
+          <span>Newsletter</span>
+        </a>
+        <a href="{% url 'edicion-impresa' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 12 12"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M6.5 1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.5M6.5 1 10 4.5M6.5 1v3.5H10"/></svg>
+          <span>Diario</span>
+        </a>
+        <a href="https://radio.{{ site.domain }}/" target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="8" fill="none" viewBox="0 0 15 8"><path fill="#000" d="M3.324 6.915a.66.66 0 0 0 .662.658.66.66 0 0 0 .662-.658V.659A.66.66 0 0 0 3.986 0a.66.66 0 0 0-.662.659zm6.649 0a.66.66 0 0 0 .662.658.66.66 0 0 0 .662-.658V.659A.66.66 0 0 0 10.635 0a.66.66 0 0 0-.662.659zM0 5.634a.66.66 0 0 0 .662.659.66.66 0 0 0 .662-.659V3.66A.66.66 0 0 0 .662 3 .66.66 0 0 0 0 3.659zm7.31.964a.66.66 0 0 0 .662-.659v-4.28A.66.66 0 0 0 7.31 1a.66.66 0 0 0-.662.659v4.28a.66.66 0 0 0 .662.659m6.649 0a.66.66 0 0 0 .662-.659v-4.28A.66.66 0 0 0 13.959 1a.66.66 0 0 0-.662.659v4.28a.66.66 0 0 0 .662.659"/></svg>
+          <span>Radio</span>
+        </a>
+      </div>
+    </div>
+    <div class="upper-center-logo-container">
+      <a href="{% url "home" %}"><img src="{% static "img/logo_la_diaria.png" %}" alt="la diaria"></a>
+    </div>
+    <div class="upper-right-content">
+      <div class="header-search">
+        <form class="header-search__form" action="{% url 'search' %}" method="get" role="search">
+          <input type="search" name="q" class="header-search__input" placeholder="Buscar" autocomplete="off" aria-label="Buscar">
+        </form>
+        <button type="button" class="search-btn header-search__toggle" aria-label="Buscar" aria-expanded="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
+        </button>
+      </div>
+      {% if user.is_authenticated %}
+        <div class="user-menu-container">
+          <button class="user-menu-button" data-activates="popup-user-menu" aria-expanded="false" aria-controls="popup-user-menu">
+            <span>{{ user.first_name }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" fill="none" viewBox="0 0 10 6"><path stroke="#ababab" stroke-linecap="round" stroke-linejoin="round" d="m.5.5 4.382 4.382L9.265.5"/></svg>
+          </button>
+          <div class="popup-user-menu" id="popup-user-menu" role="dialog" aria-label="Menú de cuenta">
+            <div class="popup-user-menu__account-data">
+              <span class="popup-user-menu__email">{{ user.email }}</span>
+              {% if not is_subscriber_any %}
+                <p class="popup-user-menu__description">El correo electrónico con el que ingresaste tiene acceso limitado a los artículos.</p>
+                <a href="{% url 'subscribe_landing' %}" class="popup-user-menu__subscribe">Suscribite para acceder sin límites</a>
+              {% endif %}
+            </div>
+            <nav class="popup-user-menu__options">
+              <a href="{% url 'edit-profile' %}" class="popup-user-menu__option">Perfil</a>
+              <a href="{% url "lista-lectura-leer-despues" %}" class="popup-user-menu__option">Guardado</a>
+              <a href="https://forms.gle/sSLDboT4wpk6Trh29" target="_blank" rel="noopener noreferrer" class="popup-user-menu__option">Danos tu opinión</a>
+              <a href="https://ayuda.ladiaria.com.uy/" taget="_blank" rel="noopener noreferrer" class="popup-user-menu__option">Ayuda</a>
+              <a href="{% url 'account-logout' %}" class="popup-user-menu__option popup-user-menu__option--logout">Cerrar sesión</a>
+            </nav>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
+      {% endif %}
+      {% if not is_subscriber_any %}
+        <a href="{% url 'subscribe_landing' %}" class="btn btn__dark">Suscribite</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
