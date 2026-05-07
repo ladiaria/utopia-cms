@@ -24,21 +24,12 @@ $minWidth: 1040px;
   background-color: white;
   bottom: 0;
   color: $off-black;
-  font-family: $sans;
   left: 0;
   position: fixed;
   width: 99%;
   z-index: 1010;
-  font-weight: 400;
-  box-shadow:
-    0 2px 2px 0 rgba(0, 0, 0, 0.14),
-    0 1px 5px 0 rgba(0, 0, 0, 0.12),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   padding-top: 0;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  border: 1px solid #c3c3c3;
 
   -webkit-backface-visibility: hidden;
   left: 50%;
@@ -50,9 +41,6 @@ $minWidth: 1040px;
   animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
 
   @media (min-width: $minWidth) {
-    background-color: white;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
     padding-top: 0;
     max-width: 700px;
   }
@@ -73,10 +61,6 @@ $minWidth: 1040px;
       border-bottom: 0;
       padding-bottom: 0;
     }
-
-    .ld-snackbar__col {
-      padding-bottom: 40px;
-    }
   }
 
   &--narrow {
@@ -95,37 +79,28 @@ $minWidth: 1040px;
     animation: none;
   }
 
-  &__body {
-    padding: $paddingDefault;
-    @media (min-width: $minWidth) {
-      background-color: white;
-      color: #262626;
-    }
-
-    .container {
-      width: 100% !important;
-    }
-  }
-
   &__block {
-    margin-bottom: 20px;
+    padding-bottom: 24px;
 
     &:last-of-type {
-      margin-bottom: 0;
+      padding-bottom: 0;
     }
   }
 
   &__title {
-    background-color: $secondary-color;
     text-align: center;
-    padding: 15px 60px;
-    font-size: 18px;
-    font-weight: 400;
-    font-family: AntennaCond, sans-serif;
+    font-size: px-to-rem(28px);
+    font-weight: 500;
+    font-family: $sans-title;
+    line-height: normal;
 
-    @media (min-width: 600px) {
-      padding: 15px 40px;
+    @media #{$medium-and-down} {
     }
+  }
+
+  &__text a {
+    text-decoration: underline;
+    font-weight: 700;
   }
 
   &__cross {
@@ -155,34 +130,16 @@ $minWidth: 1040px;
     }
   }
 
-  &__btn {
-    margin: 0 auto 10px auto;
-    max-width: 320px;
-    font-size: 18px !important;
-    min-width: 170px;
-
-    &--white.ld-snackbar__btn {
-      display: inline-block;
-    }
-  }
-
-  strong {
-    font-weight: 500;
-  }
-
   &__close {
     display: block;
     text-align: center;
-    margin: 0 auto;
     padding: 0;
-    text-decoration: none;
-    background: none !important;
+    background: transparent;
     outline: 0;
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: 16px;
+    top: 32px;
     border: none;
-    border-radius: 36px;
     vertical-align: middle;
     width: 36px;
     height: 36px;
@@ -200,10 +157,6 @@ $minWidth: 1040px;
         font-size: 32px;
       }
     }
-  }
-
-  .row {
-    margin-bottom: 0;
   }
 
   &--option {
@@ -226,11 +179,13 @@ $minWidth: 1040px;
     z-index: 1;
     transform: none;
     left: 0;
-    margin: 0 20px 50px;
-    border-radius: 10px;
+    margin: 0 auto 50px;
     animation: none;
     display: none;
     width: auto;
+    padding: 32px 16px;
+    border-top: 1px solid #ababab;
+    border-bottom: 1px solid #ababab;
 
     .ld-snackbar__close {
       transition: background 0.2s ease-in-out;
@@ -243,15 +198,25 @@ $minWidth: 1040px;
         top: 3px;
       }
     }
-
-    @media (min-width: 700px) {
-      left: calc((100% - 700px) / 2);
-      width: 700px;
-      margin: 0 0 50px;
-    }
   }
   &--active.softwall {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  @media #{$medium-and-down} {
+    &.softwall {
+      padding: 24px;
+      max-width: calc(100dvw - #{$padding-inline} * 2);
+    }
+    &__title {
+      padding-top: 24px;
+    }
+    &__close {
+      top: 24px;
+      right: 0;
+    }
   }
 }
 

@@ -40,6 +40,9 @@
 {% block css %}
   <link href="{% static 'sass/utopia_article.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   <link href="{% static 'sass/article/comments.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/cardv4.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {# nl_switch: mid-article newsletter subscribe switch #}
+  <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block header_scripts %}
@@ -57,7 +60,7 @@
 {% endblock %}
 
 {% block body_class %}{# TODO: custom types conditions should not be evaluated or used #}
-  article
+  article-detail
   {% if article.public %}is-public{% endif %}
   {% if publication %}{{ publication.slug }}-pub{% endif %}
   {% if article.is_suscriber_article %}
@@ -287,7 +290,7 @@
             {% if not article_restricted_cf or restricted_access %}
               <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
-                <span>Leer después</span>
+                <span>Guardar</span>
               </button>
               <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
@@ -346,8 +349,8 @@
       </div>
 
       <div class="article-aditional-info article-container">
-        <p class="article-author">
-          {% with authors=article.get_authors %}
+        {% with authors=article.get_authors %}
+          <p class="article-author">
             {% if authors %}
               {% for author in authors %}
                 {% if not forloop.first and not forloop.last %}, {% elif forloop.last and not forloop.first %} y {% endif %}
@@ -355,35 +358,59 @@
               {% endfor %}
               <span> - </span>
             {% else %}
+              {# Refactor date published html because is duplicated outside this condition #}
+              <span>
+                {% if date_published_use_main_publication %}
+                  <span>{{ article.main_section.edition.date_published_verbose }}</span>
+                {% else %}
+                  {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                    {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
+                  {% endif %}
+                  <span>
+                    <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
+                  </span>
+                {% endif %}
+
+                {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+                  {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                    <span class="ld-info-tooltip time">
+                      <span class="ld-info-tooltip-content">
+                        {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                      </span>
+                    </span>
+                  {% endif %}
+                {% endif %}
+                -
+              </span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="#000" d="M9 2.126c-3.858 0-7 3.142-7 7s3.142 7 7 7 7-3.143 7-7-3.142-7-7-7m0 1.4a5.59 5.59 0 0 1 5.6 5.6 5.59 5.59 0 0 1-5.6 5.6 5.59 5.59 0 0 1-5.6-5.6 5.59 5.59 0 0 1 5.6-5.6m-.7 1.4v4.49l3.005 3.005.99-.99L9.7 8.836v-3.91z"/></svg>
             {% endif %}
-          {% endwith %}
-          <span class="reading-time">{{ article.reading_time }} de lectura</span>
-        </p>
-        {% if article.date_published %}
-          <p class="article-date">
-            {% if date_published_use_main_publication %}
-              <span>{{ article.main_section.edition.date_published_verbose }}</span>
-            {% else %}
-              {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
-                {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
-              {% endif %}
-              <span>
-                <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
-              </span>
-            {% endif %}
-
-            {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
-              {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
-                <span class="ld-info-tooltip time">
-                  <span class="ld-info-tooltip-content">
-                    {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
-                  </span>
+            <span class="reading-time">{{ article.reading_time }} de lectura</span>
+          </p>
+          {% if authors and article.date_published %}
+            <p class="article-date">
+              {% if date_published_use_main_publication %}
+                <span>{{ article.main_section.edition.date_published_verbose }}</span>
+              {% else %}
+                {% if not CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO or article.date_published_seconds_ago >= 691200 %}
+                  {% comment "Revisar si necesitamos esto con el nuevo formato" %} el {% endcomment %}
+                {% endif %}
+                <span>
+                  <time datetime="{{ article.date_published_isoformat }}">{{ article.date_published_verbose.lower }}</time>
                 </span>
               {% endif %}
-            {% endif %}
-          </p>
-        {% endif %}
+
+              {% if CORE_ARTICLE_DETAIL_DATE_TOOLTIP %}
+                {% if CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP or article.date_published_seconds_ago >= 86400 %}
+                  <span class="ld-info-tooltip time">
+                    <span class="ld-info-tooltip-content">
+                      {{ article.datetime_published_verbose }}<br>{% timezone_verbose %}
+                    </span>
+                  </span>
+                {% endif %}
+              {% endif %}
+            </p>
+          {% endif %}
+        {% endwith %}
       </div>
 
       {# begin restricted content #}
@@ -544,44 +571,6 @@
 
           {% block after_content %}{% endblock %}
 
-          {% if report_form %}
-            <div id="send-feedback" class="send-feedback">
-              {% if report_form_sent %}
-                <p class="success-message">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
-                  </svg>
-                  Muchas gracias. El mensaje fue enviado correctamente.
-                </p>
-              {% else %}
-                {% include "article/feedback_form_header.html" %}
-                <form method="post" action="#send-feedback">
-                  {% csrf_token %}
-                  {{ report_form.article_token }}
-                  {% for field in report_form reversed %}
-                    <div class="form-control">
-                      {{ field.errors }}
-                      {% if not field.is_hidden %}
-                        <label for="id_{{ field.name }}">
-                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
-                        </label>
-                      {% endif %}
-                      {{ field }}
-                    </div>
-                  {% endfor %}
-                  <button type="submit">Enviar</button>
-                  {% if report_form.non_field_errors %}
-                    <div class="feedback-error">
-                      <p class="error-message">
-                        {{ report_form.render_non_field_errors }}
-                      </p>
-                    </div>
-                  {% endif %}
-                </form>
-              {% endif %}
-            </div>
-          {% endif %}
-
           {% block subscribe_box %}
             {% if publication in publication_newsletters %}
               {% if publication.slug in user.subscriber.get_newsletters_slugs %}
@@ -594,64 +583,6 @@
             {% endif %}
           {% endblock %}
 
-          {% if not user.is_authenticated %}
-            <!-- Modal Structure -->
-            <div id="paywallmodal" class="modal">
-              <!-- paywall begin -->
-              <div class="ld-snackbar ld-snackbar--active ld-snackbar--static">
-                <div class="ld-snackbar__title">
-                  Suscribite o ingresá
-                  <button class="ld-snackbar__close ld-snackbar__close-top modal-close"
-                          type="button" aria-pressed="false" aria-label="Cerrar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                      <path fill="none" d="M0 0h24v24H0V0z"/>
-                      <path fill="#fff"
-                            d="M18.3 5.71c-.39-.39-1.02-.39-1.41 0L12 10.59 7.11 5.7c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41L10.59 12 5.7 16.89c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L12 13.41l4.89 4.89c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/>
-                    </svg>
-                  </button>
-                </div>
-                <div class="ld-snackbar__body ld-snackbar__body-sm">
-                  <!-- caso favorito -->
-                  <p class="desc">Suscribite para guardar este artículo como favorito</p>
-                  <!-- caso leer después -->
-                  <p class="desc">Suscribite para guardar este artículo para leer después</p>
-                  <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">Suscribite</a>
-                  <p class="desc">¿Ya tenés suscripción?</p>
-                  <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
-                    Ingresá
-                  </a>
-                </div>
-                <div class="ld-snackbar__body ld-snackbar__body-lg">
-                  <div class="container">
-                    <div class="row">
-                      <div class="ld-snackbar--option">
-                        <div class="ld-snackbar__text ld-snackbar__block">
-                          <!-- caso favorito -->
-                          Suscribite para guardar este artículo como favorito
-                          <!-- caso leer después -->
-                          Suscribite para guardar este artículo para leer después
-                        </div>
-                        <div class="ld-snackbar__block">
-                          <a href="{% url 'subscribe-default' %}" class="ut-btn ut-btn-l">
-                            Suscribite
-                          </a>
-                        </div>
-                      </div>
-                      <div class="ld-snackbar--option">
-                        <div class="ld-snackbar__text ld-snackbar__block">¿Ya tenés suscripción?</div>
-                        <div class="ld-snackbar__block">
-                          <a href="{% url 'account-login' %}?next={{ request.path }}" class="ut-btn ut-btn-l ut-btn-outline">
-                            Ingresá
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <!-- paywall end -->
-            </div>
-          {% endif %}
 
           <div class="article-container flex justify-center">
             <button class="btn btn__dark btn-comments">
@@ -679,6 +610,45 @@
               </ul>
             </div>
           {% endif %}
+
+          {% if report_form %}
+            <div id="send-feedback" class="send-feedback">
+              {% if report_form_sent %}
+                <p class="success-message">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
+                  </svg>
+                  Muchas gracias. El mensaje fue enviado correctamente.
+                </p>
+              {% else %}
+                {% include "article/feedback_form_header.html" %}
+                <form method="post" action="#send-feedback">
+                  {% csrf_token %}
+                  {{ report_form.article_token }}
+                  {% for field in report_form reversed %}
+                    <div class="form-control">
+                      {{ field.errors }}
+                      {% if not field.is_hidden %}
+                        <label for="id_{{ field.name }}">
+                          {{ field.label }} {% if field.field.required %}<span>*</span>{% endif %}
+                        </label>
+                      {% endif %}
+                      {{ field }}
+                    </div>
+                  {% endfor %}
+                  <button type="submit" class="btn btn__dark">Enviar</button>
+                  {% if report_form.non_field_errors %}
+                    <div class="feedback-error">
+                      <p class="error-message">
+                        {{ report_form.render_non_field_errors }}
+                      </p>
+                    </div>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </div>
+          {% endif %}
+
 
         {% endif %}{# opened in line 317 #}
 
@@ -733,10 +703,10 @@
               <div class="talk-login align-center display-hidden">
                 {% if user.is_authenticated %}
                   {% if not is_subscriber %}
-                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                    <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="btn btn__dark ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   {% endif %}
                 {% else %}
-                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="ut-btn ld-btn-subscribe-to-comment">Suscribite para comentar</a>
+                  <a href="{% url 'subscribe-default' %}?next={{ request.path }}#comentarios" class="btn btn__dark ld-btn-subscribe-to-comment">Suscribite para comentar</a>
                   <span class="ld-caption ld-caption-subscribe-to-comment">
                     ¿Ya tenés suscripción?
                     <a href="{% url 'account-login' %}?next={{ request.path }}#comentarios">Ingresá</a>
@@ -750,12 +720,6 @@
         {% block featured_content %}{% endblock %}
 
         {% if article.show_related_articles %}{% render_related article %}{% endif %}
-
-        {% if not is_subscriber %}
-          <section id="header-pub" class="col s12 center-align article__bottom-ad ld-block">
-            <div id="ad-container" class="container"></div>
-          </section>
-        {% endif %}
 
       {% endif %}{# end restricted content2 #}
 
@@ -842,7 +806,7 @@
     {% if not article.is_published %}
       <span class="ld-tag-draft">Borrador</span>
     {% endif %}
-    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="ut-btn ut-admin-edit">
+    <a href="{{ SITE_URL }}admin/core/article/{{ article.id }}/" class="btn btn__dark ut-admin-edit">
       <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0V0z"/><path d="M3 17.46v3.04c0 .28.22.5.5.5h3.04c.13 0 .26-.05.35-.15L17.81 9.94l-3.75-3.75L3.15 17.1c-.1.1-.15.22-.15.36zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#ffffff"/></svg> Editar
     </a>
   {% endif %}

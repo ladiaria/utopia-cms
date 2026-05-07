@@ -270,17 +270,10 @@ def render_card(context, article, variant, media=None, img_load_lazy=True):
         else:
             template_override = template_try
 
-    if article.photo_render_allowed() and article.photo.extended.is_portrait:
-        card_display = "horizontal"
-    else:
-        card_display = "vertical"
-
     flatten_ctx = context.flatten()
     flatten_ctx.update(
         {
             'article': article,
-            'media': media or article.home_display,
-            'card_display': card_display,
             'card_type': card_type,
             'img_load_lazy': img_load_lazy,
         }
