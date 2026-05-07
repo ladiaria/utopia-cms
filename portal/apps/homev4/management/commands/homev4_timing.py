@@ -3,7 +3,8 @@ from django.core.management.base import BaseCommand
 
 LOG_PATH = "/var/log/uwsgi/ldsocial.log"
 TIMING_RE = re.compile(r"active_layout timing: ([\d.]+) ms \(user_auth=(\w+)\)")
-DETAIL_RE = re.compile(r"(build: \w+=[\d.]+ ms|active_layout [\w_]+: [\d.]+ ms)")
+# Captures the text after "WARNING:homev4:" for build and phase lines, excluding the timing summary.
+DETAIL_RE = re.compile(r"WARNING:homev4:(  build: \w+=[\d.]+ ms|active_layout [\w_]+: [\d.]+ ms)")
 
 
 class Command(BaseCommand):
@@ -32,8 +33,6 @@ class Command(BaseCommand):
         requests = []
         current_blocks = []
         for line in lines:
-            if DETAIL_RE.search(line):
-                current_blocks.append(DETAIL_RE.search(line).group(1))
             m = TIMING_RE.search(line)
             if m:
                 requests.append({
@@ -42,6 +41,10 @@ class Command(BaseCommand):
                     "blocks": current_blocks[:],
                 })
                 current_blocks = []
+                continue
+            d = DETAIL_RE.search(line)
+            if d:
+                current_blocks.append(d.group(1))
 
         shown = requests[-options["n"]:]
         if not shown:
@@ -56,7 +59,7 @@ class Command(BaseCommand):
             self.stdout.write(f"  {color(f'{ms:.1f} ms')}  [{auth_label}]")
             if options["detail"]:
                 for b in r["blocks"]:
-                    self.stdout.write(f"      {b}")
+                    self.stdout.write(f"    {b}")
 
         times = [r["ms"] for r in shown]
         self.stdout.write(f"\n  avg={sum(times)/len(times):.1f} ms  min={min(times):.1f} ms  max={max(times):.1f} ms\n")
@@ -71,8 +74,6 @@ class Command(BaseCommand):
             )
             current_blocks = []
             for line in proc.stdout:
-                if DETAIL_RE.search(line):
-                    current_blocks.append(DETAIL_RE.search(line).group(1))
                 m = TIMING_RE.search(line)
                 if m:
                     ms = float(m.group(1))
@@ -81,7 +82,11 @@ class Command(BaseCommand):
                     self.stdout.write(f"  {color(f'{ms:.1f} ms')}  [{auth_label}]")
                     if options["detail"] and current_blocks:
                         for b in current_blocks:
-                            self.stdout.write(f"      {b}")
+                            self.stdout.write(f"    {b}")
                     current_blocks = []
+                    continue
+                d = DETAIL_RE.search(line)
+                if d:
+                    current_blocks.append(d.group(1))
         except KeyboardInterrupt:
             proc.terminate()
