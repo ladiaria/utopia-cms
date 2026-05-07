@@ -233,6 +233,14 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     else:
         cover_article = None
 
+    # None → publication has no newsletter; False → not subscribed; True → already subscribed.
+    category_nl_subscribed = None
+    if publication.has_newsletter:
+        if is_authenticated and user_has_subscriber:
+            category_nl_subscribed = user.subscriber.newsletters.filter(slug=publication.slug).exists()
+        else:
+            category_nl_subscribed = False
+
     context.update(
         {
             'is_portada': True,
@@ -240,6 +248,7 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'destacados': top_articles,
             'questions_topic': questions_topic,
             'big_photo': publication.full_width_cover_image,
+            'category_nl_subscribed': category_nl_subscribed,
         }
     )
     if publication.meta_description:
