@@ -96,6 +96,20 @@ _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 
 DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
 
+# Maximum article_ids per block — enforced in save_grid (backend) and mirrored in the picker (frontend).
+# "area" applies to every section in the sections list.
+BLOCK_ARTICLE_LIMITS = {
+    "principal":           10,
+    "suplemento":           7,
+    "area":                 2,
+    "apuntes_del_dia":      1,
+    "opinion":              3,
+    "recomendadas_lv":      4,
+    "recomendadas_domingo": 4,
+    "le_monde":             2,
+    "lento":                2,
+}
+
 # Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
 LAYOUT_BLOCKS_CONFIG = {
     "principal":  {"always_active": True},
@@ -295,6 +309,23 @@ def save_grid(request, layout_id):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
+        # Enforce per-block article_ids limits — violating these breaks deduplication logic.
+        for block in ("principal", "suplemento"):
+            ids = grid_data.get(block, {}).get("article_ids", [])
+            limit = BLOCK_ARTICLE_LIMITS[block]
+            if len(ids) > limit:
+                return JsonResponse({"error": f"{block} cannot have more than {limit} articles"}, status=400)
+        area_limit = BLOCK_ARTICLE_LIMITS["area"]
+        for section in grid_data.get("sections", []):
+            ids = section.get("article_ids", [])
+            if len(ids) > area_limit:
+                slug = section.get("slug", "?")
+                return JsonResponse({"error": f"Area '{slug}' cannot have more than {area_limit} articles"}, status=400)
+        for comp in grid_data.get("componentes", []):
+            key = comp.get("key", "")
+            limit = BLOCK_ARTICLE_LIMITS.get(key)
+            if limit and len(comp.get("article_ids", [])) > limit:
+                return JsonResponse({"error": f"Component '{key}' cannot have more than {limit} articles"}, status=400)
         # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
@@ -650,7 +681,7 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
     p_ids = principal.get("article_ids") or []
     if not p_ids:
         edition = get_current_edition(publication=publication)
-        p_ids = [a.id for a in edition.top_articles] if edition else []
+        p_ids = [a.id for a in edition.top_articles][:10] if edition else []
         principal["article_ids"] = p_ids
     seen_ids.update(p_ids)
 
@@ -1605,6 +1636,7 @@ def build_editor_data(grid_data, publication=None):
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
                 "sortable_articles": defn.get("sortable_articles", True),
+                "max_articles": BLOCK_ARTICLE_LIMITS.get(key),
             }
             if defn.get("newsletter_mode"):
                 comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
@@ -1638,6 +1670,7 @@ def build_editor_data(grid_data, publication=None):
                     "pin_mode": defn.get("pin_mode", False),
                     "newsletter_mode": defn.get("newsletter_mode", False),
                     "sortable_articles": defn.get("sortable_articles", True),
+                    "max_articles": BLOCK_ARTICLE_LIMITS.get(defn["key"]),
                 }
                 if defn.get("newsletter_mode"):
                     comp_dict["newsletters"] = []

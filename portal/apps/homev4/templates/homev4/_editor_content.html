@@ -74,7 +74,8 @@
                 <div class="article-picker"
                      data-target="principal-articles"
                      data-row-class="article-row"
-                     data-item-selector=".article-row[data-article-id]">
+                     data-item-selector=".article-row[data-article-id]"
+                     data-max-add="10">
                     <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                     <div class="picker-results"></div>
                 </div>
@@ -109,7 +110,8 @@
                 <div class="article-picker"
                      data-target="suplemento-articles"
                      data-row-class="article-row"
-                     data-item-selector=".article-row[data-article-id]">
+                     data-item-selector=".article-row[data-article-id]"
+                     data-max-add="7">
                     <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                     <div class="picker-results"></div>
                 </div>
@@ -260,7 +262,8 @@
                              data-target="section-articles-{{ section.slug }}"
                              data-row-class="section-article-row"
                              data-item-selector=".section-article-row[data-article-id]"
-                             data-replace-mode="true">
+                             data-replace-mode="true"
+                             data-max-slots="2">
                             <div class="section-replace-hint" style="display:none;">Marcá el artículo a reemplazar</div>
                             <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                             <div class="picker-results"></div>
@@ -371,7 +374,8 @@
                             <div class="article-picker"
                                  data-target="comp-articles-{{ comp.key }}"
                                  data-row-class="comp-article-row"
-                                 data-item-selector=".comp-article-row[data-article-id]">
+                                 data-item-selector=".comp-article-row[data-article-id]"
+                                 {% if comp.max_articles %}data-max-add="{{ comp.max_articles }}"{% endif %}>
                                 <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                                 <div class="picker-results"></div>
                             </div>
