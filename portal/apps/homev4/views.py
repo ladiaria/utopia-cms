@@ -884,8 +884,17 @@ def build_home_data(grid_data, publication=None, layout=None):
         if defn.get("newsletter_mode"):
             comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
             comp_entry["articles"] = []
-        elif key in ("lo_ultimo", "lo_mas_leido", "apuntes_del_dia"):
-            # Dynamic: always fetched fresh; lo_ultimo respects pinned_ids and excludes static blocks.
+        elif key == "lo_mas_leido":
+            # Populated hourly by sync_article_views; read from saved article_ids.
+            # Fallback to live DB query when the block has not been populated yet.
+            c_ids = item.get("article_ids", [])
+            if c_ids:
+                by_id = {a.id: a for a in Article.published.filter(id__in=c_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+                comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
+            else:
+                comp_entry["articles"] = _fetch_component_articles(key)
+        elif key in ("lo_ultimo", "apuntes_del_dia"):
+            # Dynamic: always fetched fresh at request time.
             if key == "lo_ultimo":
                 articles = _fetch_component_articles(
                     key,
@@ -1014,6 +1023,36 @@ def _fetch_area_articles(area_type, slug, saved_ids, exclude_ids=None):
             articles.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
         return articles
     return _fetch_source_articles(area_type, slug, limit=2, exclude_ids=exclude_ids)
+
+
+def update_lo_mas_leido_in_layouts():
+    """Update the lo_mas_leido article_ids in all HomeLayout objects for the default publication.
+    Called by sync_article_views after it writes the updated view counts to ArticleViews,
+    so the home reads fresh most-read data without querying the DB on every request.
+    """
+    from core.views.masleidos import mas_leidos
+    try:
+        ids = mas_leidos(days=1, limit=5)
+    except Exception:
+        logger.exception("update_lo_mas_leido_in_layouts: mas_leidos query failed")
+        return
+    if not ids:
+        return
+    pub = get_default_publication()
+    for layout in HomeLayout.objects.filter(publication=pub):
+        grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+        old_grid = {k: v for k, v in grid.items()}
+        updated = False
+        for comp in grid.get("componentes", []):
+            if comp.get("key") == "lo_mas_leido":
+                if comp.get("article_ids") != ids:
+                    comp["article_ids"] = list(ids)
+                    updated = True
+                break
+        if updated:
+            layout.grid_data = grid
+            layout.save(update_fields=["grid_data", "modified"])
+            _write_audit_log(layout, old_grid, grid, "sync_article_views")
 
 
 # Components whose order is always automatic — saved_ids are ignored for these.
