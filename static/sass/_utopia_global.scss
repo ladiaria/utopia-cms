@@ -33,6 +33,7 @@ body {
   text-align: center;
   text-decoration: none;
   display: inline-flex;
+  justify-content: center;
   align-items: center;
   gap: 4px;
 
@@ -41,7 +42,6 @@ body {
     color: white;
     border: 1px solid $off-black;
     font-weight: 450;
-    border: none;
 
     &:hover {
       color: white;

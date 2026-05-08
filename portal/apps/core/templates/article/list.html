@@ -49,28 +49,32 @@
   </script>
 {% endblock %}
 
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/article/list.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/cardv4.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/components/cards/_card_standard.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block page_header %}
-  <div class="section_background">
-    <div class="container container--narrow">
-      <div class="section-detail__head">
-        <h1 class="section-detail__title">{% tags_joined %}</h1>
-        <p class="section-detail__description">Listado cronológico de artículos con el tema "{% tags_joined %}".</p>
-      </div>
-      </div>
+  <div class="container">
+    <div class="section-detail__head">
+      <h1 class="section-detail__title">{% tags_joined %}</h1>
+      <p class="section-detail__description">Listado cronológico de artículos con el tema "{% tags_joined %}".</p>
     </div>
-    </div>
+  </div>
 {% endblock %}
 
 {% block body_class %}tag-page{% endblock %}
 
 {% block content %}
-  <section class="section_module container--narrow">
+  <section class="section_module">
 
     {% for article in articles.object_list %}
       {% if forloop.first %}
-        {% render_article_card article=article media=article.home_display card_size="FD" img_load_lazy=False %}
+        {% render_card article=article variant="card_standard" img_load_lazy=False %}
       {% else %}
-        {% render_article_card article=article media=article.home_display card_size="FD" %}
+        {% render_card article=article variant="card_standard" %}
       {% endif %}
     {% endfor %}
 

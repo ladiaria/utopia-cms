@@ -11,7 +11,7 @@
       {% endif %}
 
       <label for="{{ field.id_for_label }}" {% if field.field.required %}class="required active"{% endif %}>
-        {{ field.label|safe }}
+        {{ field.label|safe }}{% if field.field.required %} <span class="marker">*</span>{% endif %}
       </label>
     {% endif %}
 
