@@ -28,7 +28,8 @@ header {
   top: 0;
 
   &.category-pub-header,
-  &.home-header {
+  &.home-header,
+  body.article-detail &:not(.sticky) {
     border-bottom: none;
     top: 0;
   }
@@ -450,7 +451,7 @@ header {
       }
     }
 
-    @media (min-width: 768px) {
+    @media #{$medium-and-up} {
       .category-navbar__scrollable.has-overflow-left .category-navbar__arrow--left,
       .category-navbar__scrollable.has-overflow-right .category-navbar__arrow--right {
         display: flex;
@@ -602,6 +603,7 @@ header {
       ul {
         padding-left: 0;
         align-self: flex-end;
+        justify-content: flex-start;
       }
     }
   }
