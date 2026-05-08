@@ -17,6 +17,7 @@ p {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  position: relative;
 
   .google-auth {
     padding-bottom: 32px;
@@ -208,11 +209,15 @@ p {
 }
 
 .subscribe-body .close-window-container {
-  text-align: right;
-  button {
+  button,
+  a {
     padding: 0;
     background-color: transparent;
     border: none;
+    padding: 16px;
+    position: absolute;
+    right: 8px;
+    top: 8px;
   }
 }
 

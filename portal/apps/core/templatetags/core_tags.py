@@ -502,6 +502,33 @@ def render_hierarchy(context, article, force_use_links=False):
 
 
 @register.simple_tag(takes_context=True)
+def resolve_article_breadcrumb(context, article):
+    publication, category = context.get("publication"), context.get("category")
+    section = article.publication_section(publication) if publication else article.get_section(category)
+    if not section:
+        return {}
+    parent, parent_url = None, None
+    if section.category or category:
+        allowed = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ())
+        effective_category = section.category or category
+        if not allowed or effective_category.slug in allowed:
+            parent = effective_category
+        elif publication:
+            parent = publication
+        if parent:
+            parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    elif article.main_section:
+        parent = article.main_section.edition.publication
+        parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    return {
+        'parent': parent,
+        'parent_url': parent_url,
+        'section': section,
+        'section_name': _resolve_section_name_override(section, article),
+    }
+
+
+@register.simple_tag(takes_context=True)
 def render_tagcover(context, tagname):
     try:
         tag = Tag.objects.get(name=tagname)

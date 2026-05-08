@@ -28,8 +28,7 @@ header {
   top: 0;
 
   &.category-pub-header,
-  &.home-header,
-  body.article-detail &:not(.sticky) {
+  &.home-header {
     border-bottom: none;
     top: 0;
   }
@@ -47,7 +46,8 @@ header {
   }
 
   @media #{$medium-and-down} {
-    body.article & {
+    body.article &,
+    body.article-detail &:not(.sticky) {
       border-bottom: none;
     }
   }
@@ -1017,6 +1017,12 @@ header {
   body.main-menu-open & {
     display: none !important;
   }
+
+  @media #{$medium-and-down} {
+    body.article-detail & {
+      display: none;
+    }
+  }
 }
 
 .logged-in {
@@ -1527,6 +1533,8 @@ body {
   }
 
   @media #{$medium-and-down} {
+    padding-bottom: 84px;
+
     body.homepage & {
       top: px-to-rem(150px);
     }

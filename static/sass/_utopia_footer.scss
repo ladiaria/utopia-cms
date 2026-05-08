@@ -215,8 +215,10 @@
   flex-direction: column;
   gap: 16px;
   text-align: center;
-  p {
+  p,
+  a {
     margin: 0;
+    color: #44494b;
   }
   @media #{$medium-and-down} {
     padding-block: 24px;
