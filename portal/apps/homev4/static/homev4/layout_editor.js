@@ -656,6 +656,13 @@ document.addEventListener("DOMContentLoaded", function () {
                                 }
                             }
                         } else {
+                            var maxAdd = parseInt(picker.dataset.maxAdd || "0", 10);
+                            if (maxAdd && articlesContainer.querySelectorAll("[data-article-id]").length >= maxAdd) {
+                                // Block is at capacity — flash the input red and bail.
+                                var inp = picker.querySelector(".picker-search-input");
+                                if (inp) { inp.style.background = "#ffebee"; setTimeout(function(){ inp.style.background = ""; }, 800); }
+                                return;
+                            }
                             addArticleToPicker(a, articlesContainer, rowClass, itemSelector);
                         }
                         resultsEl.innerHTML = "";
