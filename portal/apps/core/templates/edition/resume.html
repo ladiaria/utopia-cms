@@ -1,6 +1,6 @@
 {% load homev3_tags thedaily_tags %}
 
-{% if show_search %}
+{% if not footer_resume %}
 <div class="mobile-header-search">
   <form action="{% url 'search' %}" method="get" role="search">
     <input type="search" name="q" class="mobile-header-search__input" placeholder="Buscar" autocomplete="off" aria-label="Buscar">
@@ -14,10 +14,10 @@
 {% if not is_subscriber_any %}
   <div class="mobile-login-items">
     {% if not user.is_authenticated %}
-      <a class="btn" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
+      <a class="btn btn__outline" href="{% url 'account-login' %}?next={% if request.path in LOGIN_NO_REDIRECT_URLPATHS %}{% url 'home' %}{% else %}{% login_next_url request.path %}{% endif %}">Ingresar</a>
     {% endif %}
     {% if not is_subscriber_any %}
-      <a href="{% url 'subscribe_landing' %}" class="btn btn__dark">Suscribite</a>
+      <a href="{% url 'subscribe_landing' %}" class="btn {% if footer_resume %}btn__light{% else %}btn__dark{% endif %}">Suscribite</a>
     {% endif %}
   </div>
 {% endif %}

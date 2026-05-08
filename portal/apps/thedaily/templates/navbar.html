@@ -18,7 +18,13 @@
         {% if category %}
           {% include 'core/templates/category/detail_header_sections.html' %}
         {% elif publication %}
-          {% include "core/templates/publication/publication_navbar.html" %}
+          {% for section in publication.primary_sections %}
+            <li>
+              <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+                {% section_name_in_publication_menu publication section %}
+              </a>
+            </li>
+          {% endfor %}
         {% endif %}
       </ul>
       <button class="category-navbar__arrow category-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">

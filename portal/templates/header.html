@@ -96,7 +96,7 @@
       {% include "header/_header_upper_content.html" %}
       <nav class="ld-main-menu__wrap">
         {% block resume %}
-          {% include 'core/templates/edition/resume.html' with show_search=True %}
+          {% include 'core/templates/edition/resume.html' with footer_resume=False %}
         {% endblock %}
       </nav>
     </div>
