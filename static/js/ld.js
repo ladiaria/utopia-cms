@@ -160,7 +160,10 @@
         qsa(".header-search.header-search--open").forEach(function (el) {
           el.classList.remove("header-search--open");
           const toggle = qs(".header-search__toggle", el);
-          if (toggle) toggle.setAttribute("aria-expanded", "false");
+          if (toggle) {
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.setAttribute("aria-label", "Abrir buscador");
+          }
         });
       }
       setDocumentScrollLocked(isOpen);
@@ -190,7 +193,10 @@
     function setSearchOpen(headerSearch, isOpen) {
       headerSearch.classList.toggle("header-search--open", isOpen);
       const toggle = qs(".header-search__toggle", headerSearch);
-      if (toggle) toggle.setAttribute("aria-expanded", String(isOpen));
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", String(isOpen));
+        toggle.setAttribute("aria-label", isOpen ? "Cerrar buscador" : "Abrir buscador");
+      }
     }
 
     if (headerSearchToggles.length) {
@@ -201,8 +207,10 @@
             const searchIsOpen = document.body.classList.contains("mobile-search-open");
             if (searchIsOpen) {
               document.body.classList.remove("mobile-search-open");
+              toggle.setAttribute("aria-label", "Abrir buscador");
             } else {
               document.body.classList.add("mobile-search-open");
+              toggle.setAttribute("aria-label", "Cerrar buscador");
               if (!document.body.classList.contains("main-menu-open")) {
                 setMainMenuState(true);
               }
