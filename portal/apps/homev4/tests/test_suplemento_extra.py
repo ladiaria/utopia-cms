@@ -198,7 +198,7 @@ class SupplementoExtraBuildHomeDataTest(SimpleTestCase):
     def _get_lo_ultimo_exclude_ids(self, resolved_grid):
         captured = {}
 
-        def mock_fetch(key, saved_ids=None, pinned_ids=None, exclude_ids=None):
+        def mock_fetch(key, saved_ids=None, pinned_ids=None, exclude_ids=None, **kwargs):
             captured[key] = frozenset(exclude_ids or [])
             return []
 
