@@ -132,6 +132,22 @@ div.field-alt_desc_newsletters div.charcounter {
   }
 }
 
+/* headline character counter — red when over the 130-char limit */
+div.field-headline > div.headline-counter {
+  font-size: 0.6875rem;
+  line-height: 16.5px;
+  margin-left: 160px;
+  padding-left: 10px;
+  margin-top: 2px;
+}
+div.field-headline div.headline-counter.over-limit {
+  color: var(--error-fg, #ba2121);
+}
+#id_headline.headline-over-limit {
+  border-color: var(--error-fg, #ba2121) !important;
+  outline-color: var(--error-fg, #ba2121);
+}
+
 /* published status row */
 .field-is_published, .field-to_be_published, .field-date_published {
   width: unset !important;
