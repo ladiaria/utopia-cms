@@ -154,16 +154,6 @@ header {
       position: relative;
     }
 
-    // On category/publication portada headers (non-home), logo is 32px and
-    // shrinks to 26px (default) when sticky.
-    header.category-pub-header:not(.sticky):not(.home-header) & {
-      padding-bottom: 31px;
-      img {
-        height: 32px;
-        top: 31px;
-      }
-    }
-
     // On the home header in normal (non-sticky) state, the logo is larger.
     // When sticky kicks in, this selector stops matching and the logo
     // transitions back to 26px via the transition above.
@@ -259,7 +249,7 @@ header {
       a:not(.search-btn) {
         display: none;
       }
-      header.category-pub-header & {
+      body:not(.main-menu-open) header.category-pub-header & {
         display: none;
       }
       .search-btn {
@@ -1526,8 +1516,7 @@ body {
         padding: 4px 0;
         line-height: normal;
         a {
-          font-family: "Dialect Gothic A";
-          font-size: px-to-rem(16px);
+          font-size: px-to-rem(18px);
         }
       }
     }
