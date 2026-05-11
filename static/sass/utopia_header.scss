@@ -417,45 +417,45 @@ header {
       width: 100%;
       @include scroll-navbar;
     }
+  }
 
-    // Scrollable area + overflow arrows (desktop only)
-    .category-navbar__scrollable {
-      position: relative;
-      flex: 1 1 0;
-      min-width: 0;
+  // Scrollable area + overflow arrows (desktop only), shared by home and category navbars
+  .scrollable-navbar__scrollable {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .scrollable-navbar__arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    z-index: 2;
+
+    svg {
+      display: block;
+    }
+
+    &--left {
+      left: 0;
+    }
+    &--right {
+      right: -1px;
+    }
+  }
+
+  @media #{$medium-and-up} {
+    .scrollable-navbar__scrollable.has-overflow-left .scrollable-navbar__arrow--left,
+    .scrollable-navbar__scrollable.has-overflow-right .scrollable-navbar__arrow--right {
       display: flex;
-      align-items: center;
-    }
-
-    .category-navbar__arrow {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      display: none;
-      align-items: center;
-      border: 0;
-      background: transparent;
-      padding: 0;
-      cursor: pointer;
-      z-index: 2;
-
-      svg {
-        display: block;
-      }
-
-      &--left {
-        left: 0;
-      }
-      &--right {
-        right: -1px;
-      }
-    }
-
-    @media #{$medium-and-up} {
-      .category-navbar__scrollable.has-overflow-left .category-navbar__arrow--left,
-      .category-navbar__scrollable.has-overflow-right .category-navbar__arrow--right {
-        display: flex;
-      }
     }
   }
 
@@ -594,6 +594,7 @@ header {
       left: 0;
       width: 30px;
       background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+      z-index: 1;
     }
 
     &.category-navbar {
