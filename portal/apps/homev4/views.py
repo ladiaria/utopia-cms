@@ -82,7 +82,7 @@ def _resolve_sidebar_template(key):
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
-    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": False},
+    {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": True},
     {"key": "radio",                "label": "Radio",                    "description": "",                "no_articles": True},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
@@ -932,6 +932,7 @@ def build_home_data(grid_data, publication=None, layout=None):
                     saved_ids=item.get("article_ids", []),
                     pinned_ids=set(item.get("pinned_ids", [])),
                     exclude_ids=static_ids,
+                    soft_pin_saved=True,
                 )
             else:
                 articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=static_ids)
@@ -1091,7 +1092,7 @@ _COMPONENTS_AUTO_ORDER = {"lo_mas_leido", "apuntes_del_dia", "radio"}
 
 
 
-def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=None):
+def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=None, soft_pin_saved=False):
     """
     Return the article list for a given component key.
     For components not in _COMPONENTS_AUTO_ORDER, saved_ids are used to
@@ -1102,8 +1103,13 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
       - pinned_ids: articles the editor explicitly fixed. They stay at their saved position
         unless they also appear in exclude_ids (i.e. already placed in a higher-priority block)
         or have been unpublished. In those cases they are evicted and replaced dynamically.
-      - Unpinned slots (and evicted pinned slots) are always filled with the most recently
-        published available articles, excluding exclude_ids and valid pinned articles.
+      - soft_pin_saved=True: all saved articles are treated like pinned — they keep their
+        position as long as they are published and not excluded. Only evicted slots are filled
+        dynamically. Used for regular display so the editor's drag order is respected.
+        The "replace unpinned" button calls with soft_pin_saved=False (default) to refresh
+        non-pinned slots with the most recently published articles.
+      - soft_pin_saved=False (default): only explicitly pinned articles keep their position;
+        all other slots are filled with the most recently published available articles.
 
     Slugs configurable via settings:
       HOMEV4_OPINION_CATEGORY_SLUG   (default: "opinion")
@@ -1113,21 +1119,33 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
         pinned_set = set(pinned_ids or [])
         exclude_set = set(exclude_ids or [])
 
-        # Pinned articles that are still published and not in a higher-priority block.
-        valid_pinned = {}
-        if pinned_set and saved_ids:
-            candidate_ids = [aid for aid in saved_ids if aid in pinned_set and aid not in exclude_set]
+        if soft_pin_saved and saved_ids:
+            # Soft-pin mode: all saved articles keep their position if still valid.
+            candidate_ids = [aid for aid in saved_ids if aid not in exclude_set]
+            valid_saved = {}
             if candidate_ids:
-                valid_pinned = {
+                valid_saved = {
                     a.id: a
                     for a in Article.published.filter(id__in=candidate_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)
                 }
+            anchored = valid_saved
+        else:
+            # Default mode: only explicitly pinned articles keep their position.
+            valid_pinned = {}
+            if pinned_set and saved_ids:
+                candidate_ids = [aid for aid in saved_ids if aid in pinned_set and aid not in exclude_set]
+                if candidate_ids:
+                    valid_pinned = {
+                        a.id: a
+                        for a in Article.published.filter(id__in=candidate_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)
+                    }
+            anchored = valid_pinned
 
-        # Dynamic articles fill every slot that is not a valid pinned article.
-        dynamic_slots = 3 - len(valid_pinned)
+        # Dynamic articles fill every slot not covered by an anchored article.
+        dynamic_slots = 3 - len(anchored)
         dynamic_articles = []
         if dynamic_slots > 0:
-            dynamic_exclude = exclude_set | set(valid_pinned)
+            dynamic_exclude = exclude_set | set(anchored)
             qs = Article.published.select_related(_ARTICLE_AUTH_SELECT_RELATED).order_by("-date_published")
             qs = qs.exclude(id__in=dynamic_exclude)
             dynamic_articles = list(qs[:dynamic_slots])
@@ -1136,13 +1154,13 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             # No saved order yet — return all dynamic articles.
             return dynamic_articles
 
-        # Rebuild in saved order: pinned articles keep their position; every other slot
-        # (unpinned, evicted, or deleted) gets the next dynamic article.
+        # Rebuild in saved order: anchored articles keep their position; every other slot
+        # (evicted or not anchored) gets the next dynamic article.
         result = []
         dynamic_iter = iter(dynamic_articles)
         for aid in saved_ids:
-            if aid in valid_pinned:
-                result.append(valid_pinned[aid])
+            if aid in anchored:
+                result.append(anchored[aid])
             else:
                 a = next(dynamic_iter, None)
                 if a:
@@ -1650,6 +1668,7 @@ def build_editor_data(grid_data, publication=None):
                     saved_ids=item.get("article_ids", []),
                     pinned_ids=pinned_ids,
                     exclude_ids=editor_static_ids,
+                    soft_pin_saved=True,
                 )
             else:
                 c_ids = item.get("article_ids", [])
@@ -1678,7 +1697,7 @@ def build_editor_data(grid_data, publication=None):
                 elif defn["key"] == "lo_ultimo":
                     comp_dict["pinned_ids"] = []
                     comp_dict["articles"] = _fetch_component_articles(
-                        defn["key"], pinned_ids=set(), exclude_ids=editor_static_ids
+                        defn["key"], pinned_ids=set(), exclude_ids=editor_static_ids, soft_pin_saved=True,
                     )
                 else:
                     comp_dict["articles"] = _fetch_component_articles(defn["key"])
@@ -1707,6 +1726,7 @@ def build_editor_data(grid_data, publication=None):
                     saved_ids=saved.get("article_ids", []),
                     pinned_ids=pinned_ids,
                     exclude_ids=editor_static_ids,
+                    soft_pin_saved=True,
                 )
             else:
                 comp_dict["articles"] = _fetch_component_articles(defn["key"])
