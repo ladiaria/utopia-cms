@@ -529,6 +529,7 @@
 
       function updateCenter() {
         wrapper.classList.toggle("center", list.scrollWidth <= 1050);
+        wrapper.classList.toggle("mobile-centered", list.scrollWidth <= 325);
       }
 
       list.addEventListener("scroll", update, { passive: true });
