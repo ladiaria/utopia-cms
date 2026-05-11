@@ -96,7 +96,18 @@
 </div>
 
 <div class="ld-main-menu__col">
-  {% if MENU_CATEGORIES %}
+  {% if MAIN_MENU_AREAS_ITEMS %}
+    <div class="ld-main-menu__block">
+      <h2 class="ld-main-menu__title">Áreas</h2>
+      <ul class="navmenu-list">
+        {% for item in MAIN_MENU_AREAS_ITEMS %}
+          <li{% if item.classes %} class="{{ item.classes }}"{% endif %}>
+            <a href="{{ item.url }}">{{ item.label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% elif MENU_CATEGORIES %}
     <div class="ld-main-menu__block">
       <h2 class="ld-main-menu__title">Áreas</h2>
       <ul class="navmenu-list">
