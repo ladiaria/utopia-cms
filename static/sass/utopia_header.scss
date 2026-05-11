@@ -432,9 +432,11 @@ header {
       }
       @media #{$medium-and-down} {
         &.center {
-          justify-content: flex-start;
           margin-right: 0;
           ul {
+            justify-content: flex-start;
+          }
+          &:not(.mobile-centered) ul {
             justify-content: flex-start;
           }
         }
