@@ -413,21 +413,31 @@ header {
       }
     }
 
-    ul {
-      justify-content: flex-start;
-      width: 100%;
-      @include scroll-navbar;
-      width: fit-content;
-    }
-
-    .scrollable-navbar__scrollable.center {
-      justify-content: center;
-      margin-right: calc(
-        16px + 89px
-      ); // Los 89px + 16px vienen del tamaño que tiene el botón de home, es para centrar horizontalmente los elementos.
-
+    .scrollable-navbar__scrollable {
       ul {
+        justify-content: flex-start;
+        width: 100%;
+        @include scroll-navbar;
+        width: fit-content;
+      }
+      &.center {
         justify-content: center;
+        margin-right: calc(
+          16px + 89px
+        ); // Los 89px + 16px vienen del tamaño que tiene el botón de home, es para centrar horizontalmente los elementos.
+
+        ul {
+          justify-content: center;
+        }
+      }
+      @media #{$medium-and-down} {
+        &.center {
+          justify-content: flex-start;
+          margin-right: 0;
+          ul {
+            justify-content: flex-start;
+          }
+        }
       }
     }
   }
