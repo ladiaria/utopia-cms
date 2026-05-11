@@ -527,8 +527,15 @@
         wrapper.classList.toggle("has-overflow-right", hasOverflowRight);
       }
 
+      function updateCenter() {
+        wrapper.classList.toggle("center", list.scrollWidth <= 1050);
+      }
+
       list.addEventListener("scroll", update, { passive: true });
-      window.addEventListener("resize", update);
+      window.addEventListener("resize", function () {
+        update();
+        updateCenter();
+      });
 
       if (leftBtn) {
         leftBtn.addEventListener("click", function () {
@@ -542,6 +549,7 @@
       }
 
       update();
+      updateCenter();
     });
 
     // Newsletter tooltip — toggle on trigger click, close on outside click
