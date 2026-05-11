@@ -131,6 +131,7 @@ def main_menus(request):
     """
     categories_with_order = Category.objects.filter(order__isnull=False)
     result = {
+        'HOME_NAV_ITEMS': getattr(settings, 'HOME_NAV_ITEMS', None),
         'MENU_CATEGORIES': dict((c, c.section_set.all() if c.dropdown_menu else None) for c in categories_with_order),
         "categories_with_order": [c.slug for c in categories_with_order],
         'CORE_PUSH_NOTIFICATIONS_OFFER': settings.CORE_PUSH_NOTIFICATIONS_OFFER,

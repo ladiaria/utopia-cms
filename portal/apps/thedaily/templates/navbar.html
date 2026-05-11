@@ -4,16 +4,30 @@
 
 {% if publication == default_pub and request.path == '/' %}
   <nav class="navbar">
-    <ul>
-      {% for category, sections in MENU_CATEGORIES.items %}
-      <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a></li>
-      {% endfor %}
-    </ul>
+    <div class="scrollable-navbar__scrollable">
+      <ul>
+        {% if HOME_NAV_ITEMS %}
+          {% for item in HOME_NAV_ITEMS %}
+          <li{% if item.classes %} class="{{ item.classes }}"{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+          {% endfor %}
+        {% else %}
+          {% for category, sections in MENU_CATEGORIES.items %}
+          <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a></li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5211_20062)" d="M0 0h40v26H0z" transform="matrix(-1 0 0 1 40 0)"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18.782 2.61 12.39 9 6"/><defs><linearGradient id="paint0_linear_5211_20062" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--right" type="button" aria-label="Desplazar a la derecha">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5196_18321)" d="M0 0h40v26H0z"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m31 18.782 6.39-6.391L31 6"/><defs><linearGradient id="paint0_linear_5196_18321" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+    </div>
   </nav>
 {% elif not article and category or publication and not section %}
   <nav class="navbar category-navbar with-right-gradient">
     <a class="home-link" href="{% url "home" %}">Portada</a>
-    <div class="category-navbar__scrollable">
+    <div class="scrollable-navbar__scrollable">
       <ul>
         {% if category %}
           {% include 'core/templates/category/detail_header_sections.html' %}
@@ -27,10 +41,10 @@
           {% endfor %}
         {% endif %}
       </ul>
-      <button class="category-navbar__arrow category-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5211_20062)" d="M0 0h40v26H0z" transform="matrix(-1 0 0 1 40 0)"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18.782 2.61 12.39 9 6"/><defs><linearGradient id="paint0_linear_5211_20062" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
       </button>
-      <button class="category-navbar__arrow category-navbar__arrow--right" type="button" aria-label="Desplazar a la derecha">
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--right" type="button" aria-label="Desplazar a la derecha">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5196_18321)" d="M0 0h40v26H0z"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m31 18.782 6.39-6.391L31 6"/><defs><linearGradient id="paint0_linear_5196_18321" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
       </button>
     </div>
