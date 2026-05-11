@@ -133,7 +133,9 @@ p {
   }
 
   h1 {
-    font-size: px-to-rem(26px);
+    font-size: px-to-rem(24px);
+    font-weight: 500;
+    padding-bottom: 24px;
 
     @media #{$medium-and-down} {
       font-size: px-to-rem(22px);

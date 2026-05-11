@@ -15,6 +15,15 @@ Settings que quedaron sin consumidor tras eliminar código de la home vieja (hom
 - `HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR` — usada por `render_publication_grid`, que solo se invoca desde `homev3/index.html` (home vieja)
 - `ARTICLES_SLIDER_TEMPLATE_DIR` — usada por `get_articles_slider_template`, función eliminada
 
+## Revisar `HOME_NAV_ITEMS` y `MAIN_MENU_AREAS_ITEMS` en `local_settings.py`
+
+Se agregaron dos settings estáticos para controlar los items de los menús de navegación. Por ahora los slugs de cada item son estimados — verificar que todas las URLs correspondan a las áreas/publicaciones/secciones reales antes del deploy.
+
+- **`HOME_NAV_ITEMS`** — items del navbar horizontal de la home (`/`). Template: `thedaily/templates/navbar.html`.
+- **`MAIN_MENU_AREAS_ITEMS`** — items del bloque "Áreas" en el menú extendido (hamburguesa). Template: `core/templates/edition/resume.html`.
+
+Ambos settings están en `local_settings.py` en la sección HOMEV4. Ambos tienen fallback a `MENU_CATEGORIES` si el setting no existe.
+
 ## Migrar `CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES` a template
 
 El setting ahora soporta valores que sean paths a templates (terminados en `.html`), además de strings HTML inline. La sección "sobre la diaria" pasó a usar un template para poder evolucionar el markup sin tocar `local_settings.py`.

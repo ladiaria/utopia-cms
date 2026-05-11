@@ -513,12 +513,12 @@
       });
     });
 
-    // Category navbar: show overflow arrows when items don't fit (desktop only)
-    qsa(".category-navbar__scrollable").forEach(function (wrapper) {
+    // Navbar scroll: show overflow arrows when items don't fit (desktop only)
+    qsa(".scrollable-navbar__scrollable").forEach(function (wrapper) {
       const list = qs("ul", wrapper);
       if (!list) return;
-      const leftBtn = qs(".category-navbar__arrow--left", wrapper);
-      const rightBtn = qs(".category-navbar__arrow--right", wrapper);
+      const leftBtn = qs(".scrollable-navbar__arrow--left", wrapper);
+      const rightBtn = qs(".scrollable-navbar__arrow--right", wrapper);
 
       function update() {
         const hasOverflowLeft = list.scrollLeft > 1;
