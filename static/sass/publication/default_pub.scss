@@ -654,7 +654,8 @@
       gap: $gap-4;
 
       .article__title {
-        @include featured-article-title(mobile);
+        font-size: px-to-rem(22px);
+        line-height: px-to-rem(29.7px);
       }
     }
     &__secondary-row,

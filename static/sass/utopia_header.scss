@@ -400,6 +400,7 @@ header {
       position: relative;
       display: flex;
       align-items: center;
+      margin-right: 16px;
       &::after {
         content: "";
         position: absolute;
@@ -413,9 +414,21 @@ header {
     }
 
     ul {
-      justify-content: center;
+      justify-content: flex-start;
       width: 100%;
       @include scroll-navbar;
+      width: fit-content;
+    }
+
+    .scrollable-navbar__scrollable.center {
+      justify-content: center;
+      margin-right: calc(
+        16px + 89px
+      ); // Los 89px + 16px vienen del tamaño que tiene el botón de home, es para centrar horizontalmente los elementos.
+
+      ul {
+        justify-content: center;
+      }
     }
   }
 
@@ -1472,7 +1485,7 @@ body {
     display: grid;
     grid-template-columns: repeat(5, auto);
     justify-content: space-between;
-    padding-top: 80px;
+    padding-block: 80px;
   }
 
   &__col {
