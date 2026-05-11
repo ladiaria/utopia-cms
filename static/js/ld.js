@@ -155,7 +155,14 @@
         menu.classList.toggle("active", isOpen);
       });
       body.classList.toggle("main-menu-open", isOpen);
-      if (!isOpen) body.classList.remove("mobile-search-open");
+      if (!isOpen) {
+        body.classList.remove("mobile-search-open");
+        qsa(".header-search.header-search--open").forEach(function (el) {
+          el.classList.remove("header-search--open");
+          const toggle = qs(".header-search__toggle", el);
+          if (toggle) toggle.setAttribute("aria-expanded", "false");
+        });
+      }
       setDocumentScrollLocked(isOpen);
     }
 
@@ -176,40 +183,53 @@
       event.preventDefault();
     });
 
-    // Header search toggle
-    const headerSearch = qs(".header-search");
-    const headerSearchToggle = headerSearch && qs(".header-search__toggle", headerSearch);
-    const headerSearchInput = headerSearch && qs(".header-search__input", headerSearch);
+    // Header search toggle — each toggle operates on its own .header-search via closest()
+    const headerSearchToggles = qsa(".header-search__toggle");
     const mobileBreakpoint = window.matchMedia("(max-width: 992px)");
 
-    if (headerSearchToggle) {
-      headerSearchToggle.addEventListener("click", function (event) {
-        event.preventDefault();
-        if (mobileBreakpoint.matches) {
-          const searchIsOpen = document.body.classList.contains("mobile-search-open");
-          if (searchIsOpen) {
-            document.body.classList.remove("mobile-search-open");
-          } else {
-            document.body.classList.add("mobile-search-open");
-            if (!document.body.classList.contains("main-menu-open")) {
-              setMainMenuState(true);
+    function setSearchOpen(headerSearch, isOpen) {
+      headerSearch.classList.toggle("header-search--open", isOpen);
+      const toggle = qs(".header-search__toggle", headerSearch);
+      if (toggle) toggle.setAttribute("aria-expanded", String(isOpen));
+    }
+
+    if (headerSearchToggles.length) {
+      headerSearchToggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function (event) {
+          event.preventDefault();
+          if (mobileBreakpoint.matches) {
+            const searchIsOpen = document.body.classList.contains("mobile-search-open");
+            if (searchIsOpen) {
+              document.body.classList.remove("mobile-search-open");
+            } else {
+              document.body.classList.add("mobile-search-open");
+              if (!document.body.classList.contains("main-menu-open")) {
+                setMainMenuState(true);
+              }
+              const mobileInput = qs(".mobile-header-search__input");
+              if (mobileInput) mobileInput.focus();
             }
-            const mobileInput = qs(".mobile-header-search__input");
-            if (mobileInput) mobileInput.focus();
+          } else {
+            const headerSearch = toggle.closest(".header-search");
+            if (!headerSearch) return;
+            const isOpen = !headerSearch.classList.contains("header-search--open");
+            setSearchOpen(headerSearch, isOpen);
+            if (isOpen) {
+              const input = qs(".header-search__input", headerSearch);
+              if (input) input.focus();
+            }
           }
-        } else {
-          const isOpen = headerSearch.classList.toggle("header-search--open");
-          headerSearchToggle.setAttribute("aria-expanded", String(isOpen));
-          if (isOpen && headerSearchInput) headerSearchInput.focus();
-        }
+        });
       });
 
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Escape") return;
-        if (!mobileBreakpoint.matches && headerSearch.classList.contains("header-search--open")) {
-          headerSearch.classList.remove("header-search--open");
-          headerSearchToggle.setAttribute("aria-expanded", "false");
-          headerSearchToggle.focus();
+        if (mobileBreakpoint.matches) return;
+        const openSearch = qs(".header-search.header-search--open");
+        if (openSearch) {
+          setSearchOpen(openSearch, false);
+          const toggle = qs(".header-search__toggle", openSearch);
+          if (toggle) toggle.focus();
         }
       });
     }
