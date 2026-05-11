@@ -367,6 +367,7 @@ CELERY_TASK_ROUTES = {
     "send-push-notification": {"queue": "concurrent_tasks"},
     "resolve-daily-layouts": {"queue": "concurrent_tasks"},
     "refresh-home-layouts": {"queue": "concurrent_tasks"},
+    "toggle-radio-block": {"queue": "concurrent_tasks"},
 }
 CELERY_TASK_QUEUES = []  # will be populated after local settings imports
 CELERY_RESULT_EXTENDED = True
@@ -595,6 +596,9 @@ ADMIN_PAGE_LOCK_ENABLED = False
 
 # ====================================================================================== visual separator =============
 
+
+# homev4 — fallback URL for the papel (print edition) reader when no edition with PDF is found
+PAPEL_FALLBACK_URL = "https://papel.ladiaria.com.uy/library"
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa

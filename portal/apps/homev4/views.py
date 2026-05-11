@@ -14,10 +14,11 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import get_template
+from django.core.cache import cache
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.vary import vary_on_cookie
 
-from core.models import Article, Publication, Section, Category, get_current_edition
+from core.models import Article, Edition, Publication, Section, Category, get_current_edition
 from core.views.masleidos import mas_leidos
 from thedaily.utils import unsubscribed_newsletters
 
@@ -95,6 +96,20 @@ _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 
 DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
 
+# Maximum article_ids per block — enforced in save_grid (backend) and mirrored in the picker (frontend).
+# "area" applies to every section in the sections list.
+BLOCK_ARTICLE_LIMITS = {
+    "principal":           10,
+    "suplemento":           7,
+    "area":                 2,
+    "apuntes_del_dia":      1,
+    "opinion":              3,
+    "recomendadas_lv":      4,
+    "recomendadas_domingo": 4,
+    "le_monde":             2,
+    "lento":                2,
+}
+
 # Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
 LAYOUT_BLOCKS_CONFIG = {
     "principal":  {"always_active": True},
@@ -124,6 +139,44 @@ def get_default_grid_data():
 
 def get_default_publication():
     return Publication.objects.get(slug=settings.DEFAULT_PUB)
+
+
+_PAPEL_CACHE_KEY = "homev4:papel_url"
+_PAPEL_DAY_NAMES = {0: "lunes", 1: "martes", 2: "miercoles", 3: "jueves", 4: "viernes", 5: "sabado", 6: "domingo"}
+
+
+def get_papel_url():
+    """
+    Returns the URL for today's papel edition (or the most recent one with a PDF).
+    Reads from cache; on miss, queries Edition, saves to cache, and returns the URL.
+    Falls back to settings.PAPEL_FALLBACK_URL if no edition with PDF is found or on error.
+    """
+    cached = cache.get(_PAPEL_CACHE_KEY)
+    if cached:
+        return cached
+
+    try:
+        today = timezone.localdate()
+        publication = get_default_publication()
+        # Prefer today's edition with PDF; fall back to the most recent one with PDF.
+        edition = (
+            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        )
+        if not edition:
+            return settings.PAPEL_FALLBACK_URL
+        url = (
+            "https://papel.ladiaria.com.uy/reader/"
+            f"la-diaria-{_PAPEL_DAY_NAMES[edition.date_published.weekday()]}-"
+            f"{edition.date_published.strftime('%d%m%Y')}?location=1"
+        )
+        try:
+            cache.set(_PAPEL_CACHE_KEY, url)
+        except Exception:
+            pass
+        return url
+    except Exception:
+        return settings.PAPEL_FALLBACK_URL
 
 
 def _propagate_article_ids(source_layout, source_grid):
@@ -256,6 +309,23 @@ def save_grid(request, layout_id):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
+        # Enforce per-block article_ids limits — violating these breaks deduplication logic.
+        for block in ("principal", "suplemento"):
+            ids = grid_data.get(block, {}).get("article_ids", [])
+            limit = BLOCK_ARTICLE_LIMITS[block]
+            if len(ids) > limit:
+                return JsonResponse({"error": f"{block} cannot have more than {limit} articles"}, status=400)
+        area_limit = BLOCK_ARTICLE_LIMITS["area"]
+        for section in grid_data.get("sections", []):
+            ids = section.get("article_ids", [])
+            if len(ids) > area_limit:
+                slug = section.get("slug", "?")
+                return JsonResponse({"error": f"Area '{slug}' cannot have more than {area_limit} articles"}, status=400)
+        for comp in grid_data.get("componentes", []):
+            key = comp.get("key", "")
+            limit = BLOCK_ARTICLE_LIMITS.get(key)
+            if limit and len(comp.get("article_ids", [])) > limit:
+                return JsonResponse({"error": f"Component '{key}' cannot have more than {limit} articles"}, status=400)
         # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
@@ -286,6 +356,18 @@ def save_grid(request, layout_id):
         # requiring the editor to click "Vista previa" again.
         request.session["preview_grid_data"] = layout.grid_data
         request.session["preview_grid_saved"] = True
+
+        # Sync RadioGeneralConfig.show_banner when the editor toggles the radio block.
+        # Uses .update() (no signals) to avoid triggering the post_save cycle.
+        old_radio = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == "radio"), None)
+        new_radio = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == "radio"), None)
+        if old_radio is not None and new_radio is not None and old_radio != new_radio:
+            try:
+                from utopia_cms_radio.models import RadioGeneralConfig
+                RadioGeneralConfig.objects.update(show_banner="Y" if new_radio else "N")
+            except ImportError:
+                pass
+
         return JsonResponse({"status": "ok", **stats})
     except Exception as e:
         import traceback
@@ -599,7 +681,7 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
     p_ids = principal.get("article_ids") or []
     if not p_ids:
         edition = get_current_edition(publication=publication)
-        p_ids = [a.id for a in edition.top_articles] if edition else []
+        p_ids = [a.id for a in edition.top_articles][:10] if edition else []
         principal["article_ids"] = p_ids
     seen_ids.update(p_ids)
 
@@ -833,8 +915,17 @@ def build_home_data(grid_data, publication=None, layout=None):
         if defn.get("newsletter_mode"):
             comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
             comp_entry["articles"] = []
-        elif key in ("lo_ultimo", "lo_mas_leido", "apuntes_del_dia"):
-            # Dynamic: always fetched fresh; lo_ultimo respects pinned_ids and excludes static blocks.
+        elif key == "lo_mas_leido":
+            # Populated hourly by sync_article_views; read from saved article_ids.
+            # Fallback to live DB query when the block has not been populated yet.
+            c_ids = item.get("article_ids", [])
+            if c_ids:
+                by_id = {a.id: a for a in Article.published.filter(id__in=c_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+                comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
+            else:
+                comp_entry["articles"] = _fetch_component_articles(key)
+        elif key in ("lo_ultimo", "apuntes_del_dia"):
+            # Dynamic: always fetched fresh at request time.
             if key == "lo_ultimo":
                 articles = _fetch_component_articles(
                     key,
@@ -963,6 +1054,36 @@ def _fetch_area_articles(area_type, slug, saved_ids, exclude_ids=None):
             articles.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
         return articles
     return _fetch_source_articles(area_type, slug, limit=2, exclude_ids=exclude_ids)
+
+
+def update_lo_mas_leido_in_layouts():
+    """Update the lo_mas_leido article_ids in all HomeLayout objects for the default publication.
+    Called by sync_article_views after it writes the updated view counts to ArticleViews,
+    so the home reads fresh most-read data without querying the DB on every request.
+    """
+    from core.views.masleidos import mas_leidos
+    try:
+        ids = mas_leidos(days=1, limit=5)
+    except Exception:
+        logger.exception("update_lo_mas_leido_in_layouts: mas_leidos query failed")
+        return
+    if not ids:
+        return
+    pub = get_default_publication()
+    for layout in HomeLayout.objects.filter(publication=pub):
+        grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+        old_grid = {k: v for k, v in grid.items()}
+        updated = False
+        for comp in grid.get("componentes", []):
+            if comp.get("key") == "lo_mas_leido":
+                if comp.get("article_ids") != ids:
+                    comp["article_ids"] = list(ids)
+                    updated = True
+                break
+        if updated:
+            layout.grid_data = grid
+            layout.save(update_fields=["grid_data", "modified"])
+            _write_audit_log(layout, old_grid, grid, "sync_article_views")
 
 
 # Components whose order is always automatic — saved_ids are ignored for these.
@@ -1168,6 +1289,7 @@ def active_layout(request, publication_slug=None):
         allow_ads = getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True)
     else:
         allow_ads = True
+    papel_url = get_papel_url()
     context = {
         "layout": layout,
         "publication": publication,
@@ -1175,6 +1297,7 @@ def active_layout(request, publication_slug=None):
         "tarde_mode": _is_tarde_mode(layout),
         "is_portada": True,
         "allow_ads": allow_ads,
+        "papel_url": papel_url,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
@@ -1270,9 +1393,9 @@ def active_layout(request, publication_slug=None):
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
-    # import pprint
-    # pp = pprint.PrettyPrinter(indent=4)
-    # pp.pprint(context)
+    #import pprint
+    #pp = pprint.PrettyPrinter(indent=4)
+    #pp.pprint(context)
     logger.warning("active_layout render: %.1f ms", (time.perf_counter() - _t2) * 1000)
 
     if is_preview:
@@ -1513,6 +1636,7 @@ def build_editor_data(grid_data, publication=None):
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
                 "sortable_articles": defn.get("sortable_articles", True),
+                "max_articles": BLOCK_ARTICLE_LIMITS.get(key),
             }
             if defn.get("newsletter_mode"):
                 comp_dict["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
@@ -1546,6 +1670,7 @@ def build_editor_data(grid_data, publication=None):
                     "pin_mode": defn.get("pin_mode", False),
                     "newsletter_mode": defn.get("newsletter_mode", False),
                     "sortable_articles": defn.get("sortable_articles", True),
+                    "max_articles": BLOCK_ARTICLE_LIMITS.get(defn["key"]),
                 }
                 if defn.get("newsletter_mode"):
                     comp_dict["newsletters"] = []
@@ -1671,6 +1796,7 @@ def preview_5am_render(request):
     any_layout = HomeLayout.objects.filter(publication=publication).first()
     home_data = build_home_data(grid_data, publication=publication, layout=any_layout)
     home_template = getattr(settings, "HOMEV4_HOME_TEMPLATE", _HOME_TEMPLATE)
+    papel_url = get_papel_url()
     return render(request, home_template, {
         "layout": any_layout,
         "publication": publication,
@@ -1679,6 +1805,7 @@ def preview_5am_render(request):
         "tarde_mode": False,
         "is_portada": True,
         "allow_ads": False,
+        "papel_url": papel_url,
     })
 
 

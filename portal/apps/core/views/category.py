@@ -62,6 +62,15 @@ def category_detail(request, slug):
         except Topic.DoesNotExist:
             pass
 
+    # None → category has no newsletter; False → not subscribed; True → already subscribed.
+    category_nl_subscribed = None
+    if category.has_newsletter:
+        user = request.user
+        if user.is_authenticated and hasattr(user, 'subscriber'):
+            category_nl_subscribed = user.subscriber.category_newsletters.filter(slug=slug).exists()
+        else:
+            category_nl_subscribed = False
+
     return render(
         request,
         get_category_template(slug),
@@ -77,6 +86,7 @@ def category_detail(request, slug):
             'edition': get_latest_edition(),
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
+            'category_nl_subscribed': category_nl_subscribed,
             'site_description': (
                 category.meta_description
                 or (
