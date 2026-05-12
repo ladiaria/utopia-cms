@@ -154,6 +154,16 @@ header {
       position: relative;
     }
 
+    // On category/publication portada headers (non-home), logo is 32px and
+    // shrinks to 26px (default) when sticky.
+    body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+      padding-bottom: 31px;
+      img {
+        height: 32px;
+        top: 31px;
+      }
+    }
+
     // On the home header in normal (non-sticky) state, the logo is larger.
     // When sticky kicks in, this selector stops matching and the logo
     // transitions back to 26px via the transition above.
