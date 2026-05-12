@@ -156,7 +156,7 @@ header {
 
     // On category/publication portada headers (non-home), logo is 32px and
     // shrinks to 26px (default) when sticky.
-    body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+    body:not(.main-menu-open) header.category-pub-header:not(.sticky) & {
       padding-bottom: 31px;
       img {
         height: 32px;
@@ -167,7 +167,8 @@ header {
     // On the home header in normal (non-sticky) state, the logo is larger.
     // When sticky kicks in, this selector stops matching and the logo
     // transitions back to 26px via the transition above.
-    header.home-header:not(.sticky) & {
+    header.home-header:not(.sticky) &,
+    body.main-menu-open & {
       padding-bottom: 31px;
       img {
         height: 46px;
@@ -232,11 +233,13 @@ header {
       align-self: center;
       align-items: center;
 
-      // On the home header in normal (non-sticky) state, the logo is larger.
-      // When sticky kicks in, this selector stops matching and the logo
-      // transitions back to 26px via the transition above.
+      // Este selector lo que hace es achicar el logo que por defecto viene en tamaño grande.
+      // Caso 1: En la portada cuando no está sticky, posición inicial.
+      // Caso 2: En la portada de categories y publications cuando no está sticky
+      // Caso 3: Cuando está el menú extendido abierto.
       header.home-header:not(.sticky) &,
-      body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+      body:not(.main-menu-open) header.category-pub-header:not(.sticky) &,
+      body.main-menu-open & {
         padding-bottom: 0;
         img {
           height: 26px;
