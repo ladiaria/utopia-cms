@@ -58,8 +58,11 @@
         {% endwith %}
       {% else %}
         {% if articles|length >= 10 %}
-          {% with secondary=articles|slice:"1:7" %}
+          {% with secondary=articles|slice:"1:4" %}
             {% include "homev4/main_section/_secondary_manana.html" %}
+          {% endwith %}
+          {% with tertiary=articles|slice:"4:7" position_offset=5 %}
+            {% include "homev4/main_section/_tertiary.html" %}
           {% endwith %}
           {% with tertiary=articles|slice:"7:10" position_offset=8 %}
             {% include "homev4/main_section/_tertiary.html" %}
