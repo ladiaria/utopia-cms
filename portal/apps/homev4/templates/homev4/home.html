@@ -45,7 +45,7 @@
     {% with articles=home_data.principal_articles %}
     {% if articles %}
 
-      {% with featured=articles.0 %}
+      {% with featured=articles.0 position=1 %}
         {% render_card article=featured variant="card_featured_home" %}
       {% endwith %}
 
@@ -53,7 +53,7 @@
         {% with secondary=articles|slice:"1:3" %}
           {% include "homev4/main_section/_secondary_tarde.html" %}
         {% endwith %}
-        {% with tertiary=articles|slice:"3:6" %}
+        {% with tertiary=articles|slice:"3:6" position_offset=4 %}
           {% include "homev4/main_section/_tertiary.html" %}
         {% endwith %}
       {% else %}
@@ -61,14 +61,14 @@
           {% with secondary=articles|slice:"1:7" %}
             {% include "homev4/main_section/_secondary_manana.html" %}
           {% endwith %}
-          {% with tertiary=articles|slice:"7:10" %}
+          {% with tertiary=articles|slice:"7:10" position_offset=8 %}
             {% include "homev4/main_section/_tertiary.html" %}
           {% endwith %}
         {% else %}
           {% with secondary=articles|slice:"1:4" %}
             {% include "homev4/main_section/_secondary_manana.html" %}
           {% endwith %}
-          {% with tertiary=articles|slice:"4:7" %}
+          {% with tertiary=articles|slice:"4:7" position_offset=5 %}
             {% include "homev4/main_section/_tertiary.html" %}
           {% endwith %}
         {% endif %}

@@ -369,7 +369,10 @@ def render_toolbar_for(context, toolbar_object):
         if user and user.is_staff and isinstance(toolbar_object, Article):
             toolbar_template = getattr(settings, "CORE_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
             params = {'article': toolbar_object, 'is_detail': False}
-            if context.get('is_cover'):
+            position = context.get('position')
+            if position is not None:
+                params['featured_order'] = str(position)
+            elif context.get('is_cover'):
                 edition = context.get('edition')
                 if edition:
                     params.update(
