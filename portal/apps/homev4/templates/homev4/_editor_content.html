@@ -333,9 +333,11 @@
                             {% elif comp.pin_mode %}
                             <div class="comp-articles section-articles" id="comp-articles-{{ comp.key }}">
                                 {% for article in comp.articles %}
-                                <div class="comp-article-row section-article-row comp-article-static"
+                                <div class="comp-article-row section-article-row{% if not comp.sortable_articles %} comp-article-static{% endif %}"
+                                     {% if comp.sortable_articles %}draggable="true"{% endif %}
                                      data-article-id="{{ article.id }}"
                                      data-pinned="{% if article.id in comp.pinned_ids %}true{% else %}false{% endif %}">
+                                    {% if comp.sortable_articles %}<span class="drag-handle small-handle">⠿</span>{% endif %}
                                     <label class="section-replace-radio" title="Marcar para reemplazar"><input type="radio" name="comp-replace-{{ comp.key }}"></label>
                                     <span class="section-article-title">{{ article.headline }}</span>
                                     <a class="article-edit-link" href="/admin/core/article/{{ article.id }}/change/" target="_blank" title="Editar artículo">✎</a>

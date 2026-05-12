@@ -489,9 +489,12 @@ class ArticleAdminModelForm(ModelForm):
     def clean_headline(self):
         headline = self.cleaned_data.get('headline', '')
         if len(headline) > 130:
-            raise ValidationError(
-                f'El título no puede tener más de 130 caracteres (tiene {len(headline)}).'
-            )
+            # Allow saving if the existing title already exceeded the limit before this edit.
+            original = self.instance.headline if self.instance.pk else ''
+            if len(original) <= 130:
+                raise ValidationError(
+                    f'El título no puede tener más de 130 caracteres (tiene {len(headline)}).'
+                )
         return headline
 
     def clean_tags(self):

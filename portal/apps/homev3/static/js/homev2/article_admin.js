@@ -46,6 +46,39 @@ if (window.jQuery) {
   $(function(){
     prepareFields();
     $("#id_type").on("change", prepareFields);
+
+    // Headline character counter — warns in real time, hard limit is 130 chars.
+    var HEADLINE_MAX = 130;
+    var $headline = $('#id_headline');
+    if ($headline.length) {
+      // Insert outside the flex container so it renders as a block row below the input.
+      var $counter = $('<div class="headline-counter"></div>')
+        .insertAfter($headline.closest('.form-row').children('div').first());
+      function updateHeadlineCounter() {
+        var len = $headline.val().length;
+        var over = len > HEADLINE_MAX;
+        if (over) {
+          $counter.html('<strong>' + len + ' / ' + HEADLINE_MAX + ' caracteres — límite superado</strong>');
+        } else {
+          $counter.text(len + ' / ' + HEADLINE_MAX + ' caracteres');
+        }
+        $counter.toggleClass('over-limit', over);
+        $headline.toggleClass('headline-over-limit', over);
+      }
+      // If Django already shows a server-side error, hide the counter until the user edits.
+      var serverError = $('.field-headline .errorlist').length > 0;
+      if (serverError) { $counter.hide(); }
+
+      function onEdit() {
+        // Hide server-side error once the user starts editing — it's now stale.
+        $('.field-headline .errorlist').hide();
+        $counter.show();
+        updateHeadlineCounter();
+      }
+      $headline.on('input', onEdit);
+      $headline.on('paste', function() { setTimeout(onEdit, 10); });
+      if (!serverError) { updateHeadlineCounter(); }
+    }
     $.each($(".field-main input"), function(index, value){
       $(value).attr('name', 'main_section_radio');
       $(value).attr('data-articlerel-id', $("#id_articlerel_set-" + index + "-id").val());
