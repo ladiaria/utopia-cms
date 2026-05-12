@@ -170,6 +170,11 @@
   // 3 terciarias con foto
   &__tertiary-row {
     padding-bottom: $gap-8;
+    border-bottom: $border-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   // ── Modo "a la tarde" ────────────────────────────────────────────────────────
@@ -684,6 +689,13 @@
       overflow: visible;
       border-top: 0.5px solid $color-divider;
       border-bottom: 1px solid $color-divider;
+    }
+    &__tertiary-row {
+      padding-bottom: 24px;
+
+      &:last-child {
+        padding-bottom: 0;
+      }
     }
 
     &--tarde {
