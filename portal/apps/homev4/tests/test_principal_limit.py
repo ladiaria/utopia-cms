@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import RequestFactory, SimpleTestCase
 
-from homev4.views import resolve_layout_grid_data
+from homev4.views import resolve_layout_grid_data, _merge_principal_article_ids
 
 
 def _art(article_id):
@@ -331,3 +331,45 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
         response = self._post({"componentes": [{"key": "lento", "article_ids": [1, 2, 3]}]})
         data = json.loads(response.content)
         self.assertIn("lento", data.get("error", ""))
+
+
+class MergePrincipalArticleIdsTest(SimpleTestCase):
+    """Unit tests for _merge_principal_article_ids — the function used by the
+    refresh task to inject new edition articles into principal."""
+
+    def test_new_article_inserted_at_edition_position(self):
+        """A new article from the edition enters at its edition index."""
+        current = [10, 20, 30]
+        edition = [99, 10, 20, 30]
+        result = _merge_principal_article_ids(current, edition)
+        self.assertEqual(result[0], 99)
+        self.assertIn(10, result)
+
+    def test_existing_articles_keep_their_position(self):
+        """Articles already in principal are not moved."""
+        current = [10, 20, 30]
+        edition = [10, 20, 30]
+        result = _merge_principal_article_ids(current, edition)
+        self.assertEqual(result, [10, 20, 30])
+
+    def test_result_capped_at_principal_limit(self):
+        """When merge would exceed 10 articles the result is truncated to 10."""
+        current = list(range(1, 11))        # 10 saved articles
+        edition = [99] + list(range(1, 11)) # edition adds article 99 at top
+        result = _merge_principal_article_ids(current, edition)
+        self.assertEqual(len(result), 10)
+        self.assertEqual(result[0], 99)     # new top article enters
+        self.assertNotIn(10, result)        # last saved article is pushed out
+
+    def test_edition_with_24_articles_does_not_inflate_principal(self):
+        """Regression: refresh task with 24-article edition must not exceed 10."""
+        current = list(range(1, 11))
+        edition = list(range(1, 25))        # 24 articles, first 10 already saved
+        result = _merge_principal_article_ids(current, edition)
+        self.assertEqual(len(result), 10)
+
+    def test_empty_current_ids_fills_up_to_limit(self):
+        """With no saved articles, inserts from edition up to the 10-article cap."""
+        result = _merge_principal_article_ids([], list(range(1, 25)))
+        self.assertEqual(len(result), 10)
+        self.assertEqual(result, list(range(1, 11)))
