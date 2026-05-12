@@ -3,7 +3,9 @@
 {% if tertiary %}
 <div class="main-section__tertiary-row">
   {% for article in tertiary %}
-    {% render_card article=article variant="card_tertiary_home" %}
+    {% with position=forloop.counter0|add:position_offset %}
+      {% render_card article=article variant="card_tertiary_home" %}
+    {% endwith %}
   {% endfor %}
 </div>
 {% endif %}

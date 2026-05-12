@@ -38,10 +38,14 @@ article a {
     color: $link-color-hover;
   }
 
+  &__article-image {
+    display: flex;
+  }
+
   &__body {
     display: flex;
     flex-direction: column;
-    gap: $gap-3;
+    gap: $gap-2;
     height: 100%;
   }
 

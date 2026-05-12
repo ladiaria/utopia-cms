@@ -33,20 +33,21 @@
 
     {% block lead %}{% endblock %}
 
+    {% with authors=article.get_authors %}
+    {% if authors or article_card_read_later_enabled and user.is_authenticated %}
     <div class="article__footer">
-      {% with authors=article.get_authors %}
-        {% if authors %}
-          <div class="article__byline">
-            Por
-            {% for author in authors %}
-              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
-      {% include 'article/article_card_read_later.html' with a=article %}
+      {% if authors %}
+        <div class="article__byline">
+          Por
+          {% for author in authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
     </div>
+    {% endif %}
+    {% endwith %}
 
   </div>
 
