@@ -78,7 +78,7 @@ def render_related(context, article, amp=False):
     ):
         # use the publication
         upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id),
+            'articles': section.latest6relatedbypublication(publication.id, article.id),
             'section': publication.headline if publication.slug in getattr(
                 settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
             ) else publication.name,
@@ -87,7 +87,7 @@ def render_related(context, article, amp=False):
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
         upd_dict = {
-            'articles': section.latest4relatedbycategory(category.id, article.id),
+            'articles': section.latest6relatedbycategory(category.id, article.id),
             'section': category.more_link_title or category.name,
         }
 
@@ -100,13 +100,13 @@ def render_related(context, article, amp=False):
                 if category_slug in article_categories and section.slug not in section_slugs:
                     category = Category.objects.get(slug=category_slug)
                     upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id),
+                        'articles': section.latest6relatedbycategory(category.id, article.id),
                         'section': category.name,
                     }
                     break
 
     if not upd_dict:
-        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+        upd_dict = {'articles': section.latest6related(article.id), 'section': section.name}
 
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
