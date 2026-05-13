@@ -524,17 +524,30 @@
     // generic dropdown toggle (data-activates="<id>")
     function positionNavDropdown(btn, dropdown) {
       const rect = btn.getBoundingClientRect();
-      const offset = window.innerWidth <= 992 ? 5 : 15;
-      dropdown.style.top = (rect.bottom + offset) + "px";
       dropdown.style.left = "";
       dropdown.style.right = "";
-      const dropWidth = dropdown.offsetWidth;
-      if (rect.left + dropWidth > window.innerWidth - 8) {
-        dropdown.style.right = (window.innerWidth - rect.right) + "px";
-        dropdown.style.left = "auto";
+      if (btn.dataset.dropdownPosition === "right") {
+        const offset = 8;
+        const dropWidth = dropdown.offsetWidth;
+        dropdown.style.top = rect.top + "px";
+        if (rect.right + offset + dropWidth > window.innerWidth - 8) {
+          dropdown.style.right = (window.innerWidth - rect.left + offset) + "px";
+          dropdown.style.left = "auto";
+        } else {
+          dropdown.style.left = (rect.right + offset) + "px";
+          dropdown.style.right = "auto";
+        }
       } else {
-        dropdown.style.left = rect.left + "px";
-        dropdown.style.right = "auto";
+        const offset = window.innerWidth <= 992 ? 5 : 15;
+        dropdown.style.top = (rect.bottom + offset) + "px";
+        const dropWidth = dropdown.offsetWidth;
+        if (rect.left + dropWidth > window.innerWidth - 8) {
+          dropdown.style.right = (window.innerWidth - rect.right) + "px";
+          dropdown.style.left = "auto";
+        } else {
+          dropdown.style.left = rect.left + "px";
+          dropdown.style.right = "auto";
+        }
       }
     }
 
@@ -542,6 +555,13 @@
       dropdown.classList.remove("is-open");
       if (btn) btn.setAttribute("aria-expanded", "false");
     }
+
+    window.addEventListener("scroll", function () {
+      document.querySelectorAll(".dropdown-content.is-open").forEach(function (dropdown) {
+        const btn = document.querySelector("[data-activates='" + dropdown.id + "']");
+        closeNavDropdown(dropdown, btn);
+      });
+    }, { passive: true });
 
     onAll("[data-activates]", "click", function (event) {
       const btn = this;
