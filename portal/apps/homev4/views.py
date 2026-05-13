@@ -68,6 +68,7 @@ def _block_active(block_key, saved_flag):
 
 # Fixed component definitions — keys must stay stable; label/description can change.
 _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
+_DEFAULT_SECTION_TEMPLATE = "homev4/sections/default.html"
 _HOME_TEMPLATE = "homev4/home.html"
 
 
@@ -78,6 +79,15 @@ def _resolve_sidebar_template(key):
         return candidate
     except TemplateDoesNotExist:
         return _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE
+
+
+def _resolve_section_template(slug):
+    candidate = f"homev4/sections/{slug}.html"
+    try:
+        get_template(candidate)
+        return candidate
+    except TemplateDoesNotExist:
+        return _DEFAULT_SECTION_TEMPLATE
 
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
@@ -90,6 +100,8 @@ COMPONENT_DEFINITIONS = [
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
     {"key": "lento",                "label": "Lento",                    "description": "",                "has_picker": True},
+    {"key": "humor",                "label": "Humor",                    "description": "",                "replace_mode": True},
+    {"key": "crucigrama",           "label": "Crucigrama",               "description": "",                "no_articles": True},
 ]
 
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
@@ -108,6 +120,7 @@ BLOCK_ARTICLE_LIMITS = {
     "recomendadas_domingo": 4,
     "le_monde":             2,
     "lento":                2,
+    "humor":                1,
 }
 
 # Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
@@ -219,9 +232,15 @@ def _propagate_article_ids(source_layout, source_grid):
             if sec.get("slug") in src_sections:
                 sec["article_ids"] = src_sections[sec["slug"]]
 
+        existing_comp_keys = {c.get("key") for c in gd.get("componentes", [])}
         for comp in gd.get("componentes", []):
             if comp.get("key") in src_componentes:
                 comp["article_ids"] = src_componentes[comp["key"]]
+        # Add component entries that exist in source but are absent in the sibling
+        # (e.g. layouts created before a new component was added to COMPONENT_DEFINITIONS).
+        for key, ids in src_componentes.items():
+            if key not in existing_comp_keys:
+                gd.setdefault("componentes", []).append({"key": key, "active": True, "article_ids": ids})
 
         # SUPLEMENTO_EXTRA: propagate as a full block (create / update / delete)
         if src_se is not None:
@@ -613,6 +632,7 @@ def _resolve_newsletter_refs(refs):
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
     "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
+    "crucigrama",
 })
 
 
@@ -654,6 +674,7 @@ def _clear_fallback_blocks(grid_data):
     gd = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else {}
     for section in gd.get("sections", []):
         section["article_ids"] = []
+    # humor excluded: manual editor selection persists across refreshes.
     _FALLBACK_COMP_KEYS = {"opinion", "le_monde", "lento"}
     for comp in gd.get("componentes", []):
         if comp.get("key") in _FALLBACK_COMP_KEYS:
@@ -895,6 +916,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "slug": slug,
             "name": area.get("name", slug),
             "articles": articles,
+            "section_template": _resolve_section_template(slug),
         })
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
@@ -928,6 +950,17 @@ def build_home_data(grid_data, publication=None, layout=None):
                 comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
             else:
                 comp_entry["articles"] = _fetch_component_articles(key)
+        elif key == "crucigrama":
+            comp_entry["articles"] = []
+            try:
+                from utopia_cms_ladiaria.models import Crossword
+                cw = Crossword.objects.first()
+                if cw:
+                    comp_entry["crossword_id"] = cw.id
+                    comp_entry["crossword_image_url"] = cw.image.url if cw.image else None
+                    comp_entry["crossword_url"] = "/crucigramas/"
+            except ImportError:
+                pass
         elif key in ("lo_ultimo", "apuntes_del_dia"):
             # Dynamic: always fetched fresh at request time.
             if key == "lo_ultimo":
@@ -1226,7 +1259,19 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return _fetch_source_articles("publication", pub_slug, limit=2)
 
-    # radio: no articles, just a visibility toggle in the layout editor
+    if key == "humor":
+        if saved_ids:
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
+            return [by_id[aid] for aid in saved_ids if aid in by_id]
+        slug = getattr(settings, "HOMEV4_HUMOR_SECTION_SLUG", "humor")
+        try:
+            section = Section.objects.get(slug=slug)
+            return list(section.latest(limit=1))
+        except Section.DoesNotExist:
+            logger.warning("_fetch_component_articles: humor section slug=%r not found", slug)
+        return []
+
+    # radio, crucigrama: no articles, just a visibility toggle in the layout editor
     # newsletter_dia: pending implementation
     return []
 
@@ -1655,6 +1700,7 @@ def build_editor_data(grid_data, publication=None):
                 "description": defn["description"],
                 "active": item.get("active", True),
                 "has_picker": defn.get("has_picker", False),
+                "replace_mode": defn.get("replace_mode", False),
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
                 "sortable_articles": defn.get("sortable_articles", True),
@@ -1690,6 +1736,7 @@ def build_editor_data(grid_data, publication=None):
                     "description": defn["description"],
                     "active": True,
                     "has_picker": defn.get("has_picker", False),
+                    "replace_mode": defn.get("replace_mode", False),
                     "pin_mode": defn.get("pin_mode", False),
                     "newsletter_mode": defn.get("newsletter_mode", False),
                     "sortable_articles": defn.get("sortable_articles", True),

@@ -154,10 +154,21 @@ header {
       position: relative;
     }
 
+    // On category/publication portada headers (non-home), logo is 32px and
+    // shrinks to 26px (default) when sticky.
+    body:not(.main-menu-open) header.category-pub-header:not(.sticky) & {
+      padding-bottom: 31px;
+      img {
+        height: 32px;
+        top: 31px;
+      }
+    }
+
     // On the home header in normal (non-sticky) state, the logo is larger.
     // When sticky kicks in, this selector stops matching and the logo
     // transitions back to 26px via the transition above.
-    header.home-header:not(.sticky) & {
+    header.home-header:not(.sticky) &,
+    body.main-menu-open & {
       padding-bottom: 31px;
       img {
         height: 46px;
@@ -222,11 +233,13 @@ header {
       align-self: center;
       align-items: center;
 
-      // On the home header in normal (non-sticky) state, the logo is larger.
-      // When sticky kicks in, this selector stops matching and the logo
-      // transitions back to 26px via the transition above.
+      // Este selector lo que hace es achicar el logo que por defecto viene en tamaño grande.
+      // Caso 1: En la portada cuando no está sticky, posición inicial.
+      // Caso 2: En la portada de categories y publications cuando no está sticky
+      // Caso 3: Cuando está el menú extendido abierto.
       header.home-header:not(.sticky) &,
-      body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+      body:not(.main-menu-open) header.category-pub-header:not(.sticky) &,
+      body.main-menu-open & {
         padding-bottom: 0;
         img {
           height: 26px;
@@ -371,6 +384,68 @@ header {
 
   @media #{$medium-and-down} {
     padding: 0 20px;
+  }
+}
+
+// Dropdown button and panel — used in navbars and home section headers
+.dropdown-button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.dropdown-content {
+  background: #fff;
+  border: 0.5px solid #ababab;
+  border-radius: 5px;
+  padding: 0;
+  position: fixed;
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: px-to-rem(139px);
+
+  &.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  li {
+    padding: 0;
+
+    &:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    &:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    a {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      gap: 8px;
+      font-size: px-to-rem(14px);
+      line-height: 14px;
+      letter-spacing: 0.01em;
+      color: #000;
+
+      &:hover {
+        color: $link-color-hover;
+      }
+    }
   }
 }
 

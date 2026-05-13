@@ -40,6 +40,11 @@
     display: block;
   }
 }
+@media #{$medium-and-down} {
+  .ut-admin-edit-card + .ut-admin-order {
+    right: 70px;
+  }
+}
 
 .ut-btn.ut-admin-order,
 span.ut-btn.ut-admin-order {
