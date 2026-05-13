@@ -633,6 +633,10 @@ def _merge_principal_article_ids(current_ids, edition_ids):
     New articles (present in edition but absent from current) are inserted at
     min(edition_index, len(result)) so top_position is respected even when the
     current list is shorter than the edition index.
+
+    Result is capped at BLOCK_ARTICLE_LIMITS["principal"] so the refresh task never
+    inflates principal beyond the editor limit (articles 11+ stay available for
+    suplemento and areas).
     """
     current_set = set(current_ids)
     result = list(current_ids)
@@ -641,7 +645,7 @@ def _merge_principal_article_ids(current_ids, edition_ids):
             insert_at = min(edition_idx, len(result))
             result.insert(insert_at, article_id)
             current_set.add(article_id)
-    return result
+    return result[:BLOCK_ARTICLE_LIMITS["principal"]]
 
 
 def _clear_fallback_blocks(grid_data):

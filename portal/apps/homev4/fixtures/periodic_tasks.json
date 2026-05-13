@@ -1,7 +1,7 @@
 [
   {
     "model": "django_celery_beat.crontabschedule",
-    "pk": 1,
+    "pk": 100,
     "fields": {
       "minute": "0",
       "hour": "5",
@@ -13,7 +13,7 @@
   },
   {
     "model": "django_celery_beat.crontabschedule",
-    "pk": 2,
+    "pk": 101,
     "fields": {
       "minute": "0",
       "hour": "7",
@@ -25,7 +25,7 @@
   },
   {
     "model": "django_celery_beat.crontabschedule",
-    "pk": 3,
+    "pk": 102,
     "fields": {
       "minute": "0",
       "hour": "22",
@@ -37,12 +37,12 @@
   },
   {
     "model": "django_celery_beat.periodictask",
-    "pk": 1,
+    "pk": 100,
     "fields": {
       "name": "Resolve daily layouts",
       "task": "resolve-daily-layouts",
       "interval": null,
-      "crontab": 1,
+      "crontab": 100,
       "solar": null,
       "clocked": null,
       "args": "[]",
@@ -65,12 +65,12 @@
   },
   {
     "model": "django_celery_beat.periodictask",
-    "pk": 2,
+    "pk": 101,
     "fields": {
       "name": "Activate radio block",
       "task": "toggle-radio-block",
       "interval": null,
-      "crontab": 2,
+      "crontab": 101,
       "solar": null,
       "clocked": null,
       "args": "[]",
@@ -93,12 +93,12 @@
   },
   {
     "model": "django_celery_beat.periodictask",
-    "pk": 3,
+    "pk": 102,
     "fields": {
       "name": "Deactivate radio block",
       "task": "toggle-radio-block",
       "interval": null,
-      "crontab": 3,
+      "crontab": 102,
       "solar": null,
       "clocked": null,
       "args": "[]",
