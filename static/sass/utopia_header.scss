@@ -178,7 +178,7 @@ header {
     body.article & {
       align-items: center;
     }
-    body.article & .header-pill {
+    body.article-detail & .header-pill {
       display: none;
     }
   }
@@ -1107,12 +1107,6 @@ header {
   // Hide pill when menu is open
   body.main-menu-open & {
     display: none !important;
-  }
-
-  @media #{$medium-and-down} {
-    body.article-detail & {
-      display: none;
-    }
   }
 }
 
