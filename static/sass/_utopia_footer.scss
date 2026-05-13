@@ -22,7 +22,7 @@
     margin-bottom: 12px;
   }
 
-  a {
+  a:not(.btn__light) {
     color: white;
     text-decoration: none;
     display: inline-block;
@@ -33,13 +33,19 @@
     }
   }
 
-  .btn {
-    min-width: 150px;
-
-    @media #{$small-and-down} {
-      min-width: 100%;
+  .mobile-login-items {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    max-width: fit-content;
+    .btn {
+      justify-content: center;
+      width: 100%;
     }
-    line-height: 200% !important;
+    .btn__outline {
+      border: 1px solid white;
+    }
   }
   .header-logo {
     transition: opacity 0.2s ease-in-out;
@@ -209,8 +215,10 @@
   flex-direction: column;
   gap: 16px;
   text-align: center;
-  p {
+  p,
+  a {
     margin: 0;
+    color: #44494b;
   }
   @media #{$medium-and-down} {
     padding-block: 24px;

@@ -68,6 +68,7 @@ def _block_active(block_key, saved_flag):
 
 # Fixed component definitions — keys must stay stable; label/description can change.
 _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE = "homev4/sidebar_components/default.html"
+_DEFAULT_SECTION_TEMPLATE = "homev4/sections/default.html"
 _HOME_TEMPLATE = "homev4/home.html"
 
 
@@ -78,6 +79,15 @@ def _resolve_sidebar_template(key):
         return candidate
     except TemplateDoesNotExist:
         return _DEFAULT_SIDEBAR_COMPONENT_TEMPLATE
+
+
+def _resolve_section_template(slug):
+    candidate = f"homev4/sections/{slug}.html"
+    try:
+        get_template(candidate)
+        return candidate
+    except TemplateDoesNotExist:
+        return _DEFAULT_SECTION_TEMPLATE
 
 COMPONENT_DEFINITIONS = [
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
@@ -906,6 +916,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "slug": slug,
             "name": area.get("name", slug),
             "articles": articles,
+            "section_template": _resolve_section_template(slug),
         })
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 

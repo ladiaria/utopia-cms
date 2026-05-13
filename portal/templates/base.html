@@ -441,7 +441,7 @@
         {% render_header %}
       </header>
       <div class="header-nav-wrapper">
-        {% block header_navbar %}{% include "navbar.html" %}{% endblock %}
+        {% block header_navbar %}{% render_navbar %}{% endblock %}
       </div>
       {% if extra_header_template %}
         {% include extra_header_template %}
@@ -543,7 +543,6 @@
       {# js needed for the "dropdown" and "modal" menu items #}
       <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
       <script defer src="{% static 'materialize/js/global.js' %}"></script>
-      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
       <script defer src="{% static 'materialize/js/modal.js' %}"></script>
       <script defer src="{% static 'materialize/js/forms.js' %}"></script>
     {% endblock %}

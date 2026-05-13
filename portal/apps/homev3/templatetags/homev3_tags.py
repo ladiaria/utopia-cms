@@ -185,6 +185,21 @@ def render_header(context, template_suffix=''):
     return RenderHeaderNodeClass().render(context, template_suffix)
 
 
+class RenderNavbarNode(Node):
+    def render(self, context):
+        return loader.render_to_string('navbar.html', context.flatten())
+
+
+@register.simple_tag(takes_context=True)
+def render_navbar(context):
+    render_navbar_module = getattr(settings, 'HOMEV3_RENDER_NAVBAR_MODULE', None)
+    if render_navbar_module:
+        RenderNavbarNodeClass = __import__(render_navbar_module, fromlist=['RenderNavbarNode']).RenderNavbarNode
+    else:
+        RenderNavbarNodeClass = RenderNavbarNode
+    return RenderNavbarNodeClass().render(context)
+
+
 @register.simple_tag(takes_context=True)
 def login_next_url(context, default='/'):
     if context.get('is_portada'):

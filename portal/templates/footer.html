@@ -5,7 +5,7 @@
 {% else %}
   <div class="footer-portada__container">
     {% block resume %}
-      {% include 'core/templates/edition/resume.html' with show_search=False %}
+      {% include 'core/templates/edition/resume.html' with footer_resume=True %}
     {% endblock %}
   </div>
 {% endif %}

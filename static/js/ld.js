@@ -155,18 +155,18 @@
         menu.classList.toggle("active", isOpen);
       });
       body.classList.toggle("main-menu-open", isOpen);
-      if (!isOpen) body.classList.remove("mobile-search-open");
+      if (!isOpen) {
+        body.classList.remove("mobile-search-open");
+        qsa(".header-search.header-search--open").forEach(function (el) {
+          el.classList.remove("header-search--open");
+          const toggle = qs(".header-search__toggle", el);
+          if (toggle) {
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.setAttribute("aria-label", "Abrir buscador");
+          }
+        });
+      }
       setDocumentScrollLocked(isOpen);
-
-      const openButton = qs(".ld-main-menu__open");
-      if (openButton) {
-        openButton.classList.toggle("hidden", isOpen);
-      }
-
-      const closeButton = qs(".ld-main-menu__close");
-      if (closeButton) {
-        closeButton.classList.toggle("hidden", !isOpen);
-      }
     }
 
     if (window.M && window.M.Modal) {
@@ -186,40 +186,58 @@
       event.preventDefault();
     });
 
-    // Header search toggle
-    const headerSearch = qs(".header-search");
-    const headerSearchToggle = headerSearch && qs(".header-search__toggle", headerSearch);
-    const headerSearchInput = headerSearch && qs(".header-search__input", headerSearch);
+    // Header search toggle — each toggle operates on its own .header-search via closest()
+    const headerSearchToggles = qsa(".header-search__toggle");
     const mobileBreakpoint = window.matchMedia("(max-width: 992px)");
 
-    if (headerSearchToggle) {
-      headerSearchToggle.addEventListener("click", function (event) {
-        event.preventDefault();
-        if (mobileBreakpoint.matches) {
-          const searchIsOpen = document.body.classList.contains("mobile-search-open");
-          if (searchIsOpen) {
-            document.body.classList.remove("mobile-search-open");
-          } else {
-            document.body.classList.add("mobile-search-open");
-            if (!document.body.classList.contains("main-menu-open")) {
-              setMainMenuState(true);
+    function setSearchOpen(headerSearch, isOpen) {
+      headerSearch.classList.toggle("header-search--open", isOpen);
+      const toggle = qs(".header-search__toggle", headerSearch);
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", String(isOpen));
+        toggle.setAttribute("aria-label", isOpen ? "Cerrar buscador" : "Abrir buscador");
+      }
+    }
+
+    if (headerSearchToggles.length) {
+      headerSearchToggles.forEach(function (toggle) {
+        toggle.addEventListener("click", function (event) {
+          event.preventDefault();
+          if (mobileBreakpoint.matches) {
+            const searchIsOpen = document.body.classList.contains("mobile-search-open");
+            if (searchIsOpen) {
+              document.body.classList.remove("mobile-search-open");
+              toggle.setAttribute("aria-label", "Abrir buscador");
+            } else {
+              document.body.classList.add("mobile-search-open");
+              toggle.setAttribute("aria-label", "Cerrar buscador");
+              if (!document.body.classList.contains("main-menu-open")) {
+                setMainMenuState(true);
+              }
+              const mobileInput = qs(".mobile-header-search__input");
+              if (mobileInput) mobileInput.focus();
             }
-            const mobileInput = qs(".mobile-header-search__input");
-            if (mobileInput) mobileInput.focus();
+          } else {
+            const headerSearch = toggle.closest(".header-search");
+            if (!headerSearch) return;
+            const isOpen = !headerSearch.classList.contains("header-search--open");
+            setSearchOpen(headerSearch, isOpen);
+            if (isOpen) {
+              const input = qs(".header-search__input", headerSearch);
+              if (input) input.focus();
+            }
           }
-        } else {
-          const isOpen = headerSearch.classList.toggle("header-search--open");
-          headerSearchToggle.setAttribute("aria-expanded", String(isOpen));
-          if (isOpen && headerSearchInput) headerSearchInput.focus();
-        }
+        });
       });
 
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Escape") return;
-        if (!mobileBreakpoint.matches && headerSearch.classList.contains("header-search--open")) {
-          headerSearch.classList.remove("header-search--open");
-          headerSearchToggle.setAttribute("aria-expanded", "false");
-          headerSearchToggle.focus();
+        if (mobileBreakpoint.matches) return;
+        const openSearch = qs(".header-search.header-search--open");
+        if (openSearch) {
+          setSearchOpen(openSearch, false);
+          const toggle = qs(".header-search__toggle", openSearch);
+          if (toggle) toggle.focus();
         }
       });
     }
@@ -504,11 +522,56 @@
     });
 
     // generic dropdown toggle (data-activates="<id>")
+    function positionNavDropdown(btn, dropdown) {
+      const rect = btn.getBoundingClientRect();
+      dropdown.style.left = "";
+      dropdown.style.right = "";
+      if (btn.dataset.dropdownPosition === "right") {
+        const offset = 8;
+        const dropWidth = dropdown.offsetWidth;
+        dropdown.style.top = rect.top + "px";
+        if (rect.right + offset + dropWidth > window.innerWidth - 8) {
+          dropdown.style.right = (window.innerWidth - rect.left + offset) + "px";
+          dropdown.style.left = "auto";
+        } else {
+          dropdown.style.left = (rect.right + offset) + "px";
+          dropdown.style.right = "auto";
+        }
+      } else {
+        const offset = window.innerWidth <= 992 ? 5 : 15;
+        dropdown.style.top = (rect.bottom + offset) + "px";
+        const dropWidth = dropdown.offsetWidth;
+        if (rect.left + dropWidth > window.innerWidth - 8) {
+          dropdown.style.right = (window.innerWidth - rect.right) + "px";
+          dropdown.style.left = "auto";
+        } else {
+          dropdown.style.left = rect.left + "px";
+          dropdown.style.right = "auto";
+        }
+      }
+    }
+
+    function closeNavDropdown(dropdown, btn) {
+      dropdown.classList.remove("is-open");
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    }
+
+    window.addEventListener("scroll", function () {
+      document.querySelectorAll(".dropdown-content.is-open").forEach(function (dropdown) {
+        const btn = document.querySelector("[data-activates='" + dropdown.id + "']");
+        closeNavDropdown(dropdown, btn);
+      });
+    }, { passive: true });
+
     onAll("[data-activates]", "click", function (event) {
-      const target = document.getElementById(this.dataset.activates);
+      const btn = this;
+      const target = document.getElementById(btn.dataset.activates);
       if (!target) return;
       const isOpen = target.classList.toggle("is-open");
-      this.setAttribute("aria-expanded", String(isOpen));
+      btn.setAttribute("aria-expanded", String(isOpen));
+      if (isOpen) {
+        positionNavDropdown(btn, target);
+      }
       event.stopPropagation();
     });
 
@@ -517,18 +580,17 @@
         const target = document.getElementById(btn.dataset.activates);
         if (!target || !target.classList.contains("is-open")) return;
         if (!target.contains(event.target)) {
-          target.classList.remove("is-open");
-          btn.setAttribute("aria-expanded", "false");
+          closeNavDropdown(target, btn);
         }
       });
     });
 
-    // Category navbar: show overflow arrows when items don't fit (desktop only)
-    qsa(".category-navbar__scrollable").forEach(function (wrapper) {
+    // Navbar scroll: show overflow arrows when items don't fit (desktop only)
+    qsa(".scrollable-navbar__scrollable").forEach(function (wrapper) {
       const list = qs("ul", wrapper);
       if (!list) return;
-      const leftBtn = qs(".category-navbar__arrow--left", wrapper);
-      const rightBtn = qs(".category-navbar__arrow--right", wrapper);
+      const leftBtn = qs(".scrollable-navbar__arrow--left", wrapper);
+      const rightBtn = qs(".scrollable-navbar__arrow--right", wrapper);
 
       function update() {
         const hasOverflowLeft = list.scrollLeft > 1;
@@ -537,8 +599,22 @@
         wrapper.classList.toggle("has-overflow-right", hasOverflowRight);
       }
 
-      list.addEventListener("scroll", update, { passive: true });
-      window.addEventListener("resize", update);
+      function updateCenter() {
+        wrapper.classList.toggle("center", list.scrollWidth <= 1050);
+        wrapper.classList.toggle("mobile-centered", list.scrollWidth <= 325);
+      }
+
+      list.addEventListener("scroll", function () {
+        update();
+        document.querySelectorAll(".dropdown-content.is-open").forEach(function (dropdown) {
+          const btn = document.querySelector("[data-activates='" + dropdown.id + "']");
+          closeNavDropdown(dropdown, btn);
+        });
+      }, { passive: true });
+      window.addEventListener("resize", function () {
+        update();
+        updateCenter();
+      });
 
       if (leftBtn) {
         leftBtn.addEventListener("click", function () {
@@ -552,6 +628,7 @@
       }
 
       update();
+      updateCenter();
     });
 
     // Newsletter tooltip — toggle on trigger click, close on outside click

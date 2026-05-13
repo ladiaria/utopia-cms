@@ -45,7 +45,7 @@
     {% with articles=home_data.principal_articles %}
     {% if articles %}
 
-      {% with featured=articles.0 %}
+      {% with featured=articles.0 position=1 %}
         {% render_card article=featured variant="card_featured_home" %}
       {% endwith %}
 
@@ -53,22 +53,25 @@
         {% with secondary=articles|slice:"1:3" %}
           {% include "homev4/main_section/_secondary_tarde.html" %}
         {% endwith %}
-        {% with tertiary=articles|slice:"3:6" %}
+        {% with tertiary=articles|slice:"3:6" position_offset=4 %}
           {% include "homev4/main_section/_tertiary.html" %}
         {% endwith %}
       {% else %}
         {% if articles|length >= 10 %}
-          {% with secondary=articles|slice:"1:7" %}
+          {% with secondary=articles|slice:"1:4" %}
             {% include "homev4/main_section/_secondary_manana.html" %}
           {% endwith %}
-          {% with tertiary=articles|slice:"7:10" %}
+          {% with tertiary=articles|slice:"4:7" position_offset=5 %}
+            {% include "homev4/main_section/_tertiary.html" %}
+          {% endwith %}
+          {% with tertiary=articles|slice:"7:10" position_offset=8 %}
             {% include "homev4/main_section/_tertiary.html" %}
           {% endwith %}
         {% else %}
           {% with secondary=articles|slice:"1:4" %}
             {% include "homev4/main_section/_secondary_manana.html" %}
           {% endwith %}
-          {% with tertiary=articles|slice:"4:7" %}
+          {% with tertiary=articles|slice:"4:7" position_offset=5 %}
             {% include "homev4/main_section/_tertiary.html" %}
           {% endwith %}
         {% endif %}
@@ -99,6 +102,32 @@
 
       {% with featured=articles.0 %}
         {% include "homev4/suplemento_section/_featured.html" %}
+      {% endwith %}
+
+      {% if articles|length >= 7 %}
+        {% with secondary=articles|slice:"1:7" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
+      {% else %}
+        {% with secondary=articles|slice:"1:4" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
+      {% endif %}
+    {% endif %}
+    {% endwith %}
+
+  </section>
+  {% endif %}
+
+  <!-- ── Sección Suplemento Extra ─────────────────────────────────────────── -->
+  {% if home_data.suplemento_extra_active and home_data.suplemento_extra_articles %}
+  <section class="suplemento-section">
+
+    {% with articles=home_data.suplemento_extra_articles %}
+    {% if articles %}
+
+      {% with featured=articles.0 %}
+        {% include "homev4/suplemento_section/_featured.html" with section_title=home_data.suplemento_extra_title section_slug=home_data.suplemento_extra_source_slug %}
       {% endwith %}
 
       {% if articles|length >= 7 %}
@@ -178,22 +207,7 @@
   <section class="home-blocks">
     {% for section in home_data.sections %}
       {% if forloop.counter0|divisibleby:3 %}<div class="home-blocks__row">{% endif %}
-      <section class="home-block">
-        <div class="home-block__header">
-          <a href="{% url "home" domain_slug=section.slug %}">
-            <h2 class="home-block__title">{{ section.name }}</h2>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
-          </a>
-        </div>
-        {% if section.articles %}
-        <div class="home-block__articles">
-          {% for article in section.articles %}
-            {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
-            {% render_card article=article variant="card_category_pub_home" %}
-          {% endfor %}
-        </div>
-        {% endif %}
-      </section>
+      {% include section.section_template %}
       {% if forloop.counter|divisibleby:3 or forloop.last %}</div>{% endif %}
     {% endfor %}
   </section>

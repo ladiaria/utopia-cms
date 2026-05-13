@@ -1,0 +1,17 @@
+{% load core_tags %}
+<section class="home-block">
+  <div class="home-block__header">
+    <a href="{% url "home" domain_slug=section.slug %}">
+      <h2 class="home-block__title">{{ section.name }}</h2>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+    </a>
+  </div>
+  {% if section.articles %}
+  <div class="home-block__articles">
+    {% for article in section.articles %}
+      {% if not forloop.first %}<hr class="home-block__divider">{% endif %}
+      {% render_card article=article variant="card_category_pub_home" %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>

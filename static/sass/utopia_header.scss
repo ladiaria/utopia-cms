@@ -46,7 +46,8 @@ header {
   }
 
   @media #{$medium-and-down} {
-    body.article & {
+    body.article &,
+    body.article-detail &:not(.sticky) {
       border-bottom: none;
     }
   }
@@ -155,7 +156,7 @@ header {
 
     // On category/publication portada headers (non-home), logo is 32px and
     // shrinks to 26px (default) when sticky.
-    body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+    body:not(.main-menu-open) header.category-pub-header:not(.sticky) & {
       padding-bottom: 31px;
       img {
         height: 32px;
@@ -166,7 +167,8 @@ header {
     // On the home header in normal (non-sticky) state, the logo is larger.
     // When sticky kicks in, this selector stops matching and the logo
     // transitions back to 26px via the transition above.
-    header.home-header:not(.sticky) & {
+    header.home-header:not(.sticky) &,
+    body.main-menu-open & {
       padding-bottom: 31px;
       img {
         height: 46px;
@@ -231,11 +233,13 @@ header {
       align-self: center;
       align-items: center;
 
-      // On the home header in normal (non-sticky) state, the logo is larger.
-      // When sticky kicks in, this selector stops matching and the logo
-      // transitions back to 26px via the transition above.
+      // Este selector lo que hace es achicar el logo que por defecto viene en tamaño grande.
+      // Caso 1: En la portada cuando no está sticky, posición inicial.
+      // Caso 2: En la portada de categories y publications cuando no está sticky
+      // Caso 3: Cuando está el menú extendido abierto.
       header.home-header:not(.sticky) &,
-      body:not(.main-menu-open) header.category-pub-header:not(.sticky):not(.home-header) & {
+      body:not(.main-menu-open) header.category-pub-header:not(.sticky) &,
+      body.main-menu-open & {
         padding-bottom: 0;
         img {
           height: 26px;
@@ -258,7 +262,7 @@ header {
       a:not(.search-btn) {
         display: none;
       }
-      header.category-pub-header & {
+      body:not(.main-menu-open) header.category-pub-header & {
         display: none;
       }
       .search-btn {
@@ -383,6 +387,68 @@ header {
   }
 }
 
+// Dropdown button and panel — used in navbars and home section headers
+.dropdown-button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.dropdown-content {
+  background: #fff;
+  border: 0.5px solid #ababab;
+  border-radius: 5px;
+  padding: 0;
+  position: fixed;
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: px-to-rem(139px);
+
+  &.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  li {
+    padding: 0;
+
+    &:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    &:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    a {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      gap: 8px;
+      font-size: px-to-rem(14px);
+      line-height: 14px;
+      letter-spacing: 0.01em;
+      color: #000;
+
+      &:hover {
+        color: $link-color-hover;
+      }
+    }
+  }
+}
+
 .header-nav-wrapper > nav {
   width: 100%;
   border-top: 0.5px solid #ababab;
@@ -393,11 +459,13 @@ header {
     display: flex;
 
     .home-link {
-      padding-right: 48px;
+      padding: 8px;
+      padding-right: 24px;
       font-weight: 500;
       position: relative;
       display: flex;
       align-items: center;
+      margin-right: 16px;
       &::after {
         content: "";
         position: absolute;
@@ -410,47 +478,74 @@ header {
       }
     }
 
-    ul {
-      padding-left: 48px;
-      @include scroll-navbar;
-    }
-
-    // Scrollable area + overflow arrows (desktop only)
-    .category-navbar__scrollable {
-      position: relative;
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    .category-navbar__arrow {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      display: none;
-      align-items: center;
-      border: 0;
-      background: transparent;
-      padding: 0;
-      cursor: pointer;
-      z-index: 2;
-
-      svg {
-        display: block;
+    .scrollable-navbar__scrollable {
+      ul {
+        justify-content: flex-start;
+        width: 100%;
+        @include scroll-navbar;
+        width: fit-content;
       }
+      &.center {
+        justify-content: center;
+        margin-right: calc(
+          16px + 89px
+        ); // Los 89px + 16px vienen del tamaño que tiene el botón de home, es para centrar horizontalmente los elementos.
 
-      &--left {
-        left: 0;
+        ul {
+          justify-content: center;
+        }
       }
-      &--right {
-        right: -1px;
+      @media #{$medium-and-down} {
+        &.center {
+          margin-right: 0;
+          ul {
+            justify-content: flex-start;
+          }
+          &:not(.mobile-centered) ul {
+            justify-content: flex-start;
+          }
+        }
       }
     }
+  }
 
-    @media (min-width: 768px) {
-      .category-navbar__scrollable.has-overflow-left .category-navbar__arrow--left,
-      .category-navbar__scrollable.has-overflow-right .category-navbar__arrow--right {
-        display: flex;
-      }
+  // Scrollable area + overflow arrows (desktop only), shared by home and category navbars
+  .scrollable-navbar__scrollable {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .scrollable-navbar__arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    z-index: 2;
+
+    svg {
+      display: block;
+    }
+
+    &--left {
+      left: 0;
+    }
+    &--right {
+      right: -1px;
+    }
+  }
+
+  @media #{$medium-and-up} {
+    .scrollable-navbar__scrollable.has-overflow-left .scrollable-navbar__arrow--left,
+    .scrollable-navbar__scrollable.has-overflow-right .scrollable-navbar__arrow--right {
+      display: flex;
     }
   }
 
@@ -589,6 +684,7 @@ header {
       left: 0;
       width: 30px;
       background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0));
+      z-index: 1;
     }
 
     &.category-navbar {
@@ -598,6 +694,7 @@ header {
       ul {
         padding-left: 0;
         align-self: flex-end;
+        justify-content: flex-start;
       }
     }
   }
@@ -1011,6 +1108,12 @@ header {
   body.main-menu-open & {
     display: none !important;
   }
+
+  @media #{$medium-and-down} {
+    body.article-detail & {
+      display: none;
+    }
+  }
 }
 
 .logged-in {
@@ -1382,11 +1485,10 @@ body {
   z-index: 1000;
   overflow: auto;
   scrollbar-width: none;
-  font-size: 18px;
   font-weight: 400;
   width: 100%;
   max-height: 100%;
-  top: $headerMinHeight;
+  top: 0;
   right: 0;
   bottom: 0;
   left: 0;
@@ -1406,14 +1508,6 @@ body {
     opacity: 1;
     pointer-events: all;
     visibility: visible;
-  }
-
-  header.home-header:not(.sticky) & {
-    top: px-to-rem(120px);
-
-    @media #{$medium-and-down} {
-      top: px-to-rem(75px);
-    }
   }
 
   &__title {
@@ -1460,11 +1554,15 @@ body {
     }
   }
 
+  .upper-right-content {
+    min-height: px-to-rem(39px);
+  }
+
   &__wrap {
     display: grid;
     grid-template-columns: repeat(5, auto);
     justify-content: space-between;
-    @include utopia-container;
+    padding-block: 80px;
   }
 
   &__col {
@@ -1493,8 +1591,7 @@ body {
         padding: 4px 0;
         line-height: normal;
         a {
-          font-family: "Dialect Gothic A";
-          font-size: px-to-rem(16px);
+          font-size: px-to-rem(18px);
         }
       }
     }
@@ -1517,6 +1614,8 @@ body {
 
   .modal-content {
     padding: 0;
+    margin: 0 auto;
+    @include utopia-container;
   }
 
   .ld-main-menu__wrap {
@@ -1524,7 +1623,7 @@ body {
   }
 
   @media #{$medium-and-down} {
-    top: px-to-rem(50px);
+    padding-bottom: 84px;
 
     body.homepage & {
       top: px-to-rem(150px);
@@ -1534,10 +1633,15 @@ body {
       height: 27px;
     }
 
+    .upper-right-content {
+      min-height: unset;
+    }
+
     &__wrap {
       grid-template-columns: 1fr;
       gap: 48px;
       padding-bottom: 24px;
+      padding-top: 48px;
     }
 
     &__col {

@@ -2,6 +2,7 @@
 .input-field {
   display: flex;
   flex-direction: column;
+  position: relative;
   // Adds top padding only to an .input-field that follows another, creating spacing between consecutive fields
   & + & {
     padding-top: 16px;
@@ -11,6 +12,10 @@
     font-size: px-to-rem(14px);
     padding: 4px;
     line-height: normal;
+
+    .marker {
+      color: #81898b;
+    }
   }
 
   input {
@@ -23,6 +28,7 @@
     font-weight: 400;
     line-height: normal;
     outline: none;
+    font-size: px-to-rem(16px);
   }
   select {
     height: px-to-rem(48px);
@@ -31,13 +37,6 @@
   }
 }
 
-@media #{$medium-and-down} {
-  .input-field {
-    label {
-      font-size: px-to-rem(12px);
-    }
-  }
-}
 /* End label/input global styles */
 
 body.subscribe:not(.signup) form#signup-phone-form,

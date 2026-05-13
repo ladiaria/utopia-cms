@@ -1,10 +1,10 @@
 {% load core_tags homev4_tags %}
 
 {% if secondary %}
-<div class="main-section__secondary-row" data-slider>
+<div class="main-section__secondary-row">
   {% with total=secondary|length %}
     {% for article in secondary %}
-      {% with slider_class=forloop.counter|slider_position_class:total %}
+      {% with slider_class=forloop.counter|slider_position_class:total position=forloop.counter0|add:2 %}
         {% render_card article=article variant="card_secondary_manana_home" %}
       {% endwith %}
     {% endfor %}
