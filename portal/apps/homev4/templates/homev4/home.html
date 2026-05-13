@@ -119,6 +119,32 @@
   </section>
   {% endif %}
 
+  <!-- ── Sección Suplemento Extra ─────────────────────────────────────────── -->
+  {% if home_data.suplemento_extra_active and home_data.suplemento_extra_articles %}
+  <section class="suplemento-section">
+
+    {% with articles=home_data.suplemento_extra_articles %}
+    {% if articles %}
+
+      {% with featured=articles.0 %}
+        {% include "homev4/suplemento_section/_featured.html" with section_title=home_data.suplemento_extra_title section_slug=home_data.suplemento_extra_source_slug %}
+      {% endwith %}
+
+      {% if articles|length >= 7 %}
+        {% with secondary=articles|slice:"1:7" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
+      {% else %}
+        {% with secondary=articles|slice:"1:4" %}
+          {% include "homev4/suplemento_section/_secondary.html" %}
+        {% endwith %}
+      {% endif %}
+    {% endif %}
+    {% endwith %}
+
+  </section>
+  {% endif %}
+
   <!-- ── Sección Especial ─────────────────────────────────────────────────── -->
   {% if home_data.especial_active %}
   {% with articles=home_data.especial_articles %}

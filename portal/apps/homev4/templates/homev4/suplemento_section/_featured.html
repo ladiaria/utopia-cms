@@ -1,14 +1,15 @@
 {% load bleach_tags core_tags ldml %}
+{% with resolved_slug=section_slug|default:home_data.suplemento_slug resolved_title=section_title|default:home_data.suplemento_title %}
 
 <div class="suplemento-section__featured">
   <div class="suplemento-section__header">
-    {% if home_data.suplemento_slug %}
-      <a href="{{ home_data.suplemento_slug }}">
-        <h2>{{ home_data.suplemento_title }}</h2>
+    {% if resolved_slug %}
+      <a href="{{ resolved_slug }}">
+        <h2>{{ resolved_title }}</h2>
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
       </a>
     {% else %}
-      <h2>{{ home_data.suplemento_title }}</h2>
+      <h2>{{ resolved_title }}</h2>
     {% endif %}
   </div>
   {% if featured.photo %}
@@ -36,3 +37,4 @@
     {% endif %}
   </article>
 </div>
+{% endwith %}
