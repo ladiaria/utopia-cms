@@ -394,76 +394,59 @@ class BuildHomeDataCrucigramaTest(SimpleTestCase):
     """
     Tests for the crucigrama component inside build_home_data.
 
+    Two paths:
+    A) Pre-computed: crossword_id already stored in the comp entry by the signal.
+       build_home_data reads from grid_data with no DB query.
+    B) Fallback: comp has no crossword_id yet (old layout); queries DB directly.
+
     Contract:
     - articles is always [].
-    - When utopia_cms_ladiaria.models.Crossword is importable and a crossword
-      exists, comp has crossword_id, crossword_image_url, crossword_url.
+    - crossword_id / crossword_image_url / crossword_url come from the comp entry
+      when pre-computed, or from Crossword.objects.first() as fallback.
     - When Crossword.objects.first() returns None → no crossword fields added.
     - When utopia_cms_ladiaria is not installed (ImportError) → no crash, no fields.
     """
 
-    def _build(self, crossword=None, import_error=False):
+    def _build(self, comp_entry=None, crossword=None, import_error=False):
+        """
+        comp_entry: dict merged into the crucigrama comp (simulates pre-computed data).
+        crossword:  Crossword mock returned by DB fallback (used when comp has no crossword_id).
+        import_error: simulate utopia_cms_ladiaria not installed for the DB fallback path.
+        """
         from homev4.views import build_home_data
+
+        cruci_comp = {"key": "crucigrama", "active": True}
+        if comp_entry:
+            cruci_comp.update(comp_entry)
 
         resolved_grid = {
             "principal":  {"active": True, "article_ids": []},
             "suplemento": {"active": True, "article_ids": []},
             "sections": [],
-            "componentes": [
-                {"key": "crucigrama", "active": True, "article_ids": []},
-            ],
+            "componentes": [cruci_comp],
         }
 
+        def _run():
+            with patch("homev4.views.resolve_layout_grid_data", return_value=resolved_grid), \
+                 patch("homev4.views.Article") as mock_art, \
+                 patch("homev4.views._fetch_component_articles", return_value=[]), \
+                 patch("homev4.views._block_active", side_effect=lambda _k, v: bool(v)), \
+                 patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", {}), \
+                 patch("homev4.views.timezone") as mock_tz:
+                mock_art.published = _make_published_mock([])
+                mock_tz.localdate.return_value = __import__("datetime").date(2026, 5, 13)
+                mock_tz.now.return_value = MagicMock()
+                return build_home_data(resolved_grid)
+
         if import_error:
-            fake_module = None
+            # Setting a key to None in sys.modules makes Python raise ImportError on import.
+            with patch.dict(sys.modules, {"utopia_cms_ladiaria": None, "utopia_cms_ladiaria.models": None}):
+                result = _run()
         else:
-            fake_module = MagicMock()
-            fake_module.Crossword.objects.first.return_value = crossword
-
-        def fake_import(name, fromlist=None, **kwargs):
-            if name == "utopia_cms_ladiaria.models":
-                if import_error:
-                    raise ImportError("no module")
-                return fake_module
-            return orig_import(name, fromlist=fromlist, **kwargs)
-
-        orig_import = __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
-
-        with patch("homev4.views.resolve_layout_grid_data", return_value=resolved_grid), \
-             patch("homev4.views.Article") as mock_art, \
-             patch("homev4.views._fetch_component_articles", return_value=[]), \
-             patch("homev4.views._block_active", side_effect=lambda _k, v: bool(v)), \
-             patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", {}), \
-             patch("homev4.views.timezone") as mock_tz:
-            mock_art.published = _make_published_mock([])
-            mock_tz.localdate.return_value = __import__("datetime").date(2026, 5, 13)
-            mock_tz.now.return_value = MagicMock()
-
-            # Patch the import inside the crucigrama branch
-            if import_error:
-                with patch("builtins.__import__", side_effect=ImportError):
-                    # The branch uses `from utopia_cms_ladiaria.models import Crossword`
-                    # We patch sys.modules to simulate ImportError
-                    old = sys.modules.get("utopia_cms_ladiaria.models")
-                    sys.modules.pop("utopia_cms_ladiaria.models", None)
-                    sys.modules.pop("utopia_cms_ladiaria", None)
-                    try:
-                        result = build_home_data(resolved_grid)
-                    finally:
-                        if old is not None:
-                            sys.modules["utopia_cms_ladiaria.models"] = old
-            else:
-                fake_mod = MagicMock()
-                fake_mod.Crossword.objects.first.return_value = crossword
-                old = sys.modules.get("utopia_cms_ladiaria.models")
-                sys.modules["utopia_cms_ladiaria.models"] = fake_mod
-                try:
-                    result = build_home_data(resolved_grid)
-                finally:
-                    if old is None:
-                        sys.modules.pop("utopia_cms_ladiaria.models", None)
-                    else:
-                        sys.modules["utopia_cms_ladiaria.models"] = old
+            fake_mod = MagicMock()
+            fake_mod.Crossword.objects.first.return_value = crossword
+            with patch.dict(sys.modules, {"utopia_cms_ladiaria.models": fake_mod}):
+                result = _run()
 
         return next((c for c in result["componentes"] if c["key"] == "crucigrama"), None)
 
@@ -476,36 +459,144 @@ class BuildHomeDataCrucigramaTest(SimpleTestCase):
             cw.image = None
         return cw
 
-    def test_crucigrama_articles_always_empty(self):
-        """crucigrama never has articles — it is a no_articles block."""
-        comp = self._build(crossword=self._make_crossword())
-        self.assertIsNotNone(comp)
+    # ── Path A: pre-computed from comp entry ──────────────────────────────────
+
+    def test_precomputed_articles_always_empty(self):
+        """crucigrama never has articles regardless of which path is taken."""
+        comp = self._build(comp_entry={"crossword_id": 5, "crossword_image_url": "/img/5.png", "crossword_url": "/crucigramas/"})
         self.assertEqual(comp["articles"], [])
 
-    def test_crucigrama_crossword_fields_set_when_available(self):
-        """When a Crossword exists, comp has crossword_id, crossword_image_url, crossword_url."""
+    def test_precomputed_fields_read_from_comp_entry(self):
+        """When crossword_id is in the comp entry, fields come from there — no DB query."""
+        comp = self._build(comp_entry={"crossword_id": 5, "crossword_image_url": "/img/5.png", "crossword_url": "/crucigramas/"})
+        self.assertEqual(comp["crossword_id"], 5)
+        self.assertEqual(comp["crossword_image_url"], "/img/5.png")
+        self.assertEqual(comp["crossword_url"], "/crucigramas/")
+
+    def test_precomputed_no_image_url_is_none(self):
+        """Pre-computed image_url can be None when the crossword has no image."""
+        comp = self._build(comp_entry={"crossword_id": 5, "crossword_image_url": None, "crossword_url": "/crucigramas/"})
+        self.assertIsNone(comp["crossword_image_url"])
+
+    def test_precomputed_missing_url_defaults_to_crucigramas(self):
+        """crossword_url falls back to /crucigramas/ if absent in the comp entry."""
+        comp = self._build(comp_entry={"crossword_id": 5, "crossword_image_url": None})
+        self.assertEqual(comp["crossword_url"], "/crucigramas/")
+
+    # ── Path B: DB fallback (comp has no crossword_id yet) ───────────────────
+
+    def test_fallback_crossword_fields_set_when_available(self):
+        """When no pre-computed data, fields come from Crossword.objects.first()."""
         cw = self._make_crossword(cw_id=7, has_image=True)
         comp = self._build(crossword=cw)
         self.assertEqual(comp["crossword_id"], 7)
         self.assertEqual(comp["crossword_image_url"], "/media/crossword/img/7.png")
         self.assertEqual(comp["crossword_url"], "/crucigramas/")
 
-    def test_crucigrama_no_image_url_is_none(self):
-        """When the Crossword has no image, crossword_image_url is None — no crash."""
+    def test_fallback_no_image_url_is_none(self):
+        """DB fallback: crossword_image_url is None when crossword has no image."""
         cw = self._make_crossword(has_image=False)
         comp = self._build(crossword=cw)
         self.assertIsNone(comp["crossword_image_url"])
 
-    def test_crucigrama_no_crossword_object_no_fields(self):
-        """When Crossword.objects.first() returns None, no crossword fields are added."""
+    def test_fallback_no_crossword_object_no_fields(self):
+        """DB fallback: when Crossword.objects.first() returns None, no fields added."""
         comp = self._build(crossword=None)
         self.assertNotIn("crossword_id", comp)
         self.assertNotIn("crossword_image_url", comp)
         self.assertNotIn("crossword_url", comp)
 
-    def test_crucigrama_import_error_no_crash(self):
-        """When utopia_cms_ladiaria is not installed, the block renders without crashing."""
+    def test_fallback_import_error_no_crash(self):
+        """DB fallback: when utopia_cms_ladiaria is not installed, no crash, no fields."""
         comp = self._build(import_error=True)
         self.assertIsNotNone(comp)
         self.assertEqual(comp["articles"], [])
         self.assertNotIn("crossword_id", comp)
+
+
+# ---------------------------------------------------------------------------
+# _update_crossword_in_layouts signal handler
+# ---------------------------------------------------------------------------
+
+class UpdateCrosswordInLayoutsTest(SimpleTestCase):
+    """
+    Tests for the Crossword post_save signal handler in apps.py.
+
+    Contract:
+    - Writes crossword_id, crossword_image_url, crossword_url into the crucigrama
+      comp entry of every HomeLayout that has a crucigrama component.
+    - Layouts without a crucigrama component are not touched.
+    - Layouts with no grid_data dict are skipped without crashing.
+    - Uses bulk_update so pre_save dedup does not re-run.
+    """
+
+    def _call(self, layouts, crossword):
+        from homev4.apps import _update_crossword_in_layouts
+
+        mock_qs = MagicMock()
+        mock_qs.__iter__ = lambda s: iter(layouts)
+
+        # Patch HomeLayout in homev4.models since the handler imports it from there.
+        with patch("homev4.models.HomeLayout") as mock_model:
+            mock_model.objects.all.return_value = mock_qs
+            _update_crossword_in_layouts(sender=None, instance=crossword)
+            return mock_model.objects.bulk_update.call_args
+
+    def _make_layout(self, componentes):
+        layout = MagicMock()
+        layout.grid_data = {"componentes": componentes, "principal": {"article_ids": []}}
+        return layout
+
+    def _make_crossword(self, cw_id=10, has_image=True):
+        cw = MagicMock()
+        cw.id = cw_id
+        if has_image:
+            cw.image.url = f"/media/cw/{cw_id}.png"
+        else:
+            cw.image = None
+        return cw
+
+    def test_crucigrama_comp_updated(self):
+        """Layout with crucigrama gets crossword fields written into the comp entry."""
+        layout = self._make_layout([{"key": "crucigrama", "active": True}])
+        cw = self._make_crossword(cw_id=10)
+        self._call([layout], cw)
+        cruci = next(c for c in layout.grid_data["componentes"] if c["key"] == "crucigrama")
+        self.assertEqual(cruci["crossword_id"], 10)
+        self.assertEqual(cruci["crossword_image_url"], "/media/cw/10.png")
+        self.assertEqual(cruci["crossword_url"], "/crucigramas/")
+
+    def test_no_image_writes_none(self):
+        """When crossword has no image, crossword_image_url is written as None."""
+        layout = self._make_layout([{"key": "crucigrama", "active": True}])
+        cw = self._make_crossword(has_image=False)
+        self._call([layout], cw)
+        cruci = next(c for c in layout.grid_data["componentes"] if c["key"] == "crucigrama")
+        self.assertIsNone(cruci["crossword_image_url"])
+
+    def test_layout_without_crucigrama_not_updated(self):
+        """Layout whose componentes don't include crucigrama is not added to bulk_update."""
+        layout = self._make_layout([{"key": "opinion", "active": True}])
+        cw = self._make_crossword()
+        call_args = self._call([layout], cw)
+        # bulk_update should not be called — nothing to update
+        self.assertIsNone(call_args)
+
+    def test_layout_with_invalid_grid_data_skipped(self):
+        """Layout with non-dict grid_data is skipped without crashing."""
+        layout = MagicMock()
+        layout.grid_data = None
+        cw = self._make_crossword()
+        call_args = self._call([layout], cw)
+        self.assertIsNone(call_args)
+
+    def test_bulk_update_called_with_grid_data_field(self):
+        """bulk_update is called with ['grid_data'] to avoid triggering pre_save signals."""
+        layout = self._make_layout([{"key": "crucigrama", "active": True}])
+        cw = self._make_crossword()
+        call_args = self._call([layout], cw)
+        self.assertIsNotNone(call_args)
+        # call_args.args = (to_update_list, fields_list)
+        updated_layouts, fields = call_args.args
+        self.assertIn(layout, updated_layouts)
+        self.assertEqual(fields, ["grid_data"])

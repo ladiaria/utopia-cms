@@ -211,7 +211,12 @@ def _propagate_article_ids(source_layout, source_grid):
         for block in ("principal", "suplemento", "especial", "extra_articles")
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
-    src_componentes = {c["key"]: c.get("article_ids", []) for c in source_grid.get("componentes", [])}
+    # Exclude no_articles components (e.g. crucigrama) — they have no article_ids to propagate.
+    src_componentes = {
+        c["key"]: c.get("article_ids", [])
+        for c in source_grid.get("componentes", [])
+        if not _COMP_DEF_MAP.get(c.get("key", ""), {}).get("no_articles")
+    }
     # None means absent (delete from siblings); a dict means create/update in siblings.
     src_se = source_grid.get("suplemento_extra")
 
@@ -952,15 +957,23 @@ def build_home_data(grid_data, publication=None, layout=None):
                 comp_entry["articles"] = _fetch_component_articles(key)
         elif key == "crucigrama":
             comp_entry["articles"] = []
-            try:
-                from utopia_cms_ladiaria.models import Crossword
-                cw = Crossword.objects.first()
-                if cw:
-                    comp_entry["crossword_id"] = cw.id
-                    comp_entry["crossword_image_url"] = cw.image.url if cw.image else None
-                    comp_entry["crossword_url"] = "/crucigramas/"
-            except ImportError:
-                pass
+            crossword_id = item.get("crossword_id")
+            if crossword_id:
+                # Pre-computed by the Crossword post_save signal — no DB hit needed.
+                comp_entry["crossword_id"] = crossword_id
+                comp_entry["crossword_image_url"] = item.get("crossword_image_url")
+                comp_entry["crossword_url"] = item.get("crossword_url") or "/crucigramas/"
+            else:
+                # Fallback for layouts not yet updated by the signal.
+                try:
+                    from utopia_cms_ladiaria.models import Crossword
+                    cw = Crossword.objects.first()
+                    if cw:
+                        comp_entry["crossword_id"] = cw.id
+                        comp_entry["crossword_image_url"] = cw.image.url if cw.image else None
+                        comp_entry["crossword_url"] = "/crucigramas/"
+                except ImportError:
+                    pass
         elif key in ("lo_ultimo", "apuntes_del_dia"):
             # Dynamic: always fetched fresh at request time.
             if key == "lo_ultimo":
