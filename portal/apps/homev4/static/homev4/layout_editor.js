@@ -847,7 +847,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 key: el.dataset.compKey,
                 active: el.querySelector(".comp-active").checked
             };
-            var articleRows = el.querySelectorAll(".comp-article-row[data-article-id]");
+            // Also pick up section-article-row used by replace_mode components (e.g. humor)
+            var articleRows = el.querySelectorAll(".comp-article-row[data-article-id], .section-article-row[data-article-id]");
             if (articleRows.length > 0) {
                 comp.article_ids = Array.from(articleRows).map(function (ar) {
                     return parseInt(ar.dataset.articleId, 10);
