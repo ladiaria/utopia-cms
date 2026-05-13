@@ -8,7 +8,21 @@
       <ul>
         {% if HOME_NAV_ITEMS %}
           {% for item in HOME_NAV_ITEMS %}
+          {% if item.children %}
+          <li{% if item.classes %} class="{{ item.classes }}"{% endif %}>
+            <span class="dropdown-button" data-beloworigin="true" data-activates="nav-dropdown-{{ forloop.counter }}">
+              {{ item.label }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m2 4 4.382 4.382L10.765 4"/></svg>
+            </span>
+            <ul id="nav-dropdown-{{ forloop.counter }}" class="dropdown-content">
+              {% for child in item.children %}
+              <li><a href="{{ child.url }}">{{ child.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% else %}
           <li{% if item.classes %} class="{{ item.classes }}"{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+          {% endif %}
           {% endfor %}
         {% else %}
           {% for category, sections in MENU_CATEGORIES.items %}
