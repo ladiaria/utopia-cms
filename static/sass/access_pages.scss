@@ -211,15 +211,16 @@ p {
 }
 
 .subscribe-body .close-window-container {
+  display: flex;
+  justify-content: flex-end;
+  position: absolute;
+  top: 8px;
+  right: 8px;
   button,
   a {
-    padding: 0;
     background-color: transparent;
     border: none;
     padding: 16px;
-    position: absolute;
-    right: 8px;
-    top: 8px;
   }
 }
 
