@@ -21,12 +21,15 @@ Scenarios under test:
      (which happen to be the same 3).
   9. saved_ids has fewer than 3 entries → leftover dynamic articles fill remaining
      slots up to 3.
+ 10. Source exclusion: articles from opinion/libros/humor/lento/le-monde/apuntes
+     sections/categories/publications are excluded from the dynamic fetch but
+     manual pins from those sources are still returned.
 
 All DB calls are mocked — no database required. Tests run with SimpleTestCase.
 """
 from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 
 def _art(article_id):
@@ -35,23 +38,62 @@ def _art(article_id):
     return a
 
 
+def _art_with_section(article_id, section_slug):
+    """Article whose main_section.section.slug is set (mirrors ArticleRel → Section ORM path)."""
+    a = _art(article_id)
+    a.main_section = MagicMock()
+    a.main_section.section = MagicMock()
+    a.main_section.section.slug = section_slug
+    return a
+
+
+def _art_with_category(article_id, category_slug):
+    """Article whose main_section.section.category.slug is set (mirrors ArticleRel → Section → Category)."""
+    a = _art(article_id)
+    a.main_section = MagicMock()
+    a.main_section.section = MagicMock()
+    a.main_section.section.category = MagicMock()
+    a.main_section.section.category.slug = category_slug
+    return a
+
+
+def _art_with_publication(article_id, pub_slug):
+    """Article whose main_section.edition.publication.slug is set (mirrors ArticleRel → Edition → Publication)."""
+    a = _art(article_id)
+    a.main_section = MagicMock()
+    a.main_section.edition = MagicMock()
+    a.main_section.edition.publication = MagicMock()
+    a.main_section.edition.publication.slug = pub_slug
+    return a
+
+
+def _slug_at_path(obj, *path):
+    """Traverse attribute path; returns the value only if it is a plain string."""
+    for attr in path:
+        if obj is None:
+            return None
+        obj = getattr(obj, attr, None)
+    return obj if isinstance(obj, str) else None
+
+
 class FakeQS:
     """
     Minimal queryset mock supporting the call chain used by _fetch_component_articles
     for lo_ultimo:
 
       Article.published
-        .filter(id__in=...)          → for pinned lookup
-        .select_related(...)         → no-op, returns self
-        .order_by("-date_published") → no-op, order is defined by _ordered
-        .exclude(id__in=...)         → filters out given IDs
-        [:n]                         → slice
+        .filter(id__in=...)                                  → pinned lookup
+        .select_related(...)                                 → no-op
+        .order_by("-date_published")                         → no-op
+        .exclude(id__in=...)                                         → filter by ID
+        .exclude(main_section__section__slug__in=...)               → filter by section
+        .exclude(main_section__section__category__slug__in=...)     → filter by category
+        .exclude(main_section__edition__publication__slug__in=...)  → filter by pub
+        [:n]                                                 → slice
     """
 
     def __init__(self, ordered, available_ids=None):
-        # ordered: articles in the order they should be returned (most recent first)
         self._ordered = list(ordered)
-        # available_ids: set of IDs that exist in Article.published (for filter)
         self._available = {a.id: a for a in self._ordered} if available_ids is None else available_ids
 
     def filter(self, **kwargs):
@@ -66,9 +108,18 @@ class FakeQS:
         return self
 
     def exclude(self, **kwargs):
-        id__in = set(kwargs.get("id__in", []))
-        filtered = [a for a in self._ordered if a.id not in id__in]
-        return FakeQS(filtered, self._available)
+        result = list(self._ordered)
+        for key, val in kwargs.items():
+            val_set = set(val)
+            if key == "id__in":
+                result = [a for a in result if a.id not in val_set]
+            elif key == "main_section__section__slug__in":
+                result = [a for a in result if _slug_at_path(a, "main_section", "section", "slug") not in val_set]
+            elif key == "main_section__section__category__slug__in":
+                result = [a for a in result if _slug_at_path(a, "main_section", "section", "category", "slug") not in val_set]
+            elif key == "main_section__edition__publication__slug__in":
+                result = [a for a in result if _slug_at_path(a, "main_section", "edition", "publication", "slug") not in val_set]
+        return FakeQS(result, self._available)
 
     def __getitem__(self, key):
         return self._ordered[key]
@@ -226,3 +277,97 @@ class LoUltimoEdgeCasesTest(SimpleTestCase):
         arts = [_art(i) for i in range(10, 0, -1)]  # 10 articles
         result = _run(saved_ids=None, published_ordered=arts)
         self.assertLessEqual(len(result), 3)
+
+
+class LoUltimoSourceExclusionTest(SimpleTestCase):
+    """
+    Articles from excluded sources (opinion/libros/humor/lento/le-monde/apuntes)
+    are filtered out of the automatic dynamic fetch.  Manual pins from those
+    sources are NOT affected — they bypass the exclusion.
+    """
+
+    def test_excluded_section_not_in_dynamic_result(self):
+        """Article whose main_section.slug is 'humor' is excluded from dynamic fetch."""
+        arts = [
+            _art_with_section(1, "humor"),
+            _art(2),
+            _art(3),
+            _art(4),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertNotIn(1, _ids(result))
+        self.assertEqual(_ids(result), [2, 3, 4])
+
+    def test_excluded_category_not_in_dynamic_result(self):
+        """Article whose main_section.category.slug is 'opinion' is excluded."""
+        arts = [
+            _art_with_category(1, "opinion"),
+            _art(2),
+            _art(3),
+            _art(4),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertNotIn(1, _ids(result))
+        self.assertEqual(_ids(result), [2, 3, 4])
+
+    def test_excluded_publication_not_in_dynamic_result(self):
+        """Article whose publication slug is 'lento' is excluded from dynamic fetch."""
+        arts = [
+            _art_with_publication(1, "lento"),
+            _art(2),
+            _art(3),
+            _art(4),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertNotIn(1, _ids(result))
+        self.assertEqual(_ids(result), [2, 3, 4])
+
+    def test_pinned_from_excluded_source_is_kept(self):
+        """A manually pinned article from an excluded source still appears in the result."""
+        # Article 1 has section 'humor' (normally excluded) but is pinned
+        arts = [
+            _art_with_section(1, "humor"),
+            _art(2),
+            _art(3),
+        ]
+        result = _run(saved_ids=[1, 2, 3], pinned_ids={1}, published_ordered=arts)
+        # slot 0 → pinned 1 (humor, but pinned so kept); slots 1-2 → dynamic (2, 3)
+        self.assertIn(1, _ids(result))
+        self.assertEqual(_ids(result), [1, 2, 3])
+
+    def test_multiple_excluded_sources_all_filtered(self):
+        """Articles from several excluded sources are all removed from dynamic results."""
+        arts = [
+            _art_with_section(1, "humor"),
+            _art_with_category(2, "libros"),
+            _art_with_publication(3, "le-monde-diplomatique"),
+            _art(4),
+            _art(5),
+            _art(6),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertEqual(_ids(result), [4, 5, 6])
+
+    @override_settings(HOMEV4_LO_ULTIMO_EXCLUDE_SECTION_SLUGS=[])
+    def test_empty_section_exclusion_list_disables_section_filter(self):
+        """Setting HOMEV4_LO_ULTIMO_EXCLUDE_SECTION_SLUGS=[] keeps all sections."""
+        arts = [
+            _art_with_section(1, "humor"),
+            _art(2),
+            _art(3),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertIn(1, _ids(result))
+
+    @override_settings(HOMEV4_LO_ULTIMO_EXCLUDE_SECTION_SLUGS=["custom-section"])
+    def test_custom_section_exclusion_via_setting(self):
+        """A custom slug in HOMEV4_LO_ULTIMO_EXCLUDE_SECTION_SLUGS is respected."""
+        arts = [
+            _art_with_section(1, "custom-section"),
+            _art(2),
+            _art(3),
+            _art(4),
+        ]
+        result = _run(saved_ids=None, published_ordered=arts)
+        self.assertNotIn(1, _ids(result))
+        self.assertEqual(_ids(result), [2, 3, 4])
