@@ -113,6 +113,7 @@ DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFI
 BLOCK_ARTICLE_LIMITS = {
     "principal":           10,
     "suplemento":           7,
+    "especial":             1,
     "area":                 2,
     "apuntes_del_dia":      1,
     "opinion":              3,
@@ -334,7 +335,7 @@ def save_grid(request, layout_id):
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
         # Enforce per-block article_ids limits — violating these breaks deduplication logic.
-        for block in ("principal", "suplemento"):
+        for block in ("principal", "suplemento", "especial"):
             ids = grid_data.get(block, {}).get("article_ids", [])
             limit = BLOCK_ARTICLE_LIMITS[block]
             if len(ids) > limit:
