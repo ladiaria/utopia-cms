@@ -12,26 +12,29 @@ window.addEventListener("load", function() {
         // Extract username from the library's English format: "...by FirstName LastName &lt;<a href=..."
         let userName = originalMessage.match(/by (.+?)\s+&lt;/);
         userName = userName ? userName[1].trim() : 'otro usuario';
-        return "⚠️ Esta página está siendo editada por <strong>" + userName + "</strong>. Por favor espera hasta que termine o el bloqueo expire.";
+        return "<strong>" + userName + "</strong> está editando esta página. Podrás editarla cuando finalice o cuando expire el bloqueo.";
       } else {
-        return "✓ Ahora puedes editar esta página. <a href='" + window.location.pathname + "'>Recargar página aquí</a>";
+        return "✓ Ya podés editar esta página. <a href='" + window.location.pathname + "' style='font-weight:bold;text-decoration:underline;'>Recargar para editar</a>";
       }
     }
 
-    function positionBannerAtTop() {
-      $('div.submit-row').css({
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        zIndex: '10000',
-        margin: '0',
-        padding: '15px 20px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-      });
+    var BASE_BANNER_CSS = {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      right: '0',
+      zIndex: '10000',
+      margin: '0',
+      padding: '0',
+      textAlign: 'center',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+    };
+
+    function applyBannerStyle(submitRow, isLocked) {
+      var extra = isLocked
+        ? { background: '#c62828', color: '#fff' }
+        : { background: '#c8e6c9', color: '#1b5e20' };
+      submitRow.css(Object.assign({}, BASE_BANNER_CSS, extra));
     }
 
     // Restore scroll position after the library disables fields (which triggers browser auto-scroll).
@@ -49,20 +52,20 @@ window.addEventListener("load", function() {
           if (submitRow.hasClass('locked')) {
             preventAutoScroll(function() {
               const translatedMessage = translateMessage(submitRow.html(), true);
-              submitRow.html('<p style="padding:10px;margin:0;">' + translatedMessage + '</p>');
-              positionBannerAtTop();
+              submitRow.html('<p style="padding:16px 24px;margin:0;font-size:16px;">' + translatedMessage + '</p>');
+              applyBannerStyle(submitRow, true);
             });
           } else if (submitRow.hasClass('unlocked')) {
             preventAutoScroll(function() {
               const translatedMessage = translateMessage(submitRow.html(), false);
-              submitRow.html('<p style="padding:10px;margin:0;">' + translatedMessage + '</p>');
-              positionBannerAtTop();
+              submitRow.html('<p style="padding:14px 24px;margin:0;font-size:15px;">' + translatedMessage + '</p>');
+              applyBannerStyle(submitRow, false);
             });
           } else {
             // Lock released — restore normal submit-row positioning.
             submitRow.css({
               position: '', top: '', left: '', right: '', zIndex: '',
-              margin: '', padding: '', fontSize: '', fontWeight: '',
+              margin: '', padding: '', background: '', color: '',
               textAlign: '', boxShadow: ''
             });
           }
