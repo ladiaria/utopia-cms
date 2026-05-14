@@ -612,8 +612,8 @@
         });
       }, { passive: true });
       window.addEventListener("resize", function () {
-        update();
         updateCenter();
+        update();
       });
 
       if (leftBtn) {
@@ -627,8 +627,7 @@
         });
       }
 
-      update();
-      updateCenter();
+      document.fonts.ready.then(function () { updateCenter(); update(); });
     });
 
     // Newsletter tooltip — toggle on trigger click, close on outside click
