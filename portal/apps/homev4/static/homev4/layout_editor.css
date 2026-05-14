@@ -217,6 +217,10 @@
     font-size: 11px;
     color: #444;
     line-height: 1.3;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Drag states for section articles */
