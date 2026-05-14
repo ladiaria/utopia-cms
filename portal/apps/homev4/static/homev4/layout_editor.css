@@ -26,6 +26,20 @@
 #homev4-editor .editor-actions .btn-sync:hover  { background: #1e8449; }
 #homev4-editor .editor-actions .btn-reset    { background: #ba2121; margin-left: 8px; }
 #homev4-editor .editor-actions .btn-reset:hover { background: #8a1515; }
+#homev4-editor .preview-5am-banner {
+    background: #f3f3f3;
+    color: #333333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+#homev4-editor .editor-actions .btn-5am,
+#homev4-editor .editor-actions .btn-save-pending { background: var(--button-bg) !important; }
+#homev4-editor .editor-actions .btn-5am:hover,
+#homev4-editor .editor-actions .btn-save-pending:hover { background: var(--button-hover-bg) !important; }
 
 /* ── Two-column outer layout ─────────────────────────────── */
 #homev4-editor .editor-layout {
