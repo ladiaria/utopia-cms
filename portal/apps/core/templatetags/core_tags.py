@@ -514,9 +514,13 @@ def resolve_article_breadcrumb(context, article):
     if section.category:
         parent = section.category
         parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
-    elif article.main_section:
-        parent = article.main_section.edition.publication
-        parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    else:
+        excluded = getattr(settings, "CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS", ())
+        parent = section.publications.exclude(slug__in=excluded).first()
+        if not parent and article.main_section:
+            parent = article.main_section.edition.publication
+        if parent:
+            parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
     return {
         'parent': parent,
         'parent_url': parent_url,
