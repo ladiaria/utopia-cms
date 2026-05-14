@@ -227,7 +227,7 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
     Tests for the article_ids limits across all blocks in save_grid().
 
     Each block has a limit defined in BLOCK_ARTICLE_LIMITS:
-      principal: 10, suplemento: 7, area: 2,
+      principal: 10, suplemento: 7, especial: 1, area: 2,
       apuntes_del_dia: 1, opinion: 3, recomendadas_lv: 4,
       recomendadas_domingo: 4, le_monde: 2, lento: 2.
     """
@@ -253,6 +253,16 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
                  "sections_active": 0, "sections_total": 0, "componentes_active": [],
              }):
             return save_grid(request, layout_id=1)
+
+    def test_especial_over_limit_returns_400(self):
+        """especial with 2 IDs (limit 1) → HTTP 400."""
+        response = self._post({"especial": {"article_ids": [1, 2]}})
+        self.assertEqual(response.status_code, 400)
+
+    def test_especial_at_limit_accepted(self):
+        """especial with exactly 1 ID → accepted."""
+        response = self._post({"especial": {"article_ids": [1]}})
+        self.assertEqual(response.status_code, 200)
 
     def test_suplemento_over_limit_returns_400(self):
         """suplemento with 8 IDs (limit 7) → HTTP 400."""
@@ -314,7 +324,8 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
         response = self._post({
             "principal":  {"article_ids": list(range(1, 11))},
             "suplemento": {"article_ids": list(range(11, 18))},
-            "sections":   [{"slug": "mundo", "article_ids": [18, 19]}],
+            "especial":   {"article_ids": [18]},
+            "sections":   [{"slug": "mundo", "article_ids": [19, 20]}],
             "componentes": [
                 {"key": "opinion",              "article_ids": [20, 21, 22]},
                 {"key": "recomendadas_lv",      "article_ids": [23, 24, 25, 26]},
