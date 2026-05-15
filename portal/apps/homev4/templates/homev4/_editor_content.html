@@ -4,10 +4,10 @@
     <div class="editor-actions">
         {% if is_preview_5am %}
         <div class="preview-5am-banner">
-            ⚠ Estás editando el contenido que se publicará a las 5am. Lo que guardes acá no afecta la home actual.
+            ⚠ Estás editando el contenido que se publicará a las 5am. Lo que guardes acá no afecta la portada actual.
         </div>
-        <button type="button" id="btn-save" class="button btn-save-pending">Guardar para las 5am</button>
-        <button type="button" id="btn-reset-pending" class="button" style="background:#b71c1c;color:#fff;" onclick="if(confirm('¿Limpiar todo lo guardado para las 5am y empezar de cero?')) { fetch('/homev4/reset-pending/', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(function(){location.reload();}); }">Limpiar y empezar de cero</button>
+        <button type="button" id="btn-save" class="button btn-save-pending btn-5am">Guardar para las 5am</button>
+        <button type="button" id="btn-reset-pending" class="button btn-5am" onclick="if(confirm('¿Limpiar todo lo guardado para las 5am y empezar de cero?')) { fetch('/homev4/reset-pending/', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(function(){location.reload();}); }">Limpiar y empezar de cero</button>
         <a id="btn-preview-5am" href="/homev4/preview-5am-render/" target="_blank"
            class="button"
            {% if not has_pending %}style="pointer-events:none; opacity:0.4;" title="Guardá primero para previsualizar"{% endif %}>
@@ -146,7 +146,8 @@
                 <div class="article-picker"
                      data-target="especial-articles"
                      data-row-class="article-row"
-                     data-item-selector=".article-row[data-article-id]">
+                     data-item-selector=".article-row[data-article-id]"
+                     data-max-add="1">
                     <input type="text" class="picker-search-input" placeholder="Buscar artículo…" autocomplete="off">
                     <div class="picker-results"></div>
                 </div>

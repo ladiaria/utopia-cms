@@ -113,6 +113,7 @@ DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFI
 BLOCK_ARTICLE_LIMITS = {
     "principal":           10,
     "suplemento":           7,
+    "especial":             1,
     "area":                 2,
     "apuntes_del_dia":      1,
     "opinion":              3,
@@ -334,7 +335,7 @@ def save_grid(request, layout_id):
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
         # Enforce per-block article_ids limits — violating these breaks deduplication logic.
-        for block in ("principal", "suplemento"):
+        for block in ("principal", "suplemento", "especial"):
             ids = grid_data.get(block, {}).get("article_ids", [])
             limit = BLOCK_ARTICLE_LIMITS[block]
             if len(ids) > limit:
@@ -1198,6 +1199,27 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             dynamic_exclude = exclude_set | set(anchored)
             qs = Article.published.select_related(_ARTICLE_AUTH_SELECT_RELATED).order_by("-date_published")
             qs = qs.exclude(id__in=dynamic_exclude)
+            # Exclude articles from specific sources — manual pins still allowed.
+            _excl_sections = getattr(
+                settings, "HOMEV4_LO_ULTIMO_EXCLUDE_SECTION_SLUGS",
+                [getattr(settings, "HOMEV4_HUMOR_SECTION_SLUG", "humor"),
+                 getattr(settings, "HOMEV4_APUNTES_SECTION_SLUG", "apuntes-del-dia"),
+                 "apuntes-de-la-semana"],
+            )
+            _excl_categories = getattr(
+                settings, "HOMEV4_LO_ULTIMO_EXCLUDE_CATEGORY_SLUGS",
+                [getattr(settings, "HOMEV4_OPINION_CATEGORY_SLUG", "opinion"), "libros"],
+            )
+            _excl_publications = getattr(
+                settings, "HOMEV4_LO_ULTIMO_EXCLUDE_PUBLICATION_SLUGS",
+                ["lento", "le-monde-diplomatique"],
+            )
+            if _excl_sections:
+                qs = qs.exclude(main_section__section__slug__in=_excl_sections)
+            if _excl_categories:
+                qs = qs.exclude(main_section__section__category__slug__in=_excl_categories)
+            if _excl_publications:
+                qs = qs.exclude(main_section__edition__publication__slug__in=_excl_publications)
             dynamic_articles = list(qs[:dynamic_slots])
 
         if not saved_ids:
