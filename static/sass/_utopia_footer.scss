@@ -114,7 +114,7 @@
   @media #{$medium-and-down} {
     &__container {
       grid-template-columns: 1fr;
-      padding: 48px;
+      padding: 48px $padding-inline;
       gap: 48px;
     }
   }
@@ -124,7 +124,7 @@
 .footer-portada .mobile-login-items {
   display: none;
   @media #{$medium-and-down} {
-    display: block;
+    display: flex;
   }
 }
 
