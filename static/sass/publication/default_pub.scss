@@ -335,6 +335,14 @@
       grid-row: 2;
       align-self: center;
       width: 100%;
+
+      .article__lead {
+        font-family: $serif;
+        font-weight: 300;
+        font-size: px-to-rem(15px);
+        line-height: 1.3;
+        margin: 0;
+      }
     }
   }
 
@@ -772,6 +780,15 @@
 
       .article__title {
         @include featured-article-title(mobile);
+        font-size: px-to-rem(22px);
+      }
+
+      .article__lead {
+        font-family: $serif;
+        font-weight: 300;
+        font-size: px-to-rem(15px);
+        line-height: 1.3;
+        margin: 0;
       }
     }
     &__secondary-row {
