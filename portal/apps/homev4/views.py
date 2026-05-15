@@ -6,6 +6,7 @@ import time
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.formats import date_format
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -964,6 +965,7 @@ def build_home_data(grid_data, publication=None, layout=None):
                 comp_entry["crossword_id"] = crossword_id
                 comp_entry["crossword_image_url"] = item.get("crossword_image_url")
                 comp_entry["crossword_url"] = item.get("crossword_url") or "/crucigramas/"
+                comp_entry["crossword_date"] = item.get("crossword_date")
             else:
                 # Fallback for layouts not yet updated by the signal.
                 try:
@@ -973,6 +975,9 @@ def build_home_data(grid_data, publication=None, layout=None):
                         comp_entry["crossword_id"] = cw.id
                         comp_entry["crossword_image_url"] = cw.image.url if cw.image else None
                         comp_entry["crossword_url"] = "/crucigramas/"
+                        comp_entry["crossword_date"] = date_format(
+                            cw.date_published, format='l j \\d\\e F', use_l10n=True
+                        ).capitalize().replace("septiembre", "setiembre")
                 except ImportError:
                     pass
         elif key in ("lo_ultimo", "apuntes_del_dia"):
