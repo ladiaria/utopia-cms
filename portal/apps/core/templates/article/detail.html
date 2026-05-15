@@ -117,32 +117,31 @@
       {# TODO: - apply this 'render_allowed' condition also in all places that render article's photos #}
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
+        {% block main_photo %}
         {% if header_display == 'FW' %}
           <div>{# closed in line 300 #}
             <div class="fullwidth-container">
               <div class="main-photo">
-                <div>
-                  <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
-                          alt="{{ article.photo_caption }}">
-                    <picture>
-                      <!--[if IE 9]><video style="display: none;"><![endif]-->
-                      <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                      <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                      <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                      <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                      <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                      <!--[if IE 9]></video><![endif]-->
-                      <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                           data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                    </picture>
-                    <figcaption class="caption">
-                      {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
-                      {% if article.photo_author %}
-                        <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
-                      {% endif %}
-                    </figcaption>
-                  </figure>
-                </div>
+                <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
+                        alt="{{ article.photo_caption }}">
+                  <picture>
+                    <!--[if IE 9]><video style="display: none;"><![endif]-->
+                    <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
+                    <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
+                    <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
+                    <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
+                    <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
+                    <!--[if IE 9]></video><![endif]-->
+                    <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                          data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
+                  </picture>
+                  <figcaption class="caption">
+                    {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+                    {% if article.photo_author %}
+                      <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
+                    {% endif %}
+                  </figcaption>
+                </figure>
               </div>
             </div>
           {# missing close div here is closed correctly in line 300 #}
@@ -163,31 +162,30 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="44" height="35" fill="none" viewBox="0 0 44 35"><path fill="#a4a4a4" d="m12.82 10.081 9.18 9.18 9.18-9.18 2.82 2.84-12 12-12-12z"/></svg>
               </div>
               <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
-                <picture>
-                  <!--[if IE 9]><video style="display: none;"><![endif]-->
-                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                  <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                  <!--[if IE 9]></video><![endif]-->
-                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}" data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                </picture>
+                <img
+                  class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                  srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_350w_url }} 350w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
+                  sizes="100vw"
+                  width="700"
+                  height="{{ article.photo.get_700w_size.1 }}"
+                  data-caption="{{ article.photo_caption }}"
+                  alt="{{ article.photo_caption }}"
+                  loading="lazy"
+                >
               </figure>
             </div>
           {% else %}
             <div class="container-photo photo BG {{ article.photo_layout }}">
               <figure class="principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
-                <picture class="materialboxed">
-                  <!--[if IE 9]><video style="display: none;"><![endif]-->
-                  <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                  <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                  <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 500px)">
-                  <source srcset="{{ article.photo.get_450w_url }}" media="(min-width: 300px)">
-                  <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                  <!--[if IE 9]></video><![endif]-->
-                  <img class="ld-article__main-photo responsive-img {{ article.photo_layout }}" data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}">
-                </picture>
+                <img
+                  class="ld-article__main-photo responsive-img {{ article.photo_layout }} materialboxed"
+                  srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_450w_url }} 450w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
+                  sizes="100vw"
+                  width="700"
+                  height="{{ article.photo.get_700w_size.1 }}"
+                  data-caption="{{ article.photo_caption }}"
+                  alt="{{ article.photo_caption }}"
+                >
                 <figcaption class="article-caption ld-caption">
                   {% if article.photo.caption %}<p id="photo-caption">{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
@@ -196,11 +194,12 @@
             </div>
           {% endif %}
         {% endif %}
+        {% endblock %}
       {% endif %}
 
       <div class="article-header article-container">
         {% if section.is_satirical %}
-          <div class="align-center">
+          <div class="humor-pill-container">
             <a href="{{ section.get_absolute_url }}" class="humor-pill jello-horizontal">{{ section }}</a>
           </div>
         {% endif %}
@@ -466,9 +465,7 @@
               {% with linked_collections=article.published_collections %}
                 {% if linked_collections %}
                   <div class="collection-articles">
-                    <svg id="collection-logo" xmlns="http://www.w3.org/2000/svg" width="22" height="21" viewBox="0 0 22 21" fill="none">
-                      <path d="M11.0001 0.0787354C10.5001 0.0787354 10.0001 0.268735 9.59006 0.668735L6.29006 3.95874L11.0001 8.65874L15.7101 3.95874L12.4101 0.668735C12.0001 0.268735 11.5001 0.0787354 11.0001 0.0787354ZM4.88006 5.36874L1.59006 8.66874C0.800059 9.44874 0.800059 10.7087 1.59006 11.4887L4.88006 14.7887L9.58006 10.0787L4.88006 5.36874ZM17.1201 5.36874L12.4201 10.0787L17.1201 14.7887L20.4101 11.4887C21.2001 10.7087 21.2001 9.44874 20.4101 8.66874L17.1201 5.36874ZM11.0001 11.4987L6.29006 16.1987L9.59006 19.4887C10.3701 20.2787 11.6301 20.2787 12.4101 19.4887L15.7101 16.1987L11.0001 11.4987Z" fill="#A4A4A4"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" id="collection-logo" width="22" height="21" fill="none" viewBox="0 0 22 21"><path fill="#a4a4a4" d="M11 .079c-.5 0-1 .19-1.41.59l-3.3 3.29 4.71 4.7 4.71-4.7-3.3-3.29c-.41-.4-.91-.59-1.41-.59m-6.12 5.29-3.29 3.3c-.79.78-.79 2.04 0 2.82l3.29 3.3 4.7-4.71zm12.24 0-4.7 4.71 4.7 4.71 3.29-3.3c.79-.78.79-2.04 0-2.82zM11 11.499l-4.71 4.7 3.3 3.29c.78.79 2.04.79 2.82 0l3.3-3.29z"/></svg>
                     <span>Este artículo forma parte de las colecciones:</span>
                     <ul>
                       {% for collection in linked_collections %}
@@ -615,9 +612,7 @@
             <div id="send-feedback" class="send-feedback">
               {% if report_form_sent %}
                 <p class="success-message">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20.3325 2.33337L8.33242 14.3307L3.66775 9.66754L0 13.3352L8.33249 21.6665L24 6.00112L20.3325 2.33337Z" fill="black"/>
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#000" d="m20.333 2.333-12 11.998-4.665-4.663L0 13.335l8.332 8.331L24 6.002z"/></svg>
                   Muchas gracias. El mensaje fue enviado correctamente.
                 </p>
               {% else %}

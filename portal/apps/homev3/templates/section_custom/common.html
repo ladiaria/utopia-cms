@@ -18,6 +18,7 @@
       </div>
     </div>
 
+    {% block articles-container %}
     <div class="container container--mobile-overflow">
       {# 4 Article grid for section #}
       <section class="articles-grid articles-grid--scroll">
@@ -27,5 +28,6 @@
       </section>
       {# End article grid #}
     </div>
+    {% endblock %}
   </section>
 {% endif %}

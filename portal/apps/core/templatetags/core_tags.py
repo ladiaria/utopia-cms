@@ -78,7 +78,7 @@ def render_related(context, article, amp=False):
     ):
         # use the publication
         upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id),
+            'articles': section.latest6relatedbypublication(publication.id, article.id),
             'section': publication.headline if publication.slug in getattr(
                 settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
             ) else publication.name,
@@ -87,7 +87,7 @@ def render_related(context, article, amp=False):
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
         upd_dict = {
-            'articles': section.latest4relatedbycategory(category.id, article.id),
+            'articles': section.latest6relatedbycategory(category.id, article.id),
             'section': category.more_link_title or category.name,
         }
 
@@ -100,13 +100,13 @@ def render_related(context, article, amp=False):
                 if category_slug in article_categories and section.slug not in section_slugs:
                     category = Category.objects.get(slug=category_slug)
                     upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id),
+                        'articles': section.latest6relatedbycategory(category.id, article.id),
                         'section': category.name,
                     }
                     break
 
     if not upd_dict:
-        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+        upd_dict = {'articles': section.latest6related(article.id), 'section': section.name}
 
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
@@ -511,18 +511,21 @@ def resolve_article_breadcrumb(context, article):
     if not section:
         return {}
     parent, parent_url = None, None
-    if section.category or category:
-        allowed = getattr(settings, "CORE_CATEGORY_ALLOW_RENDER_HIERARCHY", ())
-        effective_category = section.category or category
-        if not allowed or effective_category.slug in allowed:
-            parent = effective_category
-        elif publication:
-            parent = publication
+    if section.category:
+        parent = section.category
+        parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    else:
+        excluded = getattr(settings, "CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS", ())
+        main_pub = article.main_section.edition.publication if article.main_section else None
+        if main_pub and main_pub.slug not in excluded:
+            parent = main_pub
+        else:
+            ar = article.articlerel_set.exclude(
+                edition__publication__slug__in=excluded
+            ).select_related('edition__publication').first()
+            parent = ar.edition.publication if ar else None
         if parent:
             parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
-    elif article.main_section:
-        parent = article.main_section.edition.publication
-        parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
     return {
         'parent': parent,
         'parent_url': parent_url,

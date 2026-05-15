@@ -178,7 +178,7 @@ header {
     body.article & {
       align-items: center;
     }
-    body.article & .header-pill {
+    body.article-detail & .header-pill {
       display: none;
     }
   }
@@ -662,9 +662,10 @@ header {
     min-height: px-to-rem(44px);
     display: flex;
 
-    > ul {
+    ul {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
 
     &.with-right-gradient::after {
@@ -1107,12 +1108,6 @@ header {
   // Hide pill when menu is open
   body.main-menu-open & {
     display: none !important;
-  }
-
-  @media #{$medium-and-down} {
-    body.article-detail & {
-      display: none;
-    }
   }
 }
 
@@ -1736,8 +1731,7 @@ main > header {
 
 // subheader
 .section-subheader {
-  padding: 20px 0;
-  box-shadow: 0px 3px 6px #00000029;
+  padding: 32px 0;
 
   .header-logo svg {
     height: 50px;

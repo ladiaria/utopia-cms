@@ -24,6 +24,26 @@ Se agregaron dos settings estáticos para controlar los items de los menús de n
 
 Ambos settings están en `local_settings.py` en la sección HOMEV4. Ambos tienen fallback a `MENU_CATEGORIES` si el setting no existe.
 
+## Verificar `CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR` en `local_settings.py`
+
+En el ambiente de test este setting está en `True`, lo que hace que los artículos del año corriente muestren la fecha sin año (ej: "5 de mayo"). En producción debe estar en `False` para mostrar siempre la fecha completa (ej: "5 de mayo de 2026").
+
+Confirmar que en `local_settings.py` de producción esté explícitamente:
+
+```python
+CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR = False
+```
+
+## Agregar `CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS` en `local_settings.py`
+
+Setting nuevo que controla qué publicaciones se excluyen al resolver la publicación del breadcrumb de artículo cuando la sección no tiene categoría asignada. Usado en `core/templatetags/core_tags.py`, función `resolve_article_breadcrumb`.
+
+Agregar en `local_settings.py`:
+
+```python
+CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS = ('la-diaria', 'fin-de-semana')
+```
+
 ## Migrar `CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES` a template
 
 El setting ahora soporta valores que sean paths a templates (terminados en `.html`), además de strings HTML inline. La sección "sobre la diaria" pasó a usar un template para poder evolucionar el markup sin tocar `local_settings.py`.
