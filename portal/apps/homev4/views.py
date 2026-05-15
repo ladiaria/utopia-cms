@@ -977,7 +977,7 @@ def build_home_data(grid_data, publication=None, layout=None):
                         comp_entry["crossword_url"] = "/crucigramas/"
                         comp_entry["crossword_date"] = date_format(
                             cw.date_published, format='l j \\d\\e F', use_l10n=True
-                        ).capitalize()
+                        ).capitalize().replace("septiembre", "setiembre")
                 except ImportError:
                     pass
         elif key in ("lo_ultimo", "apuntes_del_dia"):
