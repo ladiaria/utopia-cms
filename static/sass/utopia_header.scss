@@ -662,9 +662,10 @@ header {
     min-height: px-to-rem(44px);
     display: flex;
 
-    > ul {
+    ul {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
 
     &.with-right-gradient::after {
