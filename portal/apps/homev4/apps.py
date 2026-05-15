@@ -45,7 +45,7 @@ def _update_crossword_in_layouts(sender, instance, **kwargs):
                 comp["crossword_url"] = "/crucigramas/"
                 comp["crossword_date"] = date_format(
                     instance.date_published, format='l j \\d\\e F', use_l10n=True
-                ).capitalize()
+                ).capitalize().replace("septiembre", "setiembre")
                 layout.grid_data = gd
                 to_update.append(layout)
                 break
