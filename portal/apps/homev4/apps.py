@@ -3,6 +3,7 @@ import logging
 
 from django.apps import AppConfig
 from django.db.models.signals import pre_save
+from django.utils.formats import date_format
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,9 @@ def _update_crossword_in_layouts(sender, instance, **kwargs):
                 comp["crossword_id"] = instance.id
                 comp["crossword_image_url"] = image_url
                 comp["crossword_url"] = "/crucigramas/"
+                comp["crossword_date"] = date_format(
+                    instance.date_published, format='l j \\d\\e F', use_l10n=True
+                ).capitalize()
                 layout.grid_data = gd
                 to_update.append(layout)
                 break
