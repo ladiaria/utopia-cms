@@ -40,7 +40,7 @@
 
 // ─── Tipografía compartida: artículo destacado ────────────────────────────────
 @mixin featured-article-title($variant: desktop) {
-  font-weight: 450;
+  font-weight: 500;
 
   @if $variant == mobile {
     font-size: px-to-rem(18px);
