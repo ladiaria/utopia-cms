@@ -986,6 +986,8 @@ article#main-article {
 
   ul li {
     list-style-type: disc;
+    font-size: px-to-rem(20px);
+    line-height: px-to-rem(27px);
   }
 
   li {
