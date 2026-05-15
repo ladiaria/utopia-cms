@@ -1,0 +1,119 @@
+@import "variables";
+
+body.error {
+  background: #f1f4f5;
+}
+
+.not-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 60vh;
+  padding: 64px $padding-inline;
+  max-width: $container-width;
+  margin: 0 auto;
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 64px;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+  }
+
+  &__title {
+    font-family: "Dialect Gothic A", sans-serif;
+    font-weight: 500;
+    font-size: 40px;
+    margin: 0;
+    color: #000;
+  }
+
+  &__subtitle {
+    font-family: "Dialect Gothic A", sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: #000;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    width: 100%;
+  }
+
+  &__search-input-wrap {
+    flex: 1;
+    border-bottom: $border-divider;
+    padding: 0 0 8px 4px;
+
+    input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: "Dialect Gothic A", sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      color: #000;
+
+      &::placeholder {
+        color: $color-divider;
+      }
+    }
+  }
+
+  &__search-btn {
+    font-family: "Dialect Gothic A", sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 24px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  @media #{$medium-and-down} {
+    padding: 40px $padding-inline;
+    min-height: 50vh;
+
+    &__main {
+      gap: 40px;
+    }
+
+    &__text {
+      gap: 16px;
+    }
+
+    &__title {
+      font-size: 28px;
+    }
+
+    &__search {
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    &__search-input-wrap {
+      width: 100%;
+    }
+  }
+}
+
+.ld-footer-simple {
+  margin-top: auto;
+}
