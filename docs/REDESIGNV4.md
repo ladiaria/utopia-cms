@@ -17,12 +17,62 @@ Settings que quedaron sin consumidor tras eliminar código de la home vieja (hom
 
 ## Revisar `HOME_NAV_ITEMS` y `MAIN_MENU_AREAS_ITEMS` en `local_settings.py`
 
-Se agregaron dos settings estáticos para controlar los items de los menús de navegación. Por ahora los slugs de cada item son estimados — verificar que todas las URLs correspondan a las áreas/publicaciones/secciones reales antes del deploy.
+Se agregaron dos settings estáticos para controlar los items de los menús de navegación. Verificar que todas las URLs correspondan a las áreas/publicaciones/secciones reales antes del deploy.
 
 - **`HOME_NAV_ITEMS`** — items del navbar horizontal de la home (`/`). Template: `thedaily/templates/navbar.html`.
 - **`MAIN_MENU_AREAS_ITEMS`** — items del bloque "Áreas" en el menú extendido (hamburguesa). Template: `core/templates/edition/resume.html`.
 
-Ambos settings están en `local_settings.py` en la sección HOMEV4. Ambos tienen fallback a `MENU_CATEGORIES` si el setting no existe.
+Ambos tienen fallback a `MENU_CATEGORIES` si el setting no existe.
+
+```python
+HOME_NAV_ITEMS = [
+    {"label": "Política",    "url": "/politica/",    "classes": ""},
+    {"label": "Mundo",       "url": "/mundo/",       "classes": ""},
+    {"label": "Justicia",    "url": "/justicia/",    "classes": ""},
+    {"label": "Opinión",     "url": "/opinion/",     "classes": ""},
+    {"label": "Deporte",     "url": "/deporte/",     "classes": ""},
+    {"label": "Cultura",     "url": "/cultura/",     "classes": ""},
+    {"label": "Educación",   "url": "/educacion/",   "classes": ""},
+    {"label": "Ciencia",     "url": "/ciencia/",     "classes": ""},
+    {"label": "Economía",    "url": "/economia/",    "classes": ""},
+    {"label": "Futuro",      "url": "/futuro/",      "classes": ""},
+    {"label": "Trabajo",     "url": "/trabajo/",     "classes": ""},
+    {"label": "Salud",       "url": "/salud/",       "classes": ""},
+    {"label": "Ambiente",    "url": "/ambiente/",    "classes": ""},
+    {"label": "Verifica",    "url": "/verifica/",    "classes": ""},
+    {"label": "Local",       "url": None,            "classes": "", "children": [
+        {"label": "Colonia",   "url": "/colonia/"},
+        {"label": "Maldonado", "url": "/maldonado/"},
+        {"label": "Paysandú",  "url": "/paysandu/"},
+        {"label": "Salto",     "url": "/salto/"},
+    ]},
+    {"label": "Feminismos",  "url": "/feminismos/",  "classes": ""},
+    {"label": "Cotidiana",   "url": "/cotidiana/",   "classes": ""},
+    {"label": "Libros",      "url": "/libros/",      "classes": ""},
+    {"label": "Crucigramas", "url": "/crucigramas/", "classes": ""},
+]
+
+MAIN_MENU_AREAS_ITEMS = [
+    {"label": "Ambiente",   "url": "/ambiente/",   "classes": ""},
+    {"label": "Carnaval",   "url": "/carnaval/",   "classes": ""},
+    {"label": "Ciencia",    "url": "/ciencia/",    "classes": ""},
+    {"label": "Cotidiana",  "url": "/cotidiana/",  "classes": ""},
+    {"label": "Cultura",    "url": "/cultura/",    "classes": ""},
+    {"label": "Deporte",    "url": "/deporte/",    "classes": ""},
+    {"label": "Economía",   "url": "/economia/",   "classes": ""},
+    {"label": "Educación",  "url": "/educacion/",  "classes": ""},
+    {"label": "Feminismos", "url": "/feminismos/", "classes": ""},
+    {"label": "Futuro",     "url": "/futuro/",     "classes": ""},
+    {"label": "Justicia",   "url": "/justicia/",   "classes": ""},
+    {"label": "Libros",     "url": "/libros/",     "classes": ""},
+    {"label": "Mundo",      "url": "/mundo/",      "classes": ""},
+    {"label": "Opinión",    "url": "/opinion/",    "classes": ""},
+    {"label": "Política",   "url": "/politica/",   "classes": ""},
+    {"label": "Salud",      "url": "/salud/",      "classes": ""},
+    {"label": "Trabajo",    "url": "/trabajo/",    "classes": ""},
+    {"label": "Verifica",   "url": "/verifica/",   "classes": ""},
+]
+```
 
 ## Verificar `CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR` en `local_settings.py`
 
