@@ -10,14 +10,6 @@
   </div>
 {% endif %}
 
-  <div class="center">
-    <a href="{% url 'home' %}" title="Ir a portada">
-      {% block logo_footer %}
-        <img src="{% static HOMEV3_LOGO_FOOTER %}" alt="{{ HOMEV3_LOGO_ALT_TEXT }}" width="{{ HOMEV3_LOGO_FOOTER_WIDTH }}" height="40">
-      {% endblock %}
-    </a>
-  </div>
-
 {% if minimal_footer %}
   </div>
 {% endif %}
