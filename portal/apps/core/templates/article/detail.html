@@ -484,6 +484,7 @@
               {% endwith %}
             {% endif %}
             {# END collection articles #}
+            {% block inside_article_body_end %}{% endblock %}
           </div>
 
           {% if article.gallery %}

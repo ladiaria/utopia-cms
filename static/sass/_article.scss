@@ -998,6 +998,12 @@ article#main-article {
     font-weight: 500;
   }
 
+  blockquote {
+    margin: 32px 0;
+    padding-left: px-to-rem(24px);
+    border-left: 5px solid #000;
+  }
+
   .ld-caption {
     margin: 10px 0;
     text-align: center;
@@ -1390,6 +1396,7 @@ article .article-body .collection-articles {
   border: 1px solid #d8d8d8;
   padding: 16px;
   border-radius: 4px;
+  margin: 32px 0;
 
   &--title {
     margin: 0;
