@@ -1115,7 +1115,8 @@ blockquote.tiktok-embed {
 // Newsletter tooltip — generic component shown on click of a disabled switch
 // for anonymous users. The host element (the trigger's nearest container that
 // also holds the `.nl-tooltip`) gets `position: relative` via the data attribute.
-[data-nl-tooltip-host] {
+[data-nl-tooltip-host],
+[data-nl-unsubscribe-host] {
   position: relative;
 }
 
@@ -1169,5 +1170,69 @@ blockquote.tiktok-embed {
       text-decoration: underline;
       display: inline-flex;
     }
+  }
+}
+
+.nl-unsubscribe-tooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 16px;
+  width: 332px;
+  max-width: 332px;
+  background-color: #e3e8ea;
+  border-radius: 5px;
+  padding: 24px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &[hidden] {
+    display: none;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    right: 16px;
+    width: 16px;
+    height: 16px;
+    background-color: #e3e8ea;
+    transform: rotate(45deg);
+    border-radius: 1px;
+  }
+
+  &__title {
+    font-family: $sans;
+    font-weight: 700;
+    font-size: px-to-rem(15px);
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: #000;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &__confirm,
+  &__cancel {
+    font-family: $sans;
+    font-size: px-to-rem(15px);
+    letter-spacing: 0.01em;
+    color: #000;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  &__cancel {
+    text-decoration: underline;
   }
 }

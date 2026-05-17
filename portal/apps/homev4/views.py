@@ -173,11 +173,20 @@ def get_papel_url():
     try:
         today = timezone.localdate()
         publication = get_default_publication()
-        # Prefer today's edition with PDF; fall back to the most recent one with PDF.
-        edition = (
-            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
-            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-        )
+        weekday = today.weekday()
+        if weekday >= 5:
+            # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
+            fds_pub = Publication.objects.filter(slug="findesemana").first()
+            edition = (
+                Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
+                if fds_pub else None
+            ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        else:
+            # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
+            edition = (
+                Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+                or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+            )
         if not edition:
             return settings.PAPEL_FALLBACK_URL
         url = (
@@ -482,11 +491,15 @@ def article_search(request):
                 layout = HomeLayout.objects.get(pk=layout_id)
                 gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
                 for block in ("principal", "suplemento", "especial"):
-                    excluded_ids.update(gd.get(block, {}).get("article_ids", []))
+                    block_data = gd.get(block, {})
+                    if block_data.get("active", True):
+                        excluded_ids.update(block_data.get("article_ids", []))
                 for sec in gd.get("sections", []):
-                    excluded_ids.update(sec.get("article_ids", []))
+                    if sec.get("active", True):
+                        excluded_ids.update(sec.get("article_ids", []))
                 for comp in gd.get("componentes", []):
-                    excluded_ids.update(comp.get("article_ids", []))
+                    if comp.get("active", True):
+                        excluded_ids.update(comp.get("article_ids", []))
             except HomeLayout.DoesNotExist:
                 pass
 
@@ -708,42 +721,45 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
     resolved = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else get_default_grid_data()
     seen_ids = set()
 
-    # 1. PRINCIPAL
+    # 1. PRINCIPAL — skip fallback and dedup accumulation when inactive
     principal = resolved.setdefault("principal", {"active": True, "article_ids": []})
-    p_ids = principal.get("article_ids") or []
-    if not p_ids:
-        edition = get_current_edition(publication=publication)
-        p_ids = [a.id for a in edition.top_articles][:10] if edition else []
-        principal["article_ids"] = p_ids
-    seen_ids.update(p_ids)
+    if principal.get("active", True):
+        p_ids = principal.get("article_ids") or []
+        if not p_ids:
+            edition = get_current_edition(publication=publication)
+            p_ids = [a.id for a in edition.top_articles][:10] if edition else []
+            principal["article_ids"] = p_ids
+        seen_ids.update(p_ids)
 
-    # 2. SUPLEMENTO
+    # 2. SUPLEMENTO — skip fallback and dedup accumulation when inactive
     suplemento = resolved.setdefault("suplemento", {"active": True, "article_ids": []})
-    s_ids = suplemento.get("article_ids") or []
-    if not s_ids:
-        source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
-        if source:
-            articles = _fetch_source_articles(source[0], source[1], limit=7, exclude_ids=seen_ids)
-            s_ids = [a.id for a in articles]
-            suplemento["article_ids"] = s_ids
-    else:
-        if dedup_populated:
-            # Remove IDs already placed in higher-priority blocks (principal).
-            s_ids = [i for i in s_ids if i not in seen_ids]
-            suplemento["article_ids"] = s_ids
-    seen_ids.update(s_ids)
+    if suplemento.get("active", True):
+        s_ids = suplemento.get("article_ids") or []
+        if not s_ids:
+            source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+            if source:
+                articles = _fetch_source_articles(source[0], source[1], limit=7, exclude_ids=seen_ids)
+                s_ids = [a.id for a in articles]
+                suplemento["article_ids"] = s_ids
+        else:
+            if dedup_populated:
+                # Remove IDs already placed in higher-priority blocks (principal).
+                s_ids = [i for i in s_ids if i not in seen_ids]
+                suplemento["article_ids"] = s_ids
+        seen_ids.update(s_ids)
 
     # Extra articles (Saturday) — written by resolve_daily_layouts, not auto-computed here
     if layout is not None and getattr(layout, "day", None) == "sa":
         seen_ids.update(resolved.get("extra_articles", {}).get("article_ids", []))
 
-    # 3. ESPECIAL — purely manual; accumulate into seen_ids (dedup_populated filters against them)
+    # 3. ESPECIAL — purely manual; skip dedup accumulation when inactive
     especial = resolved.setdefault("especial", {"active": True, "article_ids": []})
-    e_ids = especial.get("article_ids") or []
-    if dedup_populated:
-        e_ids = [i for i in e_ids if i not in seen_ids]
-        especial["article_ids"] = e_ids
-    seen_ids.update(e_ids)
+    if especial.get("active", True):
+        e_ids = especial.get("article_ids") or []
+        if dedup_populated:
+            e_ids = [i for i in e_ids if i not in seen_ids]
+            especial["article_ids"] = e_ids
+        seen_ids.update(e_ids)
 
     # SUPLEMENTO_EXTRA — purely manual; accumulate active IDs into seen_ids so areas don't repeat
     # them. dedup_populated filters its own article_ids against higher-priority blocks first.

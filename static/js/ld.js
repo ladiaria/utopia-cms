@@ -589,8 +589,61 @@
     qsa(".scrollable-navbar__scrollable").forEach(function (wrapper) {
       const list = qs("ul", wrapper);
       if (!list) return;
+
+      list.addEventListener("scroll", function () {
+        document.querySelectorAll(".dropdown-content.is-open").forEach(function (dropdown) {
+          const btn = document.querySelector("[data-activates='" + dropdown.id + "']");
+          closeNavDropdown(dropdown, btn);
+        });
+      }, { passive: true });
+
+      if (mobileBreakpoint.matches) return;
       const leftBtn = qs(".scrollable-navbar__arrow--left", wrapper);
       const rightBtn = qs(".scrollable-navbar__arrow--right", wrapper);
+      const listItems = Array.from(list.querySelectorAll(":scope > li"));
+      const originalPaddingRight = parseFloat(getComputedStyle(list).paddingRight) || 0;
+
+      let pageStarts = [0];
+      let pageScrollTargets = [0];
+      const LEFT_ARROW_WIDTH = 20;
+
+      function computePageStarts() {
+        const cw = list.clientWidth;
+        pageStarts = [0];
+        pageScrollTargets = [0];
+        let pos = 0;
+        while (true) {
+          const rightEdge = pos + cw;
+          const next = listItems.find(function (item) { return item.offsetLeft + item.offsetWidth > rightEdge; });
+          if (!next) break;
+          const pageStart = next.offsetLeft;
+          const scrollTarget = Math.max(0, pageStart - LEFT_ARROW_WIDTH);
+          if (scrollTarget <= pos) break;
+          pageStarts.push(pageStart);
+          pageScrollTargets.push(scrollTarget);
+          pos = scrollTarget;
+        }
+      }
+
+      // Extend scrollWidth so every page scroll target is a reachable scrollLeft value
+      // (browser caps scrollLeft at scrollWidth - clientWidth).
+      function ensurePagination() {
+        list.style.paddingRight = originalPaddingRight + "px";
+        const cw = list.clientWidth;
+        if (!cw || pageScrollTargets.length <= 1) return;
+        const lastTarget = pageScrollTargets[pageScrollTargets.length - 1];
+        const neededSW = lastTarget + cw;
+        if (neededSW > list.scrollWidth) {
+          list.style.paddingRight = (originalPaddingRight + neededSW - list.scrollWidth) + "px";
+        }
+      }
+
+      function getCurrentPageIndex() {
+        for (var i = pageScrollTargets.length - 1; i >= 0; i--) {
+          if (list.scrollLeft >= pageScrollTargets[i] - 1) return i;
+        }
+        return 0;
+      }
 
       function update() {
         const hasOverflowLeft = list.scrollLeft > 1;
@@ -604,30 +657,28 @@
         wrapper.classList.toggle("mobile-centered", list.scrollWidth <= 325);
       }
 
-      list.addEventListener("scroll", function () {
-        update();
-        document.querySelectorAll(".dropdown-content.is-open").forEach(function (dropdown) {
-          const btn = document.querySelector("[data-activates='" + dropdown.id + "']");
-          closeNavDropdown(dropdown, btn);
-        });
-      }, { passive: true });
+      list.addEventListener("scroll", update, { passive: true });
       window.addEventListener("resize", function () {
         updateCenter();
+        computePageStarts();
+        ensurePagination();
         update();
       });
 
       if (leftBtn) {
         leftBtn.addEventListener("click", function () {
-          list.scrollBy({ left: -list.clientWidth * 0.8, behavior: "smooth" });
+          const idx = getCurrentPageIndex();
+          if (idx > 0) list.scrollTo({ left: pageScrollTargets[idx - 1], behavior: "smooth" });
         });
       }
       if (rightBtn) {
         rightBtn.addEventListener("click", function () {
-          list.scrollBy({ left: list.clientWidth * 0.8, behavior: "smooth" });
+          const idx = getCurrentPageIndex();
+          if (idx + 1 < pageScrollTargets.length) list.scrollTo({ left: pageScrollTargets[idx + 1], behavior: "smooth" });
         });
       }
 
-      document.fonts.ready.then(function () { updateCenter(); update(); });
+      document.fonts.ready.then(function () { updateCenter(); computePageStarts(); ensurePagination(); update(); });
     });
 
     // Newsletter tooltip — toggle on trigger click, close on outside click

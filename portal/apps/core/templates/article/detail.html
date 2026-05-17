@@ -124,18 +124,17 @@
               <div class="main-photo">
                 <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
                         alt="{{ article.photo_caption }}">
-                  <picture>
-                    <!--[if IE 9]><video style="display: none;"><![endif]-->
-                    <source srcset="{{ article.photo.get_1200w_url }}" media="(min-width: 1000px)">
-                    <source srcset="{{ article.photo.get_900w_url }}" media="(min-width: 800px)">
-                    <source srcset="{{ article.photo.get_700w_url }}" media="(min-width: 600px)">
-                    <source srcset="{{ article.photo.get_350w_url }}" media="(min-width: 300px)">
-                    <source srcset="{{ article.photo.get_250w_url }}" media="(min-width: 0px)">
-                    <!--[if IE 9]></video><![endif]-->
-                    <img class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
-                          data-caption="{{ article.photo_caption }}" alt="{{ article.photo_caption }}" loading="lazy">
-                  </picture>
-                  <figcaption class="caption">
+                  <img
+                    class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                    srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_350w_url }} 350w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
+                    sizes="100vw"
+                    width="700"
+                    height="{{ article.photo.get_700w_size.1 }}"
+                    data-caption="{{ article.photo_caption }}"
+                    alt="{{ article.photo_caption }}"
+                    loading="lazy"
+                  >
+                  <figcaption class="article-caption ld-caption">
                     {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                     {% if article.photo_author %}
                       <p>{{ article.photo_type }}: {{ article.photo_author }}</p>
@@ -484,6 +483,7 @@
               {% endwith %}
             {% endif %}
             {# END collection articles #}
+            {% block inside_article_body_end %}{% endblock %}
           </div>
 
           {% if article.gallery %}

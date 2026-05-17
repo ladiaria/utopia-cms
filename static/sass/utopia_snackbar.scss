@@ -21,7 +21,7 @@ $minWidth: 1040px;
 .ld-snackbar {
   font-size: 16px;
   text-align: center;
-  background-color: white;
+  background-color: transparent;
   bottom: 0;
   color: $off-black;
   left: 0;
@@ -50,16 +50,19 @@ $minWidth: 1040px;
     animation: none;
     transform: none;
     margin: 0 auto;
-    border-radius: 10px;
     border-bottom: 0;
-    padding-bottom: $paddingDefault;
     max-width: 90%;
     margin-bottom: 90px;
+    border-top: 1px solid #ababab;
+    border-bottom: 1px solid #ababab;
+    padding: 32px 0;
+
+    .ld-snackbar__title {
+      padding-bottom: 24px;
+    }
 
     @media (min-width: $minWidth) {
       max-width: 700px;
-      border-bottom: 0;
-      padding-bottom: 0;
     }
   }
 

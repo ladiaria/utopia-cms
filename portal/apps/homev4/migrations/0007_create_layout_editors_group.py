@@ -2,11 +2,17 @@ from django.db import migrations
 
 
 def create_layout_editors_group(apps, schema_editor):
+    # Permissions for new models are created by post_migrate signal, which runs after all
+    # migrations complete. Calling create_permissions() explicitly ensures they exist now.
+    from django.apps import apps as django_apps
+    from django.contrib.auth.management import create_permissions
+    create_permissions(django_apps.get_app_config("homev4"), verbosity=0)
+
     Group = apps.get_model("auth", "Group")
     Permission = apps.get_model("auth", "Permission")
     ContentType = apps.get_model("contenttypes", "ContentType")
 
-    content_type = ContentType.objects.get(app_label="homev4", model="homelayout")
+    content_type, _ = ContentType.objects.get_or_create(app_label="homev4", model="homelayout")
     permissions = Permission.objects.filter(
         content_type=content_type,
         codename__in=["view_homelayout", "change_homelayout"],
