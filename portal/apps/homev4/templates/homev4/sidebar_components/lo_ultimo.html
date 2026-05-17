@@ -1,0 +1,21 @@
+{% extends "homev4/sidebar_components/default.html" %}
+{% load core_tags bleach_tags ldml %}
+
+{% block more_link %}#{% endblock %}
+
+{% block articles %}
+  {% for article in comp.articles %}
+    <article class="article">
+      {% render_toolbar_for article %}
+      {% if article.main_section %}
+        <div class="article__section-label">{{ article.main_section.section.name }}</div>
+      {% endif %}
+      <h3 class="article__title">
+        <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+      </h3>
+      {% if article.minutes_ago %}
+        <span class="article__time-ago">Hace {{ article.minutes_ago }} min</span>
+      {% endif %}
+    </article>
+  {% endfor %}
+{% endblock %}

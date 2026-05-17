@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load bleach_tags core_tags homev3_tags static ldml %}
+{% load bleach_tags core_tags homev3_tags static ldml compress %}
 
 {% block page_title %}{% category_title %}{% endblock %}
 
@@ -10,193 +10,184 @@
 
 {% block css %}
   <link href="{% static 'sass/main.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/category/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
+
+{% block header_classes %}category-pub-header{% endblock %}
 
 {% block body_class %}section-detail{% endblock %}
 
-{% block page_header %}
-  {% if bn_module_published_count %}<div id="bn-module"></div>{% endif %}
-  {% block page_header_content %}
-    <div class="container container--wide">
-      <div class="section-detail__head">
-        <h1 class="section-detail__title">{{ category.name|capfirst }}</h1>
-        <div class="section-detail__sub-cats">
-          <ul class="section-detail__sub-cats-list">
-            {% block page_header_content_inner %}
-              {% include 'core/templates/category/detail_header_sections.html' %}
-            {% endblock %}
-          </ul>
-        </div>
-      </div>
-    </div>
-  {% endblock %}
-{% endblock %}
+{% block page_header %}{% endblock %}
+
+{% block upper_fixed_items %}fixed items category{% endblock %}
 
 {% block content %}
 
-  <div class="container container--wide">
-
-    <section class="ld-grid-main ld-grid-main--two-cols">
-
-      {% if cover_article %}
-
-        <div class="ld-grid-area area-main">
-
-          <div class="ld-card ld-card--big ld-card--{{ cover_article.type }}{% block cover_article_extra_class %}{% endblock %}">
-            {% render_toolbar_for cover_article %}
-            {% block image %}{# TODO: check if anybody need this block (it seems that nobody needs it) #}
-              {% if cover_article.photo_render_allowed %}
-                <a href="{{ cover_article.get_absolute_url }}">
-                  <figure>
-                    <picture>
-                      <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
-                      <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
-                      <img class="ld-card__img"
-                           width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
-                           title="{{ cover_article.photo_caption }}" alt="{{ cover_article.photo_caption }}">
-                    </picture>
-                  </figure>
-                </a>
-              {% endif %}
-            {% endblock %}
-
-            <div class="ld-card__body">
-
-              {% with article=cover_article %}
-                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
-              {% endwith %}
-
-              <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
-                <a href="{{ cover_article.get_absolute_url }}">
-                  {{ cover_article.headline|ldmarkup|bleach }}
-                </a>
-              </h2>
-
-              {% if cover_article.home_lead or cover_article.lead %}
-                <div class="ld-card__intro">
-                  {{ cover_article.home_lead|default:cover_article.lead|ldmarkup|bleach }}
-                </div>
-              {% endif %}
-
-              <div class="ld-card__byline">
-                {% with authors=cover_article.get_authors %}
-                  {% if authors %}
-                    <div class="ld-card__author">
-                      {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                {% endwith %}
-                {% if not hide_date_published %}
-                  {% autoescape off %}{% date_published_verbose cover_article %}{% endautoescape %}
-                {% endif %}
-                {% include 'article/article_card_read_later.html' with a=cover_article %}
+  {% include cover_grid_template|default:'category/cover_grid.html' %}
+  {% comment %}
+  <section class="ld-grid-main ld-grid-main--two-cols">
+    {% if cover_article %}
+      <div class="ld-grid-area area-main">
+        <div class="ld-card ld-card--big ld-card--{{ cover_article.type }}{% block cover_article_extra_class %}{% endblock %}">
+          {% render_toolbar_for cover_article %}
+          {% block image %}{# TODO: check if anybody need this block (it seems that nobody needs it) #}
+            {% if cover_article.photo_render_allowed %}
+              <a href="{{ cover_article.get_absolute_url }}">
+                <figure>
+                  <picture>
+                    <source srcset="{{ cover_article.photo.get_1200w_url }}" media="(min-width: 700px)">
+                    <source srcset="{{ cover_article.photo.get_700w_url }}" media="(min-width: 0)">
+                    <img class="ld-card__img"
+                          width="700"{% if cover_article.photo_image_file_exists %} height="{{ cover_article.photo.get_700w_size.1 }}"{% endif %}
+                          title="{{ cover_article.photo_caption }}" alt="{{ cover_article.photo_caption }}">
+                  </picture>
+                </figure>
+              </a>
+            {% endif %}
+          {% endblock %}
+          <div class="ld-card__body">
+            {% with article=cover_article %}
+              {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+            {% endwith %}
+            <h2 class="ld-card__title {% if not cover_article.home_lead and not cover_article.lead %}ld-card__title--mb{% endif %}">
+              <a href="{{ cover_article.get_absolute_url }}">
+                {{ cover_article.headline|ldmarkup|bleach }}
+              </a>
+            </h2>
+            {% if cover_article.home_lead or cover_article.lead %}
+              <div class="ld-card__intro">
+                {{ cover_article.home_lead|default:cover_article.lead|ldmarkup|bleach }}
               </div>
+            {% endif %}
+            <div class="ld-card__byline">
+              {% with authors=cover_article.get_authors %}
+                {% if authors %}
+                  <div class="ld-card__author">
+                    {% for author in authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endwith %}
+              {% if not hide_date_published %}
+                {% autoescape off %}{% date_published_verbose cover_article %}{% endautoescape %}
+              {% endif %}
+              {% include 'article/article_card_read_later.html' with a=cover_article %}
             </div>
           </div>
-
         </div>
-
-      {% endif %}
-
-      <div class="ld-grid-area area-third">
-
-        {% for a in destacados|slice:":5" %}
-          <div class="ld-card ld-card--sm{% if a.photo.extended.square_version %} ld-card--has-img{% endif %}
-                      ld-card--{{ a.type }}{% block destacados_right_extra_class %}{% endblock %}">
-            {% render_toolbar_for a %}
-            {% if a.photo_render_allowed %}
-              <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy" title="{{ a.photo_caption }}"
-                     alt="{{ a.photo_caption }}" width="700" height="{{ a.photo.get_700w_size.1 }}">
-              </a>
-            {% endif %}
-            <div class="ld-card__body">
-              {% with article=a %}
-                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
-              {% endwith %}
-              <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a></h3>
-              {% if a.home_lead or a.deck %}
-                <div class="ld-card__intro hide-on-med-and-up">
-                  {{ a.home_lead|default:a.deck|ldmarkup|bleach }}
-                </div>
-              {% endif %}
-              <div class="ld-card__byline">
-                {% with authors=a.get_authors %}
-                  {% if authors %}
-                    <div class="ld-card__author">
-                      {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                {% endwith %}
-                {% if not hide_date_published %}
-                  {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
-                {% endif %}
-                {% include 'article/article_card_read_later.html' %}
-              </div>
-            </div>
-            {% if a.photo.extended.square_version %}
-              <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img" width="700" height="700" loading="lazy"
-                     title="{{ a.photo_caption }}" alt="{{ a.photo_caption }}"
-                     src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}">
-              </a>
-            {% endif %}
-          </div>
-        {% endfor %}
-
       </div>
+    {% endif %}
 
-      <div class="ld-grid-clear"></div>
-
-      {% for a in destacados|slice:"5:9" %}
-        <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
-          <div class="ld-card ld-card--reg ld-card--{{ a.type }}{% block destacados_abcd_extra_class %}{% endblock %}">
-            {% render_toolbar_for a %}
-            {% if a.photo_render_allowed %}
-              <a href="{{ a.get_absolute_url }}">
-                <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" title="{{ a.photo_caption }}"
-                     alt="{{ a.photo_caption }}" loading="lazy" width="700" height="{{ a.photo.get_700w_size.1 }}">
-              </a>
-            {% endif %}
-            <div class="ld-card__body">
-              {% with article=a %}
-                {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
-              {% endwith %}
-              <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
-                <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
-              </h3>
-              {% if a.deck %}
-                <div class="ld-card__intro">{{ a.deck|ldmarkup|bleach }}</div>
-              {% endif %}
-              <div class="ld-card__byline">
-                {% with authors=a.get_authors %}
-                  {% if authors %}
-                    <div class="ld-card__author">
-                      {% for author in authors %}
-                        <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                {% endwith %}
-                {% if not hide_date_published %}
-                  {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
-                {% endif %}
-                {% include 'article/article_card_read_later.html' %}
+    <div class="ld-grid-area area-third">
+      {% for a in destacados|slice:":5" %}
+        <div class="
+          ld-card
+          ld-card--sm
+          ld-card--{{ a.type }}
+          {% if a.photo.extended.square_version %}ld-card--has-img{% endif %}
+          {% block destacados_right_extra_class %}{% endblock %}
+        ">
+          {% render_toolbar_for a %}
+          {% if a.photo_render_allowed %}
+            <a href="{{ a.get_absolute_url }}" class="ld-card__img-link">
+              <img class="ld-card__img" src="{{ a.photo.get_700w_url }}" loading="lazy" title="{{ a.photo_caption }}"
+                    alt="{{ a.photo_caption }}" width="700" height="{{ a.photo.get_700w_size.1 }}">
+            </a>
+          {% endif %}
+          <div class="ld-card__body">
+            {% with article=a %}
+              {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+            {% endwith %}
+            <h3 class="ld-card__title ld-card__title--mb"><a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a></h3>
+            {% if a.home_lead or a.deck %}
+              <div class="ld-card__intro hide-on-med-and-up">
+                {{ a.home_lead|default:a.deck|ldmarkup|bleach }}
               </div>
+            {% endif %}
+            <div class="ld-card__byline">
+              {% with authors=a.get_authors %}
+                {% if authors %}
+                  <div class="ld-card__author">
+                    {% for author in authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endwith %}
+              {% if not hide_date_published %}
+                {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+              {% endif %}
+              {% include 'article/article_card_read_later.html' %}
             </div>
           </div>
+          {% if a.photo.extended.square_version %}
+            <a class="ld-card__img-sq" href="{{ a.get_absolute_url }}">
+              <img
+                class="ld-card__img"
+                src="{{ MEDIA_URL }}photologue/photos/{{ a.photo.extended.get_square_version_filename }}"
+                width="700"
+                height="700"
+                loading="lazy"
+                title="{{ a.photo_caption }}"
+                alt="{{ a.photo_caption }}"
+              >
+            </a>
+          {% endif %}
         </div>
       {% endfor %}
 
-      <div class="ld-grid-clear"></div>
+    </div>
+    {% for a in destacados|slice:"5:9" %}
+      <div class="ld-grid-area ld-grid-area-col area-col-{% cycle 'a' 'b' 'c' 'd' %}">
+        <div class="ld-card ld-card--reg ld-card--{{ a.type }}{% block destacados_abcd_extra_class %}{% endblock %}">
+          {% render_toolbar_for a %}
+          {% if a.photo_render_allowed %}
+            <a href="{{ a.get_absolute_url }}">
+              <img
+                class="ld-card__img"
+                src="{{ a.photo.get_700w_url }}"
+                width="700"
+                height="{{ a.photo.get_700w_size.1 }}"
+                loading="lazy"
+                title="{{ a.photo_caption }}"
+                alt="{{ a.photo_caption }}"
+              >
+            </a>
+          {% endif %}
+          <div class="ld-card__body">
+            {% with article=a %}
+              {% include section_block_template|default:'article/category_detail_cards_section_block.html' %}
+            {% endwith %}
+            <h3 class="ld-card__title {% if not a.deck %}ld-card__title--mb{% endif %}">
+              <a href="{{ a.get_absolute_url }}">{{ a.headline|ldmarkup|bleach }}</a>
+            </h3>
+            {% if a.deck %}
+              <div class="ld-card__intro">{{ a.deck|ldmarkup|bleach }}</div>
+            {% endif %}
+            <div class="ld-card__byline">
+              {% with authors=a.get_authors %}
+                {% if authors %}
+                  <div class="ld-card__author">
+                    {% for author in authors %}
+                      <a href="{{ author.get_absolute_url }}">{{ author }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              {% endwith %}
+              {% if not hide_date_published %}
+                {% autoescape off %}{% date_published_verbose a %}{% endautoescape %}
+              {% endif %}
+              {% include 'article/article_card_read_later.html' %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
 
-    </section>
-  </div>
-
+  </section>
+  {% endcomment %}
   {% block featured_content %}{% endblock %}
 
   {% render_collectionrow as collectionrow %}
@@ -256,24 +247,43 @@
 {% endblock %}
 
 {% block javascript %}
+  {# TODO: Cargar el script sólo si el NL está desactivado #}
+  {% compress js %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% endcompress %}
   <script>
-    $(function() {
-      if (document.querySelector(".section-detail__sub-cats") && document.querySelector(".section-detail__sub-cats-list")) {
-        resizeSubnav(document.querySelector(".section-detail__sub-cats"), document.querySelector(".section-detail__sub-cats-list"), 2);
-      }
-      {% if bn_module_published_count %}
-        $('#bn-module').load("{% url 'bn-content' %}?category={{ category.slug }}", function(response){
-          if(response){
-            {# TODO: check if this can be simplified calling notification_close function #}
-            $('.breaking-notice').find('.btn-close').on('click', function(){
-              var notification = $(this).parents('.breaking-notice');
-              $.get('/' + $(this).attr('data-object') + '/' + $(this).attr('data-id') + '/closed/', function(data){
-                notification.toggle();
-              });
-            });
-          }
-        });
-      {% endif %}
+    // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
+    window.NL_HEADER_CONFIG = {
+      isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
+      subscribeUrl: "{% url 'nl-auth-subscribe' nltype='c' nlslug=category.slug %}",
+      dataKey: "nl_subscribe",
+      anonymousMessage: "Iniciá sesión para recibir el newsletter",
+      successMessage: "Newsletter activada"
+    };
+    document.addEventListener('DOMContentLoaded', function() {
+      switch_change_events(document.querySelectorAll('.cover-newsletter__switch'));
+      nl_header_subscribe_init();
     });
   </script>
+
+  {% if bn_module_published_count %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch("{% url 'bn-content' %}?category={{ category.slug }}")
+        .then(function(response) { return response.text(); })
+        .then(function(html) {
+          if (!html) return;
+          document.getElementById('bn-module').innerHTML = html;
+          {# TODO: check if this Ícan be simplified calling notification_close function #}
+          document.querySelectorAll('.breaking-notice .btn-close').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var notification = btn.closest('.breaking-notice');
+              fetch('/' + btn.getAttribute('data-object') + '/' + btn.getAttribute('data-id') + '/closed/');
+              notification.style.display = notification.style.display === 'none' ? '' : 'none';
+            });
+          });
+        });
+    });
+  </script>
+  {% endif %}
 {% endblock %}

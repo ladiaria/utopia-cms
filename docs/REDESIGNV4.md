@@ -1,0 +1,115 @@
+# Redesign v4 — Pasos para el deploy
+
+Acciones manuales a realizar en el momento del deploy del nuevo diseño.
+
+## Deploy de `utopia-cms-library`
+
+El rediseño de la portada de Libros y la Comunidad de libros incluye cambios en el template `book_detail.html` del repositorio `utopia-cms-library` (directorio separado: `web/utopia-cms-library/`). Este repo tiene su propio ciclo de deploy y hay que acordarse de incluirlo explícitamente.
+
+## Limpiar `local_settings.py`
+
+Settings que quedaron sin consumidor tras eliminar código de la home vieja (homev3):
+
+- `HOMEV3_CATEGORY_ROW_DEFAULT_LIMIT` — usada por `render_category_row`, tag eliminado
+- `HOMEV3_CATEGORIES_ROW_CUSTOM_TEMPLATES` — usada por `RenderCategoryRowNode`, clase eliminada
+- `HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR` — usada por `render_publication_grid`, que solo se invoca desde `homev3/index.html` (home vieja)
+- `ARTICLES_SLIDER_TEMPLATE_DIR` — usada por `get_articles_slider_template`, función eliminada
+
+## Revisar `HOME_NAV_ITEMS` y `MAIN_MENU_AREAS_ITEMS` en `local_settings.py`
+
+Se agregaron dos settings estáticos para controlar los items de los menús de navegación. Verificar que todas las URLs correspondan a las áreas/publicaciones/secciones reales antes del deploy.
+
+- **`HOME_NAV_ITEMS`** — items del navbar horizontal de la home (`/`). Template: `thedaily/templates/navbar.html`.
+- **`MAIN_MENU_AREAS_ITEMS`** — items del bloque "Áreas" en el menú extendido (hamburguesa). Template: `core/templates/edition/resume.html`.
+
+Ambos tienen fallback a `MENU_CATEGORIES` si el setting no existe.
+
+```python
+HOME_NAV_ITEMS = [
+    {"label": "Política",    "url": "/politica/",    "classes": ""},
+    {"label": "Mundo",       "url": "/mundo/",       "classes": ""},
+    {"label": "Justicia",    "url": "/justicia/",    "classes": ""},
+    {"label": "Opinión",     "url": "/opinion/",     "classes": ""},
+    {"label": "Deporte",     "url": "/deporte/",     "classes": ""},
+    {"label": "Cultura",     "url": "/cultura/",     "classes": ""},
+    {"label": "Educación",   "url": "/educacion/",   "classes": ""},
+    {"label": "Ciencia",     "url": "/ciencia/",     "classes": ""},
+    {"label": "Economía",    "url": "/economia/",    "classes": ""},
+    {"label": "Futuro",      "url": "/futuro/",      "classes": ""},
+    {"label": "Trabajo",     "url": "/trabajo/",     "classes": ""},
+    {"label": "Salud",       "url": "/salud/",       "classes": ""},
+    {"label": "Ambiente",    "url": "/ambiente/",    "classes": ""},
+    {"label": "Verifica",    "url": "/verifica/",    "classes": ""},
+    {"label": "Local",       "url": None,            "classes": "", "children": [
+        {"label": "Colonia",   "url": "/colonia/"},
+        {"label": "Maldonado", "url": "/maldonado/"},
+        {"label": "Paysandú",  "url": "/paysandu/"},
+        {"label": "Salto",     "url": "/salto/"},
+    ]},
+    {"label": "Feminismos",  "url": "/feminismos/",  "classes": ""},
+    {"label": "Cotidiana",   "url": "/cotidiana/",   "classes": ""},
+    {"label": "Libros",      "url": "/libros/",      "classes": ""},
+    {"label": "Crucigramas", "url": "/crucigramas/", "classes": ""},
+]
+
+MAIN_MENU_AREAS_ITEMS = [
+    {"label": "Ambiente",   "url": "/ambiente/",   "classes": ""},
+    {"label": "Carnaval",   "url": "/carnaval/",   "classes": ""},
+    {"label": "Ciencia",    "url": "/ciencia/",    "classes": ""},
+    {"label": "Cotidiana",  "url": "/cotidiana/",  "classes": ""},
+    {"label": "Cultura",    "url": "/cultura/",    "classes": ""},
+    {"label": "Deporte",    "url": "/deporte/",    "classes": ""},
+    {"label": "Economía",   "url": "/economia/",   "classes": ""},
+    {"label": "Educación",  "url": "/educacion/",  "classes": ""},
+    {"label": "Feminismos", "url": "/feminismos/", "classes": ""},
+    {"label": "Futuro",     "url": "/futuro/",     "classes": ""},
+    {"label": "Justicia",   "url": "/justicia/",   "classes": ""},
+    {"label": "Libros",     "url": "/libros/",     "classes": ""},
+    {"label": "Mundo",      "url": "/mundo/",      "classes": ""},
+    {"label": "Opinión",    "url": "/opinion/",    "classes": ""},
+    {"label": "Política",   "url": "/politica/",   "classes": ""},
+    {"label": "Salud",      "url": "/salud/",      "classes": ""},
+    {"label": "Trabajo",    "url": "/trabajo/",    "classes": ""},
+    {"label": "Verifica",   "url": "/verifica/",   "classes": ""},
+]
+```
+
+## Verificar `CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR` en `local_settings.py`
+
+En el ambiente de test este setting está en `True`, lo que hace que los artículos del año corriente muestren la fecha sin año (ej: "5 de mayo"). En producción debe estar en `False` para mostrar siempre la fecha completa (ej: "5 de mayo de 2026").
+
+Confirmar que en `local_settings.py` de producción esté explícitamente:
+
+```python
+CORE_ARTICLE_CARDS_DATE_PUBLISHED_HIDE_SAMEYEAR = False
+```
+
+## Agregar `CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS` en `local_settings.py`
+
+Setting nuevo que controla qué publicaciones se excluyen al resolver la publicación del breadcrumb de artículo cuando la sección no tiene categoría asignada. Usado en `core/templatetags/core_tags.py`, función `resolve_article_breadcrumb`.
+
+Agregar en `local_settings.py`:
+
+```python
+CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS = ('la-diaria', 'fin-de-semana')
+```
+
+## Migrar `CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES` a template
+
+El setting ahora soporta valores que sean paths a templates (terminados en `.html`), además de strings HTML inline. La sección "sobre la diaria" pasó a usar un template para poder evolucionar el markup sin tocar `local_settings.py`.
+
+Cambiar:
+
+```python
+CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES = {"sobre-la-diaria": "Sobre <strong>la diaria</strong>"}
+```
+
+por:
+
+```python
+CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES = {
+    "sobre-la-diaria": "utopia_cms_ladiaria/article/sobre_la_diaria_pill.html",
+}
+```
+
+El template vive en `utopia_cms_ladiaria/templates/utopia_cms_ladiaria/article/sobre_la_diaria_pill.html` y recibe `section` y `article` en contexto.

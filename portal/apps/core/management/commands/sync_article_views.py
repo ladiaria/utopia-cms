@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 # utopia-cms 2020-2023. Aníbal Pacheco.
 
+import logging
 from builtins import str
 
 from django.core.management import BaseCommand
+
+logger = logging.getLogger(__name__)
 from django.core.cache import cache
 from django.db import connection
 
@@ -54,6 +57,12 @@ class Command(BaseCommand):
                             print('ERROR updating %s table, query:\n%s' % (article_table, update_query))
                 except Exception:
                     print('ERROR: sql queries were not executed:\n%s\n%s' % (insert_query, update_query))
+            # Update lo_mas_leido article_ids in homev4 layouts so the home reads from DB.
+            try:
+                from homev4.views import update_lo_mas_leido_in_layouts
+                update_lo_mas_leido_in_layouts()
+            except Exception as e:
+                logger.warning('update_lo_mas_leido_in_layouts failed: %s', e)
             # clear cache at the end to render an updated "most read" page when requested
             cache.clear()
             if vlevel > 1:

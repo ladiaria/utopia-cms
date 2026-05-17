@@ -1,0 +1,12 @@
+@import "../variables";
+@import "../section/detail.scss";
+
+body.tag-page {
+  main#main-content {
+    .section-detail {
+      &__title {
+        padding-bottom: 0;
+      }
+    }
+  }
+}

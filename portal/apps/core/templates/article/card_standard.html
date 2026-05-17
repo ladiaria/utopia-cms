@@ -1,0 +1,46 @@
+{% load bleach_tags core_tags ldml %}
+
+<article class="article ld-card-standard">
+  {% render_toolbar_for article %}
+
+  <div class="ld-card-standard__text">
+    <div class="ld-card-standard__section">
+      {% block article_section %}
+        {% autoescape off %}{% render_hierarchy article %}{% endautoescape %}
+      {% endblock %}
+      {% include 'article/article_card_lock_tooltip.html' %}
+    </div>
+    <h3 class="ld-card-standard__title">
+      <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+    </h3>
+    {% with authors=article.get_authors %}
+      {% if authors or article_card_read_later_enabled and user.is_authenticated %}
+      <div class="article__footer">
+        {% if authors %}
+          <div class="article__byline">
+            Por
+            {% for author in authors %}
+              <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+      </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% if not article_card_hide_photo and article.photo_render_allowed %}
+    <a class="ld-card-standard__img-link" href="{{ article.get_absolute_url }}">
+      <img
+        class="ld-card-standard__img"
+        src="{{ article.photo.get_700w_url }}"
+        width="700"
+        height="{{ article.photo.get_700w_size.1 }}"
+        {% if img_load_lazy %}loading="lazy"{% endif %}
+        title="{{ article.photo_caption }}"
+        alt="{{ article.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+</article>

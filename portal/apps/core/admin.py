@@ -3,6 +3,7 @@ import logging
 
 from requests.exceptions import ConnectionError
 import json
+import logging
 from urllib.parse import urljoin
 from pydoc import locate
 from kombu.exceptions import OperationalError
@@ -67,6 +68,11 @@ from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
 from .utils import update_article_url_in_coral_talk, smart_quotes
+try:
+    from homev4.tasks import refresh_home_layouts as _refresh_home_layouts
+except ImportError:
+    # homev4 is optional — if not installed, layout refresh is simply skipped.
+    _refresh_home_layouts = None
 
 
 class PrintOnlyArticleInline(TabularInline):
@@ -322,6 +328,8 @@ class EditionAdmin(ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
 
 class PortableDocumentFormatPageAdmin(ModelAdmin):
@@ -380,6 +388,8 @@ class SectionAdmin(ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
 
 class ArticleExtensionInline(TabularInline):
@@ -475,6 +485,17 @@ class ArticleAdminModelForm(ModelForm):
         self.fields['date_published'].widget.attrs['min'] = nowval.isoformat()
         self.fields['date_published'].required = False
         self.fields['date_published'].label = ""
+
+    def clean_headline(self):
+        headline = self.cleaned_data.get('headline', '')
+        if len(headline) > 130:
+            # Allow saving if the existing title already exceeded the limit before this edit.
+            original = self.instance.headline if self.instance.pk else ''
+            if len(original) <= 130:
+                raise ValidationError(
+                    f'El título no puede tener más de 130 caracteres (tiene {len(headline)}).'
+                )
+        return headline
 
     def clean_tags(self):
         """
@@ -855,6 +876,8 @@ class ArticleAdmin(VersionAdmin):
 
         # TODO: check if code below may be called also from the model save method
         update_category_home()
+        if _refresh_home_layouts:
+            _refresh_home_layouts()
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """

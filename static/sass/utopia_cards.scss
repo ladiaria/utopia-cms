@@ -1,11 +1,5 @@
 // Cards and css grid styles.
 
-.container {
-  margin: 0 auto;
-  width: 90%;
-  max-width: 1440px;
-}
-
 img {
   max-width: 100%;
 }
@@ -136,6 +130,63 @@ img {
   }
 }
 
+.ld-grid-3-6 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 48px;
+  row-gap: 32px;
+
+  > hr {
+    grid-column: 1 / -1;
+    border: none;
+    border-top: 0.5px solid #ababab;
+    margin: 0;
+  }
+
+  > article {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      content: "";
+      top: 0;
+      bottom: 0;
+      right: -24px;
+      width: 0.5px;
+      background: #ababab;
+    }
+  }
+
+  > article:nth-of-type(3n)::before {
+    display: none;
+  }
+
+  @media #{$medium-and-down} {
+    grid-template-columns: repeat(6, 1fr);
+    overflow-x: auto;
+    gap: 16px;
+    -ms-overflow-style: none; // IE and legacy Edge
+    scrollbar-width: none; // Firefox
+
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Opera
+    }
+
+    > hr {
+      display: none;
+    }
+
+    > article {
+      width: px-to-rem(284px);
+      position: relative;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+
 .ld-grid-area.area-main {
   grid-area: area-main;
 }
@@ -224,7 +275,6 @@ img {
 }
 
 .ld-card {
-  border: 1px solid #d8d8d8;
   border-radius: 3px;
   transition: all 0.35s ease;
   background-color: white;
@@ -232,11 +282,6 @@ img {
 
   display: flex;
   flex-direction: column;
-
-  &:hover {
-    transition: all 0.15s ease;
-    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1);
-  }
 
   &__img {
     border-bottom-right-radius: 0;
@@ -256,7 +301,7 @@ img {
   }
 
   &__body {
-    padding: 16px;
+    padding-top: 16px;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -267,12 +312,12 @@ img {
   }
 
   &__title {
-    font-family: "Meta Serif", serif;
+    font-family: $serif;
     width: 100%;
-    font-size: 19px;
+    font-size: px-to-rem(18px);
     line-height: 24px;
     margin: 0 0 5px;
-    font-weight: 500;
+    font-weight: 450;
 
     &--mb {
       margin-bottom: 16px;
@@ -289,7 +334,6 @@ img {
     a {
       text-decoration: none;
       color: $off-black;
-      font-weight: 500;
       &:hover {
         color: lighten($off-black, 10%);
       }
@@ -400,7 +444,7 @@ img {
   }
 
   &__byline {
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 12px;
     font-weight: 400;
     color: $off-black;
@@ -433,10 +477,9 @@ img {
   }
 
   &__section {
-    font-size: 12px;
-    line-height: 17px;
+    font-size: px-to-rem(12px);
+    line-height: px-to-rem(14px);
     text-transform: uppercase;
-    margin-bottom: 5px;
     display: flex;
 
     a {
@@ -452,32 +495,16 @@ img {
   }
 
   &__addtrl {
-    position: absolute;
-    right: 0;
-    bottom: -3px;
     cursor: pointer;
-    padding: 3px;
     transition: background 0.2s ease-in-out;
     border-radius: 100%;
-
-    &:hover {
-      background: #f3f3f3;
-
-      svg path:first-child {
-        fill: #f3f3f3;
-      }
-    }
+    margin-left: auto;
 
     svg {
       display: block;
 
       path {
         transition: background 0.4s ease-in-out;
-      }
-    }
-    &.added {
-      svg path:first-child {
-        fill: #8c8c8c;
       }
     }
   }
@@ -506,10 +533,6 @@ img {
 
 .lock-tooltip {
   position: relative;
-
-  .lock {
-    margin-left: 5px;
-  }
 
   .lock-tooltip-content {
     display: none;
@@ -541,90 +564,6 @@ img {
 body.lento-pub .lock-tooltip-content {
   left: 34px;
   top: -8px;
-}
-
-.ld-grid-clear {
-  display: none;
-}
-
-.no-cssgrid {
-  .ld-grid-area {
-    margin-bottom: 24px;
-  }
-  @media (min-width: $gridMinWidth) {
-    .ld-grid-area {
-      padding: 0 12px;
-      margin-bottom: 0;
-      float: left;
-    }
-    .area-main {
-      width: 50%;
-    }
-    .ld-grid-main--two-cols .area-main {
-      width: 75%;
-    }
-    .area-second {
-      width: 25%;
-    }
-    .area-third {
-      width: 25%;
-    }
-    .ld-grid-clear {
-      display: block;
-      &:after {
-        content: "";
-        display: table;
-        clear: both;
-        margin-bottom: 24px;
-      }
-    }
-    .ld-grid-area-col {
-      width: 25%;
-      float: left;
-      padding: 0 12px;
-      margin-bottom: 24px;
-    }
-  }
-
-  @media (min-width: $gridMinWidth) and (max-width: 1300px) {
-    .ld-card--sm {
-      padding-right: 0;
-      .ld-card__img-sq {
-        display: none;
-      }
-    }
-  }
-
-  .ld-grid-simple {
-    @media (min-width: 640px) {
-      margin: 0 -12px;
-    }
-    > .ld-grid-simple__area {
-      margin-bottom: 24px;
-      float: left;
-
-      .ld-card {
-        height: 100%;
-        @media (min-width: $gridMinWidth) {
-          margin-bottom: 0;
-        }
-      }
-      @media (min-width: 640px) {
-        width: 50%;
-        padding: 0 12px;
-      }
-      @media (min-width: $gridMinWidth) {
-        width: 25%;
-      }
-    }
-  }
-}
-
-.art_count_4,
-.art_count_3,
-.art_count_2,
-.art_count_1 {
-  margin-bottom: 24px;
 }
 
 .card {
@@ -843,35 +782,5 @@ body.lento-pub .lock-tooltip-content {
         display: inline-block;
       }
     }
-  }
-}
-
-// new cover distribution
-.ld-grid-7030 {
-  display: grid;
-  grid-gap: 22px;
-  grid-template-columns: 1fr;
-
-  .ld-grid-thirds {
-    grid-gap: 22px;
-
-    .ld-card--sm {
-      height: auto;
-      margin-bottom: 22px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(1, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-  }
-
-  @media (min-width: $gridMinWidth) {
-    grid-template-columns: 70% 30%;
-    grid-template-rows: 1fr;
   }
 }

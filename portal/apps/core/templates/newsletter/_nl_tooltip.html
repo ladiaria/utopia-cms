@@ -1,0 +1,14 @@
+{% comment %}
+  Newsletter subscribe tooltip for anonymous users.
+  Show inside an element marked with `data-nl-tooltip-host`.
+  The trigger (the disabled switch) should have `data-nl-tooltip-trigger`.
+{% endcomment %}
+<div class="nl-tooltip" role="tooltip" hidden>
+  <h4 class="nl-tooltip__title">Ingresá para activarla</h4>
+  <p class="nl-tooltip__body">
+    Activá newsletters y recibilas por mail.
+    <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">Ingresá</a>
+    o
+    <a href="{% url 'account-signup' %}?next={{ request.path|urlencode }}">creá una cuenta</a>.
+  </p>
+</div>

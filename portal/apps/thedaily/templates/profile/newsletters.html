@@ -4,8 +4,8 @@
   <div id="{{ field.auto_id }}_wrapper">
     <div id="ld-newsletters" class="ld-block ld-section-newsletters">
 
-      <div class="edit_profile_card__header"><h2 class="title">Newsletters</h2></div>
-      <p>
+      <div class="edit_profile_card__header edit_profile_card__header--with-description"><h2 class="title">Newsletters</h2></div>
+      <p class="edit_profile_card__description">
         {% if newsletters or mailtrain_lists %}
           Elegí las newsletters que quieras y recibí los contenidos en tu email.
         {% else %}
@@ -16,7 +16,7 @@
       {% if newsletters %}
         <div id="newsletter-switches">
           {% for nlobj in newsletters %}
-            <div class="item-newsletter profile-check edit_profile_card__inner-section">
+            <div class="item-newsletter profile-check edit_profile_card__inner-section edit_profile_card__inner-section--secondary">
               {% for choice in field.field.choices %}
                 {% if choice.1 == nlobj.name %}
                   <div class="edit_profile_card__inner-section_header">

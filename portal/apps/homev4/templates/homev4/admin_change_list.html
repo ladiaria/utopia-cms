@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block object-tools-items %}
+<li>
+    <a href="/homev4/preview-5am/" target="_blank" class="button">
+        Preparar Edición ↗
+    </a>
+</li>
+{{ block.super }}
+{% endblock %}

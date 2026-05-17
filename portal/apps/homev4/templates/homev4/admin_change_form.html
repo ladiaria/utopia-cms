@@ -1,0 +1,47 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}?v={{ layout_editor_css_version }}"/>
+{% endblock %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{% if original and editor_data %}
+<fieldset class="module">
+    <h2>Editor de Layout</h2>
+    {% include "homev4/_editor_content.html" %}
+</fieldset>
+{% endif %}
+
+{% if original %}
+<fieldset class="module collapse" id="fieldset-grid-json">
+    <h2>
+        <a class="collapse-toggle" href="#" id="toggle-grid-json">
+            Datos del layout (JSON)
+            <span id="toggle-grid-json-label"> (Mostrar)</span>
+        </a>
+    </h2>
+    <div id="grid-json-body" style="display:none; padding: 8px 12px;">
+        <pre style="font-size:11px; white-space:pre-wrap; word-break:break-all; background:#f8f8f8; padding:10px; border:1px solid #ddd; border-radius:4px;">{{ grid_data_pretty }}</pre>
+    </div>
+</fieldset>
+<script>
+(function() {
+    var toggle = document.getElementById('toggle-grid-json');
+    var body = document.getElementById('grid-json-body');
+    var label = document.getElementById('toggle-grid-json-label');
+    if (toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            var hidden = body.style.display === 'none';
+            body.style.display = hidden ? 'block' : 'none';
+            label.textContent = hidden ? ' (Ocultar)' : ' (Mostrar)';
+        });
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

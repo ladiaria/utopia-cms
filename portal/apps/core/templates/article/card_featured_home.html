@@ -1,0 +1,45 @@
+{% load bleach_tags core_tags ldml %}
+
+<article class="article main-section__featured">
+  {% render_toolbar_for featured %}
+  {% if featured.photo %}
+    <a href="{{ featured.get_absolute_url }}" class="main-section__featured-image">
+      <img
+        srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
+        sizes="(min-width: 700px) 1200px, 100vw"
+        width="700"
+        height="{{ featured.photo.get_700w_size.1 }}"
+        title="{{ featured.photo_caption }}"
+        alt="{{ featured.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+  <div class="main-section__featured-body">
+    {% block featured_label %}
+      <div class="article__section-label">{% autoescape off %}{% render_hierarchy featured %}{% endautoescape %}</div>
+    {% endblock %}
+    <h1 class="article__title">
+      <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
+    </h1>
+    {% if featured.home_lead %}
+      <p class="article__summary">{{ featured.home_lead|ldmarkup|bleach }}</p>
+    {% elif featured.lead %}
+      <p class="article__summary">{{ featured.lead|ldmarkup|bleach }}</p>
+    {% endif %}
+    {% with authors=featured.get_authors %}
+    {% if authors or article_card_read_later_enabled and user.is_authenticated %}
+    <div class="article__footer">
+      {% if authors %}
+        <div class="article__byline">
+          Por
+          {% for author in authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
+    </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+</article>

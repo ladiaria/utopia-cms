@@ -1,3 +1,44 @@
+/* Label / input global styles */
+.input-field {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  // Adds top padding only to an .input-field that follows another, creating spacing between consecutive fields
+  & + & {
+    padding-top: 16px;
+  }
+
+  label {
+    font-size: px-to-rem(14px);
+    padding: 4px;
+    line-height: normal;
+
+    .marker {
+      color: #81898b;
+    }
+  }
+
+  input {
+    width: 100%;
+    height: px-to-rem(48px);
+    padding: 0 16px;
+    background-color: #fff;
+    border: 0.5px solid #000;
+    border-radius: 5px;
+    font-weight: 400;
+    line-height: normal;
+    outline: none;
+    font-size: px-to-rem(16px);
+  }
+  select {
+    height: px-to-rem(48px);
+    border: 0.5px solid #000;
+    padding: 0 16px;
+  }
+}
+
+/* End label/input global styles */
+
 body.subscribe:not(.signup) form#signup-phone-form,
 body.subscribe:not(.signup) form#signup_form,
 body.subscribe:not(.signup) form#google_signin,

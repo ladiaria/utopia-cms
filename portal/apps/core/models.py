@@ -963,9 +963,9 @@ class Section(Model):
         """
         return self.latest(3)
 
-    def latest4related(self, exclude_id):
+    def latest6related(self, exclude_id):
         """
-        devuelve los últimos 4 articulos de la sección que acepten ser
+        devuelve los últimos 6 articulos de la sección que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
         return Article.objects.raw(
@@ -976,13 +976,13 @@ class Section(Model):
             WHERE core_articlerel.section_id=%s AND is_published
                 AND allow_related AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4"""
+            LIMIT 6"""
             % (self.id, exclude_id)
         )
 
-    def latest4relatedbycategory(self, category, exclude_id):
+    def latest6relatedbycategory(self, category, exclude_id):
         """
-        devuelve los últimos 4 articulos de la categoría que acepten ser
+        devuelve los últimos 6 articulos de la categoría que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
         return Article.objects.raw(
@@ -995,13 +995,13 @@ class Section(Model):
             WHERE is_published AND allow_related
                 AND core_section.category_id=%s AND core_article.id!=%s
             GROUP BY id ORDER BY date_published DESC
-            LIMIT 4"""
+            LIMIT 6"""
             % (category, exclude_id)
         )
 
-    def latest4relatedbypublication(self, publication, exclude_id):
+    def latest6relatedbypublication(self, publication, exclude_id):
         """
-        devuelve los últimos 4 articulos de la publicacion que acepten ser
+        devuelve los últimos 6 articulos de la publicacion que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
         return (
@@ -1010,7 +1010,7 @@ class Section(Model):
             SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
                 JOIN core_edition e ON ar.edition_id=e.id
             WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
-            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 4"""
+            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 6"""
                 % (publication, exclude_id)
             )
             if settings.CORE_ENABLE_RELATED_ARTICLES
@@ -1507,7 +1507,7 @@ class ArticleBase(Model, CT):
     def has_photo(self):
         try:
             return bool(self.photo)
-        except PhotoExtended.DoesNotExist:
+        except (Photo.DoesNotExist, PhotoExtended.DoesNotExist):
             return False
 
     def photo_image_file_exists(self):

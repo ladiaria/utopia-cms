@@ -1,0 +1,13 @@
+{% load core_tags homev4_tags %}
+
+{% if secondary %}
+<div class="suplemento-section__secondary-row" data-slider>
+  {% with total=secondary|length %}
+    {% for article in secondary %}
+      {% with slider_class=forloop.counter|slider_position_class:total %}
+        {% render_card article=article variant="card_secondary_manana_home" %}
+      {% endwith %}
+    {% endfor %}
+  {% endwith %}
+</div>
+{% endif %}

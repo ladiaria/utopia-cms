@@ -1,7 +1,7 @@
 /* Simplified buttons new styles: 4 styles, 5 sizes and icon option */
 .ut-btn {
   // default regular dark button
-  font-family: "Roboto", sans-serif;
+  font-family: $sans;
   font-size: 15px;
   font-weight: 700;
   line-height: 20px;
@@ -9,7 +9,7 @@
   color: white;
   padding: 10px 20px;
   background: $off-black;
-  border-radius: 100px;
+  border-radius: 5px;
   display: inline-block;
   outline: none;
   cursor: pointer;
@@ -19,7 +19,10 @@
   -webkit-tap-highlight-color: transparent;
   text-decoration: none;
   border: none;
-  transition: background 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+  transition:
+    background 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease;
 
   svg {
     display: inline-block;
@@ -102,28 +105,6 @@
       }
     }
 
-    &.ut-btn-light {
-      // outlined light button
-      border-color: white;
-      color: white;
-
-      &:hover {
-        background: white;
-        color: $off-black;
-
-        svg path:not([fill="none"]) {
-          fill: $off-black;
-        }
-      }
-      &:active {
-        background: white;
-        color: $off-black;
-
-        svg path:not([fill="none"]) {
-          fill: $off-black;
-        }
-      }
-    }
     &.disabled {
       cursor: default;
       color: #a4a4a4;

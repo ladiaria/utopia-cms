@@ -3,12 +3,28 @@
 {% for article in articles %}
   <li data-id="{{ article.id }}" class="item">
     <article>
-      <span class="num-recomendados col iter-{{ forloop.parentloop.counter }}">{{ forloop.parentloop.counter }}</span>
-      <div class="col">
+      {% render_toolbar_for article %}
+      <span class="num-recomendados iter-{{ forloop.parentloop.counter }}">{{ forloop.parentloop.counter }}</span>
+      <div class="article__body">
         <div class="article-section">{% autoescape off %}{% publication_section article %}{% endautoescape %}</div>
         <a href="{{ article.get_absolute_url }}" class="title-recomendados">
           {{ article.headline|ldmarkup|bleach }}
         </a>
+        {% with authors=article.get_authors %}
+        {% if authors or article_card_read_later_enabled and user.is_authenticated %}
+        <div class="article__footer">
+          {% if authors %}
+            <div class="article__byline">
+              Por
+              {% for author in authors %}
+                <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+          {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+        </div>
+        {% endif %}
+        {% endwith %}
       </div>
     </article>
   </li>

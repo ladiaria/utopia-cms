@@ -1,87 +1,157 @@
-/* new styles */
-.coral-tabBar-tab-active {
-    border-top-color: #262626 !important;
-    color: #262626 !important;
-}
-.coral-tabBar-tab-active:before {
-    background-color: #262626 !important;
-    color: #262626 !important;
-}
-.coral-viewerBox-logoutButton {
-    color: #262626 !important;
-    text-decoration: underline !important;
-}
-.coral-guidelines {
-    background-color: #f5f5f5 !important;
-    border-color: #9a9da0 !important;
-}
-.coral-tabBar-tab {
-    border-bottom-color: #262626 !important;
-}
-.coral-createComment-submit {
-    background-color: #262626 !important;
-}
-.coral-createComment-submit:disabled {
-    opacity:0.9;
-}
-.coral-tabBarComments-allComments {
-    color: #262626 !important;
-    border-bottom-color: #262626 !important;
-}
-.coral-allComments-viewNewButton {
-    border-color: #262626 !important;
-    color: #262626 !important;
+:root,
+#coral {
+  --off-black: #000;
+  --font-family-sans-serif: "Dialect Gothic A", sans-serif;
+  --font-family-secondary: "Dialect Gothic A", sans-serif;
+  --round-corners: 4px;
+  --palette-grey-lighter: #ABABAB;
 }
 
-.coral-stream > nav {
-    margin-bottom: 0 !important;
-}
-main {
-    padding:24px 16px 16px;
-    border: solid 1px #d8d8d8;
-    border-top: none;
-    border-bottom-right-radius: 4px;
-    border-bottom-left-radius: 4px;
+#coral {
+  max-width: 25.75rem;
 }
 
-#app {
-    padding-bottom: 1px;
+.coral-guidelines-content p {
+  font-family: var(--font-family-sans-serif) !important;
 }
 
-.coral-unauthenticated > .coral-createComment {
+#coral>main>nav {
   display: none;
 }
-.coral-commentForm {
-    border-radius: 0 !important;
+
+.coral-comments .coral-authenticated>div:first-child {
+  display: none;
+}
+
+.coral-counter {
+  display: none;
+}
+
+select.coral-selectField {
+  border: 1px solid var(--palette-grey-lighter);
 }
 
 .coral-rte-content {
-    border-top:1px solid #cbd1d2;
-    border-bottom:1px solid #cbd1d2;
+  border-top: 0;
+}
+
+/* new styles */
+.coral-tabBar-tab-active {
+  border-top-color: var(--off-black) !important;
+  color: var(--off-black) !important;
+}
+
+.coral-tabBar-tab-active:before {
+  background-color: var(--off-black) !important;
+  color: var(--off-black) !important;
+}
+
+.coral-viewerBox-logoutButton {
+  color: var(--off-black) !important;
+  text-decoration: underline !important;
+}
+
+.coral-guidelines {
+  background-color: #f5f5f5 !important;
+  border-color: #9a9da0 !important;
+}
+
+.coral-tabBar-tab {
+  border-bottom-color: var(--off-black) !important;
+}
+
+.coral-comment-username span {
+  font-size: 1rem;
+}
+
+.coral-createComment-submit {
+  background-color: var(--off-black) !important;
+  width: min-content;
+  border-radius: 5px;
+  font-size: 1rem;
+  padding: 8px 22px;
+  text-transform: none;
+}
+
+.coral-comment-timestamp span {
+  color: #ABABAB;
+  font-weight: 500;
+}
+
+.coral-comment-content {
+  font-weight: 400;
+}
+
+.coral-comment-actionBar button span {
+  font-weight: 450;
+  color: #727272;
+}
+
+.coral-createComment-submit:disabled {
+  opacity: 0.9;
+}
+
+.coral-tabBarComments-allComments {
+  color: var(--off-black) !important;
+  border-bottom-color: var(--off-black) !important;
+}
+
+.coral-allComments-viewNewButton {
+  border-color: var(--off-black) !important;
+  color: var(--off-black) !important;
+}
+
+.coral-stream>nav {
+  margin-bottom: 0 !important;
+}
+
+main {
+  padding: 24px 16px 16px;
+  border: solid 1px #d8d8d8;
+  border-top: none;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+#app {
+  padding-bottom: 1px;
+}
+
+.coral-unauthenticated>.coral-createComment {
+  display: none;
+}
+
+
+.coral-rte-content {
+  border-top: 1px solid #cbd1d2;
+  border-bottom: 1px solid #cbd1d2;
 }
 
 .coral-tabBarSecondary-tab-active {
-    color: #262626 !important;
-    border-color: #262626 !important;
+  color: var(--off-black) !important;
+  border-color: var(--off-black) !important;
 }
+
 .coral-myComment-viewConversationButton {
-    color: #262626 !important;
+  color: var(--off-black) !important;
 }
 
 .coral-emailNotifications-updateButton,
 .coral-mediaPreferences-updateButton {
-    background-color: #262626 !important;
-    border-color:#262626 !important;
+  background-color: var(--off-black) !important;
+  border-color: var(--off-black) !important;
 }
-.coral-preferences input[type="checkbox"]:checked + label::before {
-    background-color: #262626 !important;
-    border-color: #262626 !important;
+
+.coral-preferences input[type="checkbox"]:checked+label::before {
+  background-color: var(--off-black) !important;
+  border-color: var(--off-black) !important;
 }
+
 body:not(.logged-in) .coral-comment-actionBar,
 body:not(.logged-in) #post-comment-form,
 body:not(.logged-in) .coral-guidelines,
 .coral-comment-shareButton,
 .coral-createComment-signIn,
-.coral-streamFooter  {
-    display: none!important;
+.coral-streamFooter {
+  display: none !important;
 }

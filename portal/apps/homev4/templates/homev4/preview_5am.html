@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'homev4/layout_editor.css' %}?v={{ layout_editor_css_version }}"/>
+<style>
+.preview-5am-banner {
+    background: #e65100;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+.btn-save-pending {
+    background: #e65100 !important;
+    color: #fff !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <fieldset class="module">
+        <h2>Editor — Preparar portada para las 5am</h2>
+        {% include "homev4/_editor_content.html" %}
+    </fieldset>
+</div>
+<script>
+// Enable the preview button after a successful save.
+document.addEventListener('homev4:saved', function () {
+    var btn = document.getElementById('btn-preview-5am');
+    if (btn) {
+        btn.style.pointerEvents = '';
+        btn.style.opacity = '';
+        btn.removeAttribute('title');
+    }
+});
+</script>
+{% endblock %}

@@ -16,28 +16,6 @@ $icon-wa: "\e900";
 
 // Icons
 
-i.ld-icons, i.material-icons {
-  speak: none;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-  vertical-align: text-bottom;
-
-  /* Better Font Rendering =========== */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  // for some mobile phones
-  text-rendering: optimizeLegibility;
-  font-feature-settings: 'liga';
-}
-
-i.material-icons {
-  font-family: "Material Icons" !important;
-}
-
 .icon-portada {
   &:before {
     content: $icon-portada;

@@ -184,8 +184,8 @@ class PreLoginForm(CrispyForm):
             + (
                 Submit(
                     'submit',
-                    'continuar',
-                    css_class='payment-container__anonymous__subscribe ut-btn' + (
+                    'Continuar',
+                    css_class='payment-container__anonymous__subscribe btn btn__dark' + (
                         " topspaced" if not terms_and_conditions_prelogin else ""
                     ),
                 ),
@@ -363,6 +363,7 @@ class SignupForm(BaseUserForm):
             custom_layout(self.helper.form_id)
             or Layout(
                 *(
+                    'next_page',
                     'first_name',
                     'email',
                     'phone',
@@ -374,9 +375,8 @@ class SignupForm(BaseUserForm):
                 )
                 + terms_and_conditions_layout_tuple()
                 + (
-                    'next_page',
                     HTML('<div class="align-center">'),
-                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='ut-btn ut-btn-l'),
+                    Submit('save', self.initial.get("save", "Crear cuenta"), css_class='btn btn__dark'),
                     HTML('</div>'),
                 )
             )
@@ -447,7 +447,7 @@ class SignupCaptchaForm(SignupForm):
                 'captcha',
                 'next_page',
                 HTML('<div class="align-center">'),
-                Submit('save', 'Crear cuenta', css_class='ut-btn ut-btn-l'),
+                Submit('save', 'Crear cuenta', css_class='btn btn__dark'),
                 HTML('</div>'),
             )
         )
@@ -585,7 +585,7 @@ class SubscriberAddressForm(SubscriberForm):
             Field('email', readonly=True),
             Field('phone'),
             HTML(
-                '<div class="validate col s12">'
+                '<div class="form-subtitle">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
                 '</div>'
             ),
@@ -691,13 +691,13 @@ class SubscriberSignupAddressForm(SubscriberAddressForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
+            'next_page',
             'first_name',
             'email',
             'phone',
-            'next_page',
             Field('password', template='materialize_css_forms/layout/password.html'),
             HTML(
-                '<div class="validate col s12">'
+                '<div class="form-subtitle">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
                 '</div>'
             ),
@@ -764,7 +764,7 @@ class PhoneSubscriptionForm(CrispyForm):
             "phone",
             HTML('<div class="">'),  # next field will close this div tag
             Field('preferred_time', template='preferred_time_visible.html'),
-            HTML('<div class="ld-block--sm align-center">'),
+            HTML('<div class="align-center">'),
             FormActions(Submit('save', 'Enviar', css_class='ut-btn ut-btn-l')),
             HTML('</div>'),
         )
@@ -781,7 +781,7 @@ class WebSubscriptionForm(ModelForm):
         self.helper.layout = Layout(
             *terms_and_conditions_layout_tuple()
             + (
-                HTML('<div class="ld-block--sm align-center">'),
+                HTML('<div class="align-center">'),
                 FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
                 HTML(
                     '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
@@ -829,7 +829,7 @@ class SubscriptionForm(WebSubscriptionForm):
             )
             + terms_and_conditions_layout_tuple()
             + (
-                HTML('<div class="ld-block--sm align-center">'),
+                HTML('<div class="align-center">'),
                 FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
                 HTML(
                     '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
@@ -853,7 +853,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
             HTML('<div class="col s12" style="margin-top: 25px;margin-bottom: 25px;">'),
             Field('payment_type', template='payment_type.html'),
             Field('preferred_time', template='preferred_time.html'),
-            HTML('</div><div class="ld-block--sm align-center">'),
+            HTML('</div><div class="align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
             Field('subscription_type_prices'),
@@ -891,7 +891,7 @@ class SubscriptionCaptchaForm(SubscriptionForm):
                     '<strong>Comprobá que no sos un robot</strong>'
                 ),
                 'captcha',
-                HTML('</div><div class="ld-block--sm align-center">'),
+                HTML('</div><div class="align-center">'),
                 FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
                 HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
                 Field('subscription_type_prices'),
@@ -914,7 +914,7 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
                 '<strong>Comprobá que no sos un robot</strong>'
             ),
             'captcha',
-            HTML('</div><div class="ld-block--sm align-center">'),
+            HTML('</div><div class="align-center">'),
             FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
             Field('subscription_type_prices'),
@@ -990,10 +990,10 @@ class GoogleSignupAddressForm(GoogleSignupForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
-            HTML('<div class="ld-block--sm align-center">Para continuar completá los siguientes datos</div>'),
+            HTML('<div class="align-center">Para continuar completá los siguientes datos</div>'),
             'phone',
             HTML(
-                '<div class="validate col s12">'
+                '<div class="form-subtitle">'
                 '  <h3 class="medium" style="color:black;">Información de entrega</h3>'
                 '</div>'
             ),
@@ -1025,8 +1025,8 @@ class PasswordResetRequestForm(CrispyForm):
                     title="Nombre de usuario o email.",
                     template='materialize_css_forms/layout/email-login.html',
                 ),
-                HTML('<div class="align-center form-group">'),
-                FormActions(Submit('save', 'Restablecer contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('<div class="align-center">'),
+                Submit('save', 'Restablecer contraseña', css_class='btn btn__dark'),
                 HTML('</div>'),
             )
         )

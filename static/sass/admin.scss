@@ -1,3 +1,5 @@
+@import "./variables";
+
 /**
 * Admin/Staff only code
 */
@@ -16,26 +18,31 @@
   }
 }
 
-.ut-btn.ut-admin-edit-card,
-a.ut-btn.ut-admin-edit-card {
+.ut-admin-edit-card,
+.ut-admin-order {
   position: absolute;
   right: 15px;
+  top: 15px;
   font-size: 11px;
   padding: 4px 9px 5px;
-  bottom: 15px;
   z-index: 1;
 }
-@media screen and (min-width: 769px) {
-  .ut-btn.ut-admin-edit-card,
-  a.ut-btn.ut-admin-edit-card {
+@media #{$medium-and-up} {
+  .ut-admin-edit-card {
     display: none;
     bottom: initial;
     top: 15px;
+    z-index: 2;
   }
 
-  .ut-btn.ut-admin-edit-card:hover,
-  a.ut-btn.ut-admin-edit-card:hover {
+  .ut-admin-edit-card:hover,
+  .ut-admin-order:hover {
     display: block;
+  }
+}
+@media #{$medium-and-down} {
+  .ut-admin-edit-card + .ut-admin-order {
+    right: 70px;
   }
 }
 
@@ -55,8 +62,8 @@ span.ut-btn.ut-admin-order {
   }
 }
 
-*:hover > .ut-btn.ut-admin-edit-card,
-*:hover > a.ut-btn.ut-admin-edit-card {
+*:hover > .ut-admin-edit-card,
+*:hover > .ut-admin-edit-card {
   display: block;
 }
 
@@ -68,7 +75,6 @@ span.ut-btn.ut-admin-order {
 
 .ld-tag-draft {
   position: fixed;
-  font-family: "Roboto", sans-serif;
   font-style: normal;
   font-weight: 500;
   font-size: 16px;

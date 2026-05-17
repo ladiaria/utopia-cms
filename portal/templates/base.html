@@ -113,9 +113,7 @@
     <!-- CSS -->
     {% compress css %}
       {% block base_css %}
-        {% block materialize_forms_css %}
-          <link href="{% static 'sass/utopia_materialize/_forms.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
-        {% endblock %}
+        {% block materialize_forms_css %}{% endblock %}
         <link href="{% static 'sass/base.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
       {% endblock %}
       {% if HOMEV3_CUSTOM_CSS %}
@@ -282,7 +280,7 @@
 
               {# Performance Monitoring (tracing) - CURRENTLY DISABLED #}
               {# Controls what % of page loads send performance data to Sentry #}
-              {# #}
+
               {# Values: #}
               {#   0.0 = Disabled (current) - Only error tracking, no performance data #}
               {#   0.1 = 10% sample - Good for testing performance monitoring #}
@@ -315,7 +313,7 @@
                 }
 
                 {# === FILTER: BROWSER EXTENSIONS === #}
-                {# Don't report errors from browser extensions (not our code, can't fix) #}
+                {# Don’t report errors from browser extensions (not our code, can‘t fix) #}
                 {# Examples: ad blockers, password managers, translation extensions #}
                 if (hint.originalException && hint.originalException.stack) {
                   const stack = hint.originalException.stack;
@@ -325,7 +323,7 @@
                 }
 
                 {# === FILTER: NETWORK ERRORS === #}
-                {# Don't report network errors (user offline, slow connection, timeout) #}
+                {# Don’t report network errors (user offline, slow connection, timeout) #}
                 {# These are not bugs in our code, just connectivity issues #}
                 if (hint.originalException && hint.originalException.message) {
                   const message = hint.originalException.message.toLowerCase();
@@ -340,15 +338,15 @@
               },
 
               {# === IGNORE ERRORS === #}
-              {# List of error messages/patterns to completely ignore (won't even reach beforeSend) #}
-              {# These are known issues that are not bugs or can't be fixed #}
+              {# List of error messages/patterns to completely ignore (won’t even reach beforeSend) #}
+              {# These are known issues that are not bugs or can’t be fixed #}
               ignoreErrors: [
                 {# Browser extension errors (common when users have many extensions) #}
                 'top.GLOBALS',
                 'canvas.contentDocument',
                 'atomicFindClose',
 
-                {# Facebook SDK errors (third-party, can't fix) #}
+                {# Facebook SDK errors (third-party, can’t fix) #}
                 'fb_xd_fragment',
 
                 {# Network/connectivity errors (not bugs) #}
@@ -436,19 +434,22 @@
 
     <!-- cabezal -->
     {% block navbar %}
-      <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
+      {% comment %} <header{% if request.signupwall_header %} class="with-article-counter-container {{ request.remaining_articles_word }}-articles"{% endif %}>
+        {% render_header %}
+      </header> {% endcomment %}
+      <header class="{% block header_classes %}{% endblock %}">
         {% render_header %}
       </header>
+      <div class="header-nav-wrapper">
+        {% block header_navbar %}{% render_navbar %}{% endblock %}
+      </div>
+      {% if extra_header_template %}
+        {% include extra_header_template %}
+      {% endif %}
+
       {% if PWA_ENABLED %}
         <div class="pwa-prompt" style="display:none;">
-          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g clip-path="url(#clip0_722_4218)">
-              <path d="M34.8333 31.1667V21.6333C33.9167 21.8167 33 22 32.0833 22H31.1667V33H12.8333V20.1667C12.8333 15.0333 16.8667 11 22 11C22.1833 8.61666 23.2833 6.59999 24.75 4.94999C24.2 4.21666 23.1 3.66666 22 3.66666C19.9833 3.66666 18.3333 5.31666 18.3333 7.33332V7.88332C12.8333 9.53332 9.16667 14.4833 9.16667 20.1667V31.1667L5.5 34.8333V36.6667H38.5V34.8333L34.8333 31.1667ZM18.3333 38.5C18.3333 40.5167 19.9833 42.1667 22 42.1667C24.0167 42.1667 25.6667 40.5167 25.6667 38.5H18.3333Z" fill="#262626"/>
-              <path d="M38.5 11.9167C38.5 15.4 35.5667 18.3333 32.0834 18.3333C28.6 18.3333 25.6667 15.4 25.6667 11.9167C25.6667 8.43333 28.6 5.5 32.0834 5.5C35.5667 5.5 38.5 8.43333 38.5 11.9167Z" fill="#FE5B4C"/>
-            </g>
-            <defs><clipPath id="clip0_722_4218"><rect width="44" height="44" fill="white"/></clipPath></defs>
-            <title>Ícono campana</title>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" fill="none" viewBox="0 0 44 44"><g clip-path="url(#clip0_722_4218)"><path fill="#262626" d="M34.833 31.167v-9.534c-.916.184-1.833.367-2.75.367h-.916v11H12.833V20.167C12.833 15.033 16.867 11 22 11c.183-2.383 1.283-4.4 2.75-6.05-.55-.733-1.65-1.283-2.75-1.283a3.677 3.677 0 0 0-3.667 3.666v.55c-5.5 1.65-9.166 6.6-9.166 12.284v11L5.5 34.833v1.834h33v-1.834zm-16.5 7.333A3.677 3.677 0 0 0 22 42.167a3.677 3.677 0 0 0 3.667-3.667z"/><path fill="#fe5b4c" d="M38.5 11.917c0 3.483-2.933 6.416-6.417 6.416s-6.416-2.933-6.416-6.416S28.6 5.5 32.083 5.5 38.5 8.433 38.5 11.917"/></g><defs><clipPath id="clip0_722_4218"><path fill="#fff" d="M0 0h44v44H0z"/></clipPath></defs><title>Ícono campana</title></svg>
           <span class="title">Activá nuestras notificaciones y<br>enterate antes</span>
           <div class="actions">
             <span class="ut-btn" onclick="return confirmFunction();">Activar</span>
@@ -522,7 +523,7 @@
       <div id="nav-mobile" class="nav-mobile navbar-fixed">
         <nav>
           <div class="nav-wrapper">
-            <ul class="center row">
+            <ul class="" data-col-numbers="{{ mobile_nav_ths }}">
               {% if is_detail %}
                 {% with mobile_nav_ths=mobile_nav_ths|add:mobile_nav_detail_more %}
                   {% include 'mobile_nav_items.html' %}
@@ -542,7 +543,6 @@
       {# js needed for the "dropdown" and "modal" menu items #}
       <script defer src="{% static 'materialize/js/jquery.easing.1.4.js' %}"></script>
       <script defer src="{% static 'materialize/js/global.js' %}"></script>
-      <script defer src="{% static 'materialize/js/dropdown.js' %}"></script>
       <script defer src="{% static 'materialize/js/modal.js' %}"></script>
       <script defer src="{% static 'materialize/js/forms.js' %}"></script>
     {% endblock %}
@@ -550,12 +550,14 @@
     {% block ld_core_scripts %}
       {% if user.is_authenticated %}
         {# used only in pages that show article cards #}
-        <script defer src="{% static 'js/read_later_events.js' %}"></script>
+        <script defer src="{% static 'js/read_later_events.js' %}?v=2.1"></script>
       {% endif %}
 
       {# TODO: check usage of all the following scripts loaded (from ld.js to picturefill.js) #}
-      <script defer src="{% static 'js/ld.js' %}"></script>
-      <script defer src="{% static 'js/resizeSubnav.js' %}"></script>
+      {% compress js %}
+        <script defer src="{% static 'js/ld.js' %}"></script>
+      {% endcompress %}
+      {% comment %} <script defer src="{% static 'js/resizeSubnav.js' %}"></script> {% endcomment %}
 
       {# Modernizr - Detect CSS Grid #}
       <script src="{% static 'js/vendor/modernizr-custom.js' %}"></script>

@@ -1,0 +1,40 @@
+{% load bleach_tags core_tags ldml %}
+
+<article class="article">
+  {% render_toolbar_for article %}
+  {% if article.photo %}
+    <a href="{{ article.get_absolute_url }}" class="article__image-container">
+      <img
+        class="article__image"
+        srcset="{{ article.photo.get_small_url }} 350w, {{ article.photo.get_700w_url }} 700w"
+        sizes="(min-width: 700px) 284px, 100vw"
+        width="700"
+        height="{{ article.photo.get_700w_size.1 }}"
+        loading="lazy"
+        title="{{ article.photo_caption }}"
+        alt="{{ article.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+  {% block article_section_label %}
+    <div class="article__section-label">{% autoescape off %}{% render_hierarchy article %}{% endautoescape %}</div>
+  {% endblock %}
+  <h3 class="article__title">
+    <a href="{{ article.get_absolute_url }}">{{ article.headline|ldmarkup|bleach }}</a>
+  </h3>
+  {% with authors=article.get_authors %}
+  {% if authors or article_card_read_later_enabled and user.is_authenticated %}
+  <div class="article__footer">
+    {% if authors %}
+      <div class="article__byline">
+        Por
+        {% for author in authors %}
+          <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% include "article/article_card_read_later.html" with a=article prefetched_article_data=True %}
+  </div>
+  {% endif %}
+  {% endwith %}
+</article>

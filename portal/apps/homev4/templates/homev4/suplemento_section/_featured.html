@@ -1,0 +1,41 @@
+{% load bleach_tags core_tags ldml %}
+{% with resolved_slug=section_slug|default:home_data.suplemento_slug resolved_title=section_title|default:home_data.suplemento_title %}
+
+<div class="suplemento-section__featured">
+  <div class="suplemento-section__header">
+    {% if resolved_slug %}
+      <a href="{{ resolved_slug }}">
+        <h2>{{ resolved_title }}</h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m8 21.5 6-6-6-6"/></svg>
+      </a>
+    {% else %}
+      <h2>{{ resolved_title }}</h2>
+    {% endif %}
+  </div>
+  {% if featured.photo %}
+    <a href="{{ featured.get_absolute_url }}" class="suplemento-section__featured-image">
+      <img
+        srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
+        sizes="(min-width: 700px) 616px, 100vw"
+        width="700"
+        height="{{ featured.photo.get_700w_size.1 }}"
+        loading="lazy"
+        alt="{{ featured.photo_caption }}"
+      >
+    </a>
+  {% endif %}
+  <article class="article">
+    {% render_toolbar_for featured %}
+    <div class="article__section-label">{% autoescape off %}{% render_hierarchy featured %}{% endautoescape %}</div>
+    <h3 class="article__title">
+      <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
+    </h3>
+    {% if featured.home_lead %}<p class="article__lead">{{ featured.home_lead|ldmarkup|bleach }}</p>{% endif %}
+    {% if article_card_read_later_enabled and user.is_authenticated %}
+      <div class="article__footer">
+        {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
+      </div>
+    {% endif %}
+  </article>
+</div>
+{% endwith %}

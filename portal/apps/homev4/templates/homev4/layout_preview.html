@@ -1,0 +1,75 @@
+{% load static homev3_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Home Layout Preview - {{ layout.name }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .preview-header {
+            background: #417690; color: #fff; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .preview-header h1 { font-size: 16px; font-weight: normal; }
+        .preview-header a { color: #fff; text-decoration: underline; font-size: 13px; }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 16px;
+        }
+        .grid-slot {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 16px;
+            min-height: 80px;
+        }
+        .slot-title {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eee;
+        }
+        .article-item { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+        .article-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .article-item h3 { font-size: 16px; margin-bottom: 4px; }
+        .article-item h3 a { color: #333; text-decoration: none; }
+        .article-item h3 a:hover { color: #417690; }
+        .article-item .deck { font-size: 14px; color: #666; }
+        .article-item .meta { font-size: 12px; color: #999; margin-top: 4px; }
+        .article-cover { margin-bottom: 16px; }
+        .article-cover h2 { font-size: 22px; margin-bottom: 6px; }
+        .article-cover h2 a { color: #333; text-decoration: none; }
+        .article-cover .deck { font-size: 15px; color: #555; }
+        .empty-slot { color: #999; font-style: italic; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <h1>Preview: {{ layout.name }} ({{ layout.publication }} @ {{ layout.scheduled_time }})</h1>
+        <a href="{% url 'homev4:editor' layout.pk %}">Back to Editor</a>
+    </div>
+
+    <div class="grid-layout">
+        {% for slot in grid_data %}
+        <div class="grid-slot"
+             style="grid-column: {{ slot.grid_column_start }} / span {{ slot.grid_column_span }};
+                    grid-row: {{ slot.grid_row_start }} / span {{ slot.grid_row_span }};">
+            {% render_slot slot %}
+        </div>
+        {% empty %}
+        <div class="grid-slot" style="grid-column: 1 / span 12;">
+            <div class="empty-slot">No blocks in this layout. Open the editor to add blocks.</div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

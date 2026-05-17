@@ -1,0 +1,56 @@
+@import "../variables";
+@import "../components/cards/card_standard";
+
+main#main-content {
+  padding-top: 32px;
+  > .container {
+    padding: 0;
+  }
+}
+
+.section-detail {
+  &__head {
+    padding-bottom: 32px;
+  }
+  &__title {
+    font-family: $sans-title;
+    font-size: px-to-rem(48px);
+  }
+  &__toplink {
+    color: #81898b;
+    font-size: px-to-rem(18px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+@media #{$medium-and-down} {
+  main#main-content {
+    padding-top: 24px;
+    > .container {
+      padding: 0 $padding-inline;
+    }
+  }
+
+  .section-detail {
+    &__head {
+      padding-bottom: 24px;
+      margin-bottom: 0;
+    }
+    &__title {
+      font-size: px-to-rem(32px);
+    }
+    &__toplink {
+      color: #81898b;
+      font-size: px-to-rem(16px);
+      height: px-to-rem(44px);
+    }
+  }
+
+  .section_module {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+}

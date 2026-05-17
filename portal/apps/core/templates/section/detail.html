@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load core_tags %}
+{% load static core_tags %}
 
 {% block page_title %}{% section_title %}{% endblock %}
 
@@ -8,35 +8,29 @@
   <meta property="og:title" content="{% section_title %}">
 {% endblock %}
 
+{% block css %}
+  <link href="{% static 'sass/section/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block body_class %}section-detail{% endblock %}
 
 {% block page_header %}
  {% include "section/detail_header.html" %}
 {% endblock %}
 
+{% block header_classes %}section-detail-header{% endblock %}
+
 {% block content %}
-	<section class="section_module container--narrow">
+	<section class="section_module">
     {% for article in articles %}
       {% if forloop.first %}
-        {% render_article_card article=article media=article.home_display card_size="FD" img_load_lazy=False %}
+        {% render_card article=article variant="card_standard" img_load_lazy=False %}
       {% else %}
-        {% render_article_card article=article media=article.home_display card_size="FD" %}
+        {% render_card article=article variant="card_standard" %}
       {% endif %}
     {% endfor %}
     {% if articles.has_other_pages %}
       {% with pager=articles %}{% include "pagination.html" %}{% endwith %}
     {% endif %}
   </section>
-{% endblock %}
-
-{% block footer_scripts %}
-  <script>
-    $(document).ready(function() {
-      const subMenu = document.querySelector(".section-subheader .submenu");
-      const subMenuList = document.querySelector(".submenu--list");
-      if (subMenu && subMenuList) {
-        resizeSubnav(subMenu, subMenuList, 1);
-      }
-    });
-  </script>
 {% endblock %}

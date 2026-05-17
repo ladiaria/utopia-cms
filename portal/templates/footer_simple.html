@@ -1,20 +1,17 @@
 <footer class="ld-footer-simple">
-  <div class="row ld-text-secondary align-center">
-    <div class="col s12">
-      <div>
-        {% if not user.is_authenticated and not disable_first_row %}
-          {% if not disable_signup %}
-            <b>¿No tenés cuenta?</b><br>
-            <a href="{% url 'subscribe_landing' %}">Suscribite</a> o <a href="{% url 'account-signup' %}">registrate</a>.
-          {% else %}
-            <b>¿Ya tenés una cuenta?</b><br>
-            <a href="{% url 'account-login' %}">Ingresá</a>
-          {% endif %}
-          <br><br>
-        {% endif %}
-        <b>¿Tenés consultas?</b><br>
-        Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.
-      </div>
+  {% if not user.is_authenticated and not disable_first_row %}
+    <div>
+      {% if not disable_signup %}
+        <p><span class="font-bold">¿No tenés cuenta?</span></p>
+        <p><a href="{% url 'subscribe_landing' %}">Suscribite</a> o <a href="{% url 'account-signup' %}">registrate</a>.</p>
+      {% else %}
+        <p><span class="font-bold">¿Ya tenés una cuenta?</span></p>
+        <p><a href="{% url 'account-login' %}">Ingresá</a></p>
+      {% endif %}
     </div>
+  {% endif %}
+  <div>
+    <p><span class="font-bold">¿Tenés consultas?</span></p>
+    <p>Visitá nuestro <a href="/ayuda/">centro de ayuda</a> o <a href="{% url 'contact-form' %}">contactanos</a>.</p>
   </div>
 </footer>

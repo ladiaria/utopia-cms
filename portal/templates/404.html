@@ -1,37 +1,32 @@
 {% extends base_template %}
-{% load core_tags %}
+{% load static core_tags i18n %}
 
 {% block page_title %}{% title_joinparts 'Página no encontrada' %}{% endblock %}
 {% block body_class %}error{% endblock %}
 
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/not_found.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block content %}
 
-  <div class="ld-content">
-    <div class="row u-mb-50">
-      <div class="col s12">
-        <h1 class="ld-title-huge align-center">Página no encontrada</h1>
+  <div class="not-found">
+    <div class="not-found__main">
+      <div class="not-found__text">
+        <h1 class="not-found__title">Página no encontrada</h1>
+        <p class="not-found__subtitle">Tal vez puedas encontrar lo que buscabas</p>
       </div>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col s12 m6 offset-m3">
-      <p class="center-align">
-        <span class="small">Tal vez puedas encontrar lo que buscabas</span>
-      </p>
-      <form action="{% url 'search' %}" method="get" class="search">
-        <label for="id_q">Buscar:</label>
-        <input type="text" name="q" id="id_q" value="{{ token }}">
-        {{ form.q.errors }}
-        <div class="row">
-          <div class="col m12">
-            <p class="center-align">
-              <button class="ut-btn ut-btn-l ut-btn-light" type="submit" id="submit-search">Buscar</button>
-            </p>
-          </div>
+      <form action="{% url 'search' %}" method="get" class="not-found__search">
+        <div class="not-found__search-input-wrap">
+          <input type="text" name="q" id="id_q" value="{{ token }}" placeholder="Escribir">
         </div>
+        <button type="submit" class="not-found__search-btn">Buscar</button>
       </form>
     </div>
+
   </div>
 
 {% endblock %}
+
+{% block footer_block %}{% include 'footer_simple.html' %}{% endblock footer_block %}

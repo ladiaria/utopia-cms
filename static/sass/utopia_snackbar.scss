@@ -21,21 +21,15 @@ $minWidth: 1040px;
 .ld-snackbar {
   font-size: 16px;
   text-align: center;
-  background-color: white;
+  background-color: transparent;
   bottom: 0;
   color: $off-black;
-  font-family: "Roboto", sans-serif;
   left: 0;
   position: fixed;
   width: 99%;
   z-index: 1010;
-  font-weight: 400;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   padding-top: 0;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  border: 1px solid #c3c3c3;
 
   -webkit-backface-visibility: hidden;
   left: 50%;
@@ -46,90 +40,73 @@ $minWidth: 1040px;
   animation-fill-mode: forwards;
   animation-timing-function: cubic-bezier(0.33, 0.07, 0, 0.98);
 
-  @media (min-width: $minWidth){
-    background-color: white;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+  @media (min-width: $minWidth) {
     padding-top: 0;
     max-width: 700px;
   }
 
-
-  &--static{
+  &--static {
     position: static;
     animation: none;
     transform: none;
     margin: 0 auto;
-    border-radius: 10px;
     border-bottom: 0;
-    padding-bottom: $paddingDefault;
     max-width: 90%;
     margin-bottom: 90px;
+    border-top: 1px solid #ababab;
+    border-bottom: 1px solid #ababab;
+    padding: 32px 0;
 
-    @media (min-width: $minWidth){
-      max-width: 700px;
-      border-bottom: 0;
-      padding-bottom: 0;
+    .ld-snackbar__title {
+      padding-bottom: 24px;
     }
 
-    .ld-snackbar__col{
-      padding-bottom: 40px;
+    @media (min-width: $minWidth) {
+      max-width: 700px;
     }
   }
 
-
-  &--narrow{
-
-    @media (min-width: $minWidth){
+  &--narrow {
+    @media (min-width: $minWidth) {
       max-width: 700px;
     }
 
-    .ld-snackbar__text{
+    .ld-snackbar__text {
       max-width: 450px;
       margin-left: auto;
       margin-right: auto;
     }
   }
 
-  &--active{
+  &--active {
     animation: none;
   }
 
-  &__body{
-    padding: $paddingDefault;
-    @media (min-width: $minWidth){
-      background-color: white;
-      color: #262626;
-    }
+  &__block {
+    padding-bottom: 24px;
 
-    .container{
-      width: 100% !important;
+    &:last-of-type {
+      padding-bottom: 0;
     }
   }
 
-  &__block{
-    margin-bottom: 20px;
-
-    &:last-of-type{
-      margin-bottom: 0;
-    }
-  }
-
-
-  &__title{
-    background-color: $secondary-color;
+  &__title {
     text-align: center;
-    padding: 15px 60px;
-    font-size: 18px;
-    font-weight: 400;
-    font-family: AntennaCond, sans-serif;
+    font-size: px-to-rem(28px);
+    font-weight: 500;
+    font-family: $sans-title;
+    line-height: normal;
 
-    @media (min-width:600px){
-      padding: 15px 40px;
+    @media #{$medium-and-down} {
     }
   }
 
-  &__cross{
+  &__text a {
+    text-decoration: underline;
+    font-weight: 700;
+  }
+
+  &__cross {
     display: none;
     @include hide-text;
   }
@@ -139,10 +116,10 @@ $minWidth: 1040px;
     font-size: 15px;
   }
 
-  &__login-area{
+  &__login-area {
     color: $off-black;
 
-    a{
+    a {
       color: $off-black;
       text-decoration: underline;
     }
@@ -150,116 +127,105 @@ $minWidth: 1040px;
       color: $grey;
       font-size: 16px;
       padding: 5px 0;
-      a { color: $grey }
+      a {
+        color: $grey;
+      }
     }
   }
 
-  &__btn{
-    margin: 0 auto 10px auto;
-    max-width: 320px;
-    font-size: 18px !important;
-    min-width: 170px;
-
-    &--white.ld-snackbar__btn{
-      display: inline-block;
-    }
-  }
-
-  strong{
-    font-weight: 500;
-  }
-
-  &__close{
+  &__close {
     display: block;
     text-align: center;
-    margin: 0 auto;
     padding: 0;
-    text-decoration: none;
-    background: none !important;
+    background: transparent;
     outline: 0;
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: 16px;
+    top: 32px;
     border: none;
-    border-radius: 36px;
     vertical-align: middle;
     width: 36px;
     height: 36px;
 
-    i{
+    i {
       line-height: 34px;
       height: 36px;
       vertical-align: middle;
     }
 
-    @media (min-width: $minWidth){
+    @media (min-width: $minWidth) {
       right: 15px;
       border: none;
-      i{
+      i {
         font-size: 32px;
       }
     }
-  }
-
-  .row{
-    margin-bottom: 0;
   }
 
   &--option {
     margin: 25px 0 30px;
   }
 
-
   .desc {
     color: $off-black;
-    font-family: "Roboto", sans-serif;
+    font-family: $sans;
     font-size: 16px;
     margin-bottom: 15px;
     margin-top: 15px;
   }
-  .desc:first-child{
-    margin-top:0;
+  .desc:first-child {
+    margin-top: 0;
   }
 
   &.softwall {
-      position: relative;
-      z-index: 1;
-      transform: none;
-      left:0;
-      margin: 0 20px 50px;
-      border-radius: 10px;
-      animation: none;
-      display: none;
-      width: auto;
+    position: relative;
+    z-index: 1;
+    transform: none;
+    left: 0;
+    margin: 0 auto 50px;
+    animation: none;
+    display: none;
+    width: auto;
+    padding: 32px 16px;
+    border-top: 1px solid #ababab;
+    border-bottom: 1px solid #ababab;
 
-      .ld-snackbar__close {
-        transition: background 0.2s ease-in-out;
+    .ld-snackbar__close {
+      transition: background 0.2s ease-in-out;
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.1) !important;
-        }
-        svg {
-            position: relative;
-            top:3px;
-        }
+      &:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
       }
-
-
-      @media (min-width:700px) {
-        left:calc((100% - 700px) / 2);
-        width: 700px;
-        margin: 0 0 50px;
+      svg {
+        position: relative;
+        top: 3px;
       }
-
+    }
   }
   &--active.softwall {
-      display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  @media #{$medium-and-down} {
+    &.softwall {
+      padding: 24px;
+      max-width: calc(100dvw - #{$padding-inline} * 2);
+    }
+    &__title {
+      padding-top: 24px;
+    }
+    &__close {
+      top: 24px;
+      right: 0;
+    }
   }
 }
 
 .ld-paywall-ending {
-    margin-bottom: 30vh;
-  }
+  margin-bottom: 30vh;
+}
 // Paywall
 #paywall {
   &.card {

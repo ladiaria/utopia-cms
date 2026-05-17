@@ -1,0 +1,11 @@
+{% load core_tags %}
+
+{% if secondary %}
+<div class="main-section__secondary-row">
+  {% for article in secondary %}
+    {% with position=forloop.counter0|add:2 %}
+      {% render_card article=article variant="card_secondary_tarde_home" %}
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}

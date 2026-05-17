@@ -78,7 +78,7 @@ def render_related(context, article, amp=False):
     ):
         # use the publication
         upd_dict = {
-            'articles': section.latest4relatedbypublication(publication.id, article.id),
+            'articles': section.latest6relatedbypublication(publication.id, article.id),
             'section': publication.headline if publication.slug in getattr(
                 settings, 'CORE_PUBLICATIONS_RELATED_USE_HEADLINE', ()
             ) else publication.name,
@@ -87,7 +87,7 @@ def render_related(context, article, amp=False):
     elif category and category.slug in getattr(settings, 'CORE_CATEGORY_RELATED_USE_CATEGORY', ()):
         # use the category
         upd_dict = {
-            'articles': section.latest4relatedbycategory(category.id, article.id),
+            'articles': section.latest6relatedbycategory(category.id, article.id),
             'section': category.more_link_title or category.name,
         }
 
@@ -100,13 +100,13 @@ def render_related(context, article, amp=False):
                 if category_slug in article_categories and section.slug not in section_slugs:
                     category = Category.objects.get(slug=category_slug)
                     upd_dict = {
-                        'articles': section.latest4relatedbycategory(category.id, article.id),
+                        'articles': section.latest6relatedbycategory(category.id, article.id),
                         'section': category.name,
                     }
                     break
 
     if not upd_dict:
-        upd_dict = {'articles': section.latest4related(article.id), 'section': section.name}
+        upd_dict = {'articles': section.latest6related(article.id), 'section': section.name}
 
     upd_dict.update({'is_detail': False, 'amp': amp})
     flatten_ctx = context.flatten()
@@ -161,6 +161,10 @@ def media_select(parser, token):
     return MediaSelectNode(**kwargs)
 
 
+# TODO: migrate all uses of render_article_card to render_card.
+# New strategy: render_card uses descriptive template names (e.g. "article_card",
+# "article_card_lead") instead of opaque size codes (FN, FD, BG, etc.).
+# render_article_card is kept for backwards compatibility during the migration.
 @register.simple_tag(takes_context=True)
 def render_article_card(context, article, media, card_size, card_type=None, img_load_lazy=True):
     if not article:
@@ -236,6 +240,46 @@ def render_article_card(context, article, media, card_size, card_type=None, img_
     )
     return loader.render_to_string(
         template_override or ('core/templates/%sarticle/%s' % ('amp/' if flatten_ctx.get("amp") else '', template)),
+        flatten_ctx,
+    )
+
+
+@register.simple_tag(takes_context=True)
+def render_card(context, article, variant, media=None, img_load_lazy=True):
+    """
+    Renders an article card using a descriptive variant name.
+    Usage: {% render_card article=article variant="article_card" %}
+           {% render_card article=article variant="article_card_lead" %}
+
+    Supports template overrides via CORE_ARTICLE_DETAIL_TEMPLATE_DIR setting.
+    """
+    if not article:
+        return ""
+
+    card_type = article.type
+
+    template_file = '%s.html' % variant
+    template_override = None
+    template_dir = getattr(settings, 'CORE_ARTICLE_DETAIL_TEMPLATE_DIR', None)
+    if template_dir:
+        template_try = join(template_dir, "article", template_file)
+        try:
+            Engine.get_default().get_template(template_try)
+        except TemplateDoesNotExist:
+            pass
+        else:
+            template_override = template_try
+
+    flatten_ctx = context.flatten()
+    flatten_ctx.update(
+        {
+            'article': article,
+            'card_type': card_type,
+            'img_load_lazy': img_load_lazy,
+        }
+    )
+    return loader.render_to_string(
+        template_override or ('core/templates/article/%s' % template_file),
         flatten_ctx,
     )
 
@@ -325,7 +369,10 @@ def render_toolbar_for(context, toolbar_object):
         if user and user.is_staff and isinstance(toolbar_object, Article):
             toolbar_template = getattr(settings, "CORE_TOOLBAR_TEMPLATE", 'core/templates/article/toolbar.html')
             params = {'article': toolbar_object, 'is_detail': False}
-            if context.get('is_cover'):
+            position = context.get('position')
+            if position is not None:
+                params['featured_order'] = str(position)
+            elif context.get('is_cover'):
                 edition = context.get('edition')
                 if edition:
                     params.update(
@@ -337,9 +384,15 @@ def render_toolbar_for(context, toolbar_object):
                             ),
                         }
                     )
-            context.update(params)
-            return loader.render_to_string(toolbar_template, context.flatten())
+            flat_context = context.flatten()
+            flat_context.update(params)
+            return loader.render_to_string(toolbar_template, flat_context)
     return ''
+
+
+@register.simple_tag
+def all_photo_render_allowed(articles):
+    return all(a.photo_render_allowed() for a in articles)
 
 
 @register.simple_tag
@@ -356,6 +409,20 @@ def render_supplements():
     return loader.render_to_string('core/templates/supplement_list.html', {'supplements': supplements})
 
 
+def _resolve_section_name_override(section, article):
+    """
+    Resolves the display name for a section using CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES.
+    If the override value ends in `.html`, it is rendered as a template with `section` and
+    `article` in context. Otherwise it is returned as-is. Falls back to `section.name`.
+    """
+    override = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug)
+    if not override:
+        return section.name
+    if override.endswith('.html'):
+        return loader.render_to_string(override, {'section': section, 'article': article})
+    return override
+
+
 @register.simple_tag(takes_context=True)
 def publication_section(context, article, pub=None):
     """
@@ -370,7 +437,7 @@ def publication_section(context, article, pub=None):
         )
         if section:
             use_section_link = getattr(settings, 'CORE_ARTICLE_CARDS_SECTION_LINK', True)
-            s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+            s_name = _resolve_section_name_override(section, article)
             if use_section_link:
                 result = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
             else:
@@ -421,7 +488,7 @@ def render_hierarchy(context, article, force_use_links=False):
             parent.append(article.main_section.edition.publication)
         else:
             return publication_section(context, article)
-        s_name = getattr(settings, "CORE_ARTICLE_CARDS_SECTION_NAME_OVERRIDES", {}).get(section.slug, section.name)
+        s_name = _resolve_section_name_override(section, article)
         if use_section_link:
             child = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
         else:
@@ -435,6 +502,36 @@ def render_hierarchy(context, article, force_use_links=False):
         return ''
     else:
         return publication_section(context, article)
+
+
+@register.simple_tag(takes_context=True)
+def resolve_article_breadcrumb(context, article):
+    publication, category = context.get("publication"), context.get("category")
+    section = article.publication_section(publication) if publication else article.get_section(category)
+    if not section:
+        return {}
+    parent, parent_url = None, None
+    if section.category:
+        parent = section.category
+        parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    else:
+        excluded = getattr(settings, "CORE_BREADCRUMB_EXCLUDE_PUBLICATION_SLUGS", ())
+        main_pub = article.main_section.edition.publication if article.main_section else None
+        if main_pub and main_pub.slug not in excluded:
+            parent = main_pub
+        else:
+            ar = article.articlerel_set.exclude(
+                edition__publication__slug__in=excluded
+            ).select_related('edition__publication').first()
+            parent = ar.edition.publication if ar else None
+        if parent:
+            parent_url = reverse('home', kwargs={'domain_slug': parent.slug})
+    return {
+        'parent': parent,
+        'parent_url': parent_url,
+        'section': section,
+        'section_name': _resolve_section_name_override(section, article),
+    }
 
 
 @register.simple_tag(takes_context=True)

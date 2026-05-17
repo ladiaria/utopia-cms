@@ -1,0 +1,179 @@
+{% load core_tags %}
+
+{# TODO: Check whether this file needs to be renamed to navbar.html #}
+
+{% if publication == default_pub and request.path == '/' %}
+  <nav class="navbar">
+    <div class="scrollable-navbar__scrollable">
+      <ul>
+        {% if HOME_NAV_ITEMS %}
+          {% for item in HOME_NAV_ITEMS %}
+          {% if item.children %}
+          <li{% if item.classes %} class="{{ item.classes }}"{% endif %}>
+            <span class="dropdown-button" data-beloworigin="true" data-activates="nav-dropdown-{{ forloop.counter }}">
+              {{ item.label }}
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m2 4 4.382 4.382L10.765 4"/></svg>
+            </span>
+            <ul id="nav-dropdown-{{ forloop.counter }}" class="dropdown-content">
+              {% for child in item.children %}
+              <li><a href="{{ child.url }}">{{ child.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          {% else %}
+          <li{% if item.classes %} class="{{ item.classes }}"{% endif %}><a href="{{ item.url }}">{{ item.label }}</a></li>
+          {% endif %}
+          {% endfor %}
+        {% else %}
+          {% for category, sections in MENU_CATEGORIES.items %}
+          <li><a href="{% url 'home' domain_slug=category.slug %}">{{ category|capfirst }}</a></li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5211_20062)" d="M0 0h40v26H0z" transform="matrix(-1 0 0 1 40 0)"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18.782 2.61 12.39 9 6"/><defs><linearGradient id="paint0_linear_5211_20062" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--right" type="button" aria-label="Desplazar a la derecha">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5196_18321)" d="M0 0h40v26H0z"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m31 18.782 6.39-6.391L31 6"/><defs><linearGradient id="paint0_linear_5196_18321" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+    </div>
+  </nav>
+{% elif not article and category or publication and not section %}
+  <nav class="navbar category-navbar">
+    <a class="home-link" href="{% url "home" %}">Portada</a>
+    <div class="scrollable-navbar__scrollable center">
+      <ul>
+        {% if category %}
+          {% include 'core/templates/category/detail_header_sections.html' %}
+        {% elif publication %}
+          {% for section in publication.primary_sections %}
+            <li>
+              <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
+                {% section_name_in_publication_menu publication section %}
+              </a>
+            </li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--left" type="button" aria-label="Desplazar a la izquierda">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5211_20062)" d="M0 0h40v26H0z" transform="matrix(-1 0 0 1 40 0)"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18.782 2.61 12.39 9 6"/><defs><linearGradient id="paint0_linear_5211_20062" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+      <button class="scrollable-navbar__arrow scrollable-navbar__arrow--right" type="button" aria-label="Desplazar a la derecha">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="26" fill="none" viewBox="0 0 40 26"><path fill="url(#paint0_linear_5196_18321)" d="M0 0h40v26H0z"/><path stroke="#44494b" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m31 18.782 6.39-6.391L31 6"/><defs><linearGradient id="paint0_linear_5196_18321" x1="40" x2="0" y1="13" y2="13" gradientUnits="userSpaceOnUse"><stop offset=".461" stop-color="#fff"/><stop offset=".966" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+      </button>
+    </div>
+  </nav>
+{% endif %}
+
+{% comment %}
+<ul class="main-menu center hide-on-small-and-down{% if publication != default_pub %} {{ publication.slug }}{% endif %}">
+  <li class="nav-menu__portada">
+    <a href="{% url 'home' %}"><span class="inner">Portada</span></a>
+  </li>
+  {% for category, sections in MENU_CATEGORIES.items %}
+    {% if not category.exclude_from_top_menu %}
+      {% if sections %}
+        <li>
+          <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="category-{{ category.slug }}-dropdown">
+            <span class="inner">{{ category|capfirst }}
+              {% if category.new_pill %}
+                <span class="nav-menu__pill nav-menu__new-pill" style="margin-left: 2px; margin-right: -5px;">Nuevo</span>
+              {% endif %}
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+            </span>
+          </a>
+        </li>
+      {% else %}
+        <li class="nav-menu__{{ category.slug }}">
+          <a href="{% url 'home' domain_slug=category.slug %}"><span class="inner">{{ category|capfirst }}</span>
+            {% if category.new_pill %}
+              <span class="nav-menu__pill nav-menu__new-pill">Nuevo</span>
+            {% endif %}
+          </a>
+        </li>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% block menu_items_after_areas %}{% endblock %}
+  {% if MENU_PUBLICATIONS %}
+    <li>
+      <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="emergentes-dropdown">
+        <span class="inner">Emergentes
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+        </span>
+      </a>
+    </li>
+  {% endif %}
+  {% block extra_dropdowns %}{% endblock %}
+  {% if MENU_LATEST_ARTICLE_LINKS_DROPDOWN %}
+    <li class="nav-menu__apuntes">
+      <a class="dropdown-button" data-beloworigin="true" href="#!" data-activates="{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}-dropdown">
+        <span class="inner">{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M24,24H0V0H24Z" fill="none" opacity="0.87"/><path d="M15.88,9.29,12,13.17,8.12,9.29A1,1,0,0,0,6.71,10.7l4.59,4.59a1,1,0,0,0,1.41,0L17.3,10.7a1,1,0,0,0,0-1.41,1.017,1.017,0,0,0-1.42,0Z" class="nav-fill" fill="#a4a4a4"/></svg>
+        </span>
+      </a>
+    </li>
+  {% elif MENU_LATEST_ARTICLE_LINKS %}
+    <li class="nav-menu__apuntes">
+      <a href="{% url 'section-latest-article' section_slug=MENU_LATEST_ARTICLE_LINKS.0.0 %}">
+        <span class="inner">{{ MENU_LATEST_ARTICLE_LINKS.0.1 }}</span>
+      </a>
+    </li>
+  {% endif %}
+  {% block extra_items %}{% endblock %}
+  <li class="nav-menu__more">
+    <button class="more-button js-ld-main-menu-toggle">
+      <span class="inner">Más</span>
+    </button>
+  </li>
+</ul>
+
+{% for category, sections in MENU_CATEGORIES.items %}
+  {% if not category.exclude_from_top_menu and sections %}
+    <ul id="category-{{ category.slug }}-dropdown" class="dropdown-content hide-on-small-and-down">
+      {% for section in sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">
+            {{ section.name_in_category_menu|default:section.name }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endfor %}
+
+{% with emergentes='ciencia economia educacion feminismos justicia salud trabajo' %}
+  {% if publication != default_pub and publication not in emergentes.split %}
+    <ul id="secciones-dropdown" class="dropdown-content hide-on-small-and-down">
+      {% for section in publication.primary_sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">{{ section }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+    <ul id="secciones-dropdown2" class="dropdown-content hide-on-small-and-down">
+      {% for section in publication.secondary_sections %}
+        <li>
+          <a href="{% url 'section_detail' section_slug=section.slug %}" class="{{ section.slug }}">{{ section }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+{% if MENU_PUBLICATIONS %}
+  <ul id="emergentes-dropdown" class="dropdown-content hide-on-small-and-down">
+    {% for pub in MENU_PUBLICATIONS %}<li><a href="{{ pub.get_absolute_url }}">{{ pub }}</a></li>{% endfor %}
+  </ul>
+{% endif %}
+
+{% if MENU_LATEST_ARTICLE_LINKS_DROPDOWN %}
+  <ul id="{{ MENU_LATEST_ARTICLE_LINKS_DROPDOWN }}-dropdown" class="dropdown-content hide-on-small-and-down">
+    {% for s_slug, desktop_short, mobile_short, text_long in MENU_LATEST_ARTICLE_LINKS %}
+      <li><a href="{% url 'section-latest-article' section_slug=s_slug %}">{{ desktop_short }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% block extra_dropdowns_contents %}{% endblock %}
+{% endcomment %}

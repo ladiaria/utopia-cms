@@ -9,6 +9,13 @@
 {% endwith %}
 {% endspaceless %}{% endblock %}
 
+{% block materialize_forms_css %}{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/access_pages.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
+
 {% block extra_css %}
   <link rel="stylesheet" href="{{ intl_tel_input_cdn }}css/intlTelInput.css">
 {% endblock %}
@@ -29,7 +36,7 @@
   <div class="modal" id="terms-conditions-modal">
     <div class="content">
       {% autoescape off %}{% terms_and_conditions %}{% endautoescape %}
-      <div class="align-center"><a class="ut-btn" onclick="accept_terms_and_conds();">aceptar</a></div>
+      <div class="align-center"><a class="btn btn__dark" id="terms-accept-btn">Aceptar</a></div>
     </div>
   </div>
 {% endblock %}
@@ -48,17 +55,16 @@
           Para acceso ilimitado <a href="{% url 'subscribe-default' %}">suscribite</a>.
         </span>
       </div>
-      <div class="col s12 m8 offset-m2">
-        <div class="row">
-          <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
-          <div class="col s12 align-center ld-block--sm">
-            <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ signup_form.next_page.value|default:'/' }}" class="ld-btn-google">con Google</a>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col s12 align-center"><span class="ld-text-secondary">O con tu email</span></div>
-        </div>
-        <div class="row"><div class="col s12"><div class="row">{% crispy signup_form %}</div></div></div>
+      <div>
+        <h2 class="center-align u-mt-50">Creá tu cuenta</h2>
+        <div class="col s12 align-center ld-block--sm">
+          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ signup_form.next_page.value|default:'/' }}" class="ld-btn-google">
+            <img src="{% static "img/icon-google.svg" %}" alt="Logo Google">
+            <span>Con Google</span>
+          </a>
+      </div>
+      <div class="align-center"><span class="ld-text-secondary">O con tu email</span></div>
+      {% crispy signup_form %}
       </div>
     </div>
   </main>
@@ -77,17 +83,19 @@
   <script defer src="{% static 'materialize/js/velocity.min.js' %}"></script>
   <script src="{{ intl_tel_input_cdn }}js/intlTelInput.min.js"></script>
   <script src="{% static 'js/phone_widget.js' %}"></script>
-  <script>
-    $(function(){
-      phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
-      $('label[for="id_terms_and_conds_accepted"] a').on("click", function(event){
-        event.preventDefault();
-        $('.modal').modal('open');
-      });
+  <script type="module">
+    import { openModal, closeModal } from "{% static 'js/modal.js' %}";
+
+    phone_widget("{{ phonenumber_default_region }}", "{{ intl_tel_input_cdn }}", "{{ local_lang }}");
+
+    document.querySelector('label[for="id_terms_and_conds_accepted"] a')?.addEventListener("click", function(event){
+      event.preventDefault();
+      openModal('terms-conditions-modal');
     });
-    function accept_terms_and_conds(){
-      $('.modal').modal('close');
-      $('#id_terms_and_conds_accepted').prop('checked', true);
-    }
+
+    document.getElementById('terms-accept-btn').addEventListener("click", function(){
+      closeModal('terms-conditions-modal');
+      document.getElementById('id_terms_and_conds_accepted').checked = true;
+    });
   </script>
 {% endblock %}

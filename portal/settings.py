@@ -102,6 +102,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "signupwall",
     "homev3",
+    "homev4.apps.Homev4Config",
     "cartelera.config.CarteleraConfig",
     "martor",
     "django_bleach",
@@ -364,6 +365,9 @@ CELERY_TASK_ROUTES = {
     "update-category-home": {"queue": "upd_category_home"},
     "update-article-urls": {"queue": "upd_articles_url"},
     "send-push-notification": {"queue": "concurrent_tasks"},
+    "resolve-daily-layouts": {"queue": "concurrent_tasks"},
+    "refresh-home-layouts": {"queue": "concurrent_tasks"},
+    "toggle-radio-block": {"queue": "concurrent_tasks"},
 }
 CELERY_TASK_QUEUES = []  # will be populated after local settings imports
 CELERY_RESULT_EXTENDED = True
@@ -586,9 +590,15 @@ CRM_API_HTTP_BASIC_AUTH = None  # Override to tuple (user, pass) if the CRM is r
 ENV_HTTP_BASIC_AUTH = False  # Override to True if this CMS deployment is restricted using basic auth
 ENABLE_GOOGLE_ONE_TAP = False
 SENTRY_ENABLED = False
+# Pessimistic locking for Django Admin pages — shows a banner and disables fields
+# when another user already has the same change form open. Override to True in local_settings.py.
+ADMIN_PAGE_LOCK_ENABLED = False
 
 # ====================================================================================== visual separator =============
 
+
+# homev4 — fallback URL for the papel (print edition) reader when no edition with PDF is found
+PAPEL_FALLBACK_URL = "https://papel.ladiaria.com.uy/library"
 
 # Override previous settings with values in local_settings.py settings file
 from local_settings import *  # noqa
