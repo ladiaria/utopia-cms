@@ -547,6 +547,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function getEditorArticleIds() {
         var ids = [];
         document.querySelectorAll("[data-article-id]").forEach(function (el) {
+            // Skip articles inside disabled blocks — they should remain searchable.
+            if (el.closest(".is-inactive")) return;
             var id = parseInt(el.dataset.articleId, 10);
             if (!isNaN(id)) ids.push(id);
         });

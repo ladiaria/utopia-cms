@@ -47,9 +47,14 @@ class PapelUrlTest(SimpleTestCase):
         # filter(...).exclude(...).order_by(...).first() for most recent edition
         edition_qs.filter.return_value.exclude.return_value.order_by.return_value.first.return_value = edition_recent
 
+        # Mock Publication so weekend path (filter slug="findesemana") doesn't hit the DB.
+        pub_qs = MagicMock()
+        pub_qs.filter.return_value.first.return_value = MagicMock()
+
         return {
             "cache": patch("homev4.views.cache", cache_mock),
             "Edition": patch("homev4.views.Edition", MagicMock(objects=edition_qs)),
+            "Publication": patch("homev4.views.Publication", MagicMock(objects=pub_qs)),
             "timezone": patch("homev4.views.timezone.localdate", return_value=today),
             "pub": patch("homev4.views.get_default_publication", return_value=MagicMock()),
             "_cache_mock": cache_mock,
@@ -123,6 +128,9 @@ class PapelUrlTest(SimpleTestCase):
         ]
         for date, expected_slug in cases:
             with self.subTest(date=date):
-                patchers = self._patch(today=date, edition_today=_mock_edition(date))
+                # Weekends use order_by path (edition_recent); weekdays use today's edition.
+                is_weekend = date.weekday() >= 5
+                kwargs = {"today": date, "edition_recent": _mock_edition(date)} if is_weekend else {"today": date, "edition_today": _mock_edition(date)}
+                patchers = self._patch(**kwargs)
                 result = self._run(patchers)
                 self.assertIn(expected_slug, result)
