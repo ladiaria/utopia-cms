@@ -1641,6 +1641,8 @@ class ArticleBase(Model, CT):
         return (now() - self.date_published).total_seconds()
 
     def datetime_published_verbose(self, day_name_and_time=True):
+        if self.date_published is None:
+            return ''
         locale.setlocale(locale.LC_ALL, settings.LOCALE_NAME)
         format_st = "{dt.day} de {dt:%B de %Y}"
 
@@ -1657,6 +1659,8 @@ class ArticleBase(Model, CT):
         return format_st.format(dt=template_localtime(self.date_published)).lower().capitalize()
 
     def date_published_verbose(self):
+        if self.date_published is None:
+            return ''
         if settings.CORE_ARTICLE_CARDS_DATE_PUBLISHED_USE_AGO:
             total_seconds = self.date_published_seconds_ago()
             if total_seconds < 60:
