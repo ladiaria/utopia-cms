@@ -1,0 +1,12 @@
+{% comment %}
+  Newsletter unsubscribe confirmation tooltip for already-subscribed users.
+  Show inside an element marked with `data-nl-unsubscribe-host`.
+  Pass `nl_name` (category or publication object) via `with`.
+{% endcomment %}
+<div class="nl-unsubscribe-tooltip" role="dialog" hidden>
+  <p class="nl-unsubscribe-tooltip__title">¿Desactivar la newsletter de {{ nl_name }}?</p>
+  <div class="nl-unsubscribe-tooltip__actions">
+    <button type="button" class="nl-unsubscribe-tooltip__confirm">Desactivar</button>
+    <button type="button" class="nl-unsubscribe-tooltip__cancel">Cancelar</button>
+  </div>
+</div>
