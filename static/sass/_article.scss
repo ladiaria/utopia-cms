@@ -986,6 +986,8 @@ article#main-article {
 
   ul li {
     list-style-type: disc;
+    font-size: px-to-rem(20px);
+    line-height: px-to-rem(27px);
   }
 
   li {
@@ -996,6 +998,12 @@ article#main-article {
   strong,
   b {
     font-weight: 500;
+  }
+
+  blockquote {
+    margin: 32px 0;
+    padding-left: px-to-rem(24px);
+    border-left: 5px solid #000;
   }
 
   .ld-caption {
@@ -1390,6 +1398,7 @@ article .article-body .collection-articles {
   border: 1px solid #d8d8d8;
   padding: 16px;
   border-radius: 4px;
+  margin: 32px 0;
 
   &--title {
     margin: 0;
