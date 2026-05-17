@@ -393,6 +393,7 @@ article#main-article {
 
     a {
       transition: color 0.1s ease-in-out;
+      text-decoration: underline;
 
       &:hover {
         text-decoration: underline;

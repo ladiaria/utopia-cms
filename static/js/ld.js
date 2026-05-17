@@ -657,28 +657,41 @@
         wrapper.classList.toggle("mobile-centered", list.scrollWidth <= 325);
       }
 
+      const isHomeNavbar = !!wrapper.closest("#home-navbar");
+
       list.addEventListener("scroll", update, { passive: true });
       window.addEventListener("resize", function () {
         updateCenter();
-        computePageStarts();
-        ensurePagination();
+        if (isHomeNavbar) { computePageStarts(); ensurePagination(); }
         update();
       });
 
       if (leftBtn) {
         leftBtn.addEventListener("click", function () {
-          const idx = getCurrentPageIndex();
-          if (idx > 0) list.scrollTo({ left: pageScrollTargets[idx - 1], behavior: "smooth" });
+          if (isHomeNavbar) {
+            const idx = getCurrentPageIndex();
+            if (idx > 0) list.scrollTo({ left: pageScrollTargets[idx - 1], behavior: "smooth" });
+          } else {
+            list.scrollBy({ left: -list.clientWidth, behavior: "smooth" });
+          }
         });
       }
       if (rightBtn) {
         rightBtn.addEventListener("click", function () {
-          const idx = getCurrentPageIndex();
-          if (idx + 1 < pageScrollTargets.length) list.scrollTo({ left: pageScrollTargets[idx + 1], behavior: "smooth" });
+          if (isHomeNavbar) {
+            const idx = getCurrentPageIndex();
+            if (idx + 1 < pageScrollTargets.length) list.scrollTo({ left: pageScrollTargets[idx + 1], behavior: "smooth" });
+          } else {
+            list.scrollBy({ left: list.clientWidth, behavior: "smooth" });
+          }
         });
       }
 
-      document.fonts.ready.then(function () { updateCenter(); computePageStarts(); ensurePagination(); update(); });
+      document.fonts.ready.then(function () {
+        updateCenter();
+        if (isHomeNavbar) { computePageStarts(); ensurePagination(); }
+        update();
+      });
     });
 
     // Newsletter tooltip — toggle on trigger click, close on outside click
