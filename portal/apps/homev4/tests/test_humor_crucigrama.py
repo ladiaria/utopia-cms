@@ -12,6 +12,7 @@ Covers:
 
 All DB calls are mocked — no database required. Tests run with SimpleTestCase.
 """
+import datetime
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -453,6 +454,7 @@ class BuildHomeDataCrucigramaTest(SimpleTestCase):
     def _make_crossword(self, cw_id=7, has_image=True):
         cw = MagicMock()
         cw.id = cw_id
+        cw.date_published = datetime.date(2026, 1, 5)  # Monday — date_format needs a real date
         if has_image:
             cw.image.url = f"/media/crossword/img/{cw_id}.png"
         else:
@@ -550,6 +552,7 @@ class UpdateCrosswordInLayoutsTest(SimpleTestCase):
     def _make_crossword(self, cw_id=10, has_image=True):
         cw = MagicMock()
         cw.id = cw_id
+        cw.date_published = datetime.date(2026, 1, 5)  # Monday — date_format needs a real date
         if has_image:
             cw.image.url = f"/media/cw/{cw_id}.png"
         else:
