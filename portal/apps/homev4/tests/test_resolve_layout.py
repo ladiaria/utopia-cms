@@ -384,6 +384,65 @@ class ResolveLayoutGridDataTest(SimpleTestCase):
         # Inactive recomendadas should NOT exclude article 30 from areas
         self.assertIn(30, all_area_ids)
 
+    def test_inactive_principal_not_added_to_seen_ids(self):
+        """
+        Inactive principal must NOT contribute to seen_ids — its saved articles
+        must remain available for suplemento and area fallbacks.
+        """
+        grid = {
+            "principal": {"active": False, "article_ids": [1, 2]},
+        }
+        # suplemento pool and area pool both include 1 — should NOT be excluded
+        result = self._run(grid, principal_ids=(), suplemento_ids=(1, 3), area_ids=(1, 5))
+        # Suplemento fallback: 1 should NOT be blocked by inactive principal
+        self.assertIn(1, result["suplemento"]["article_ids"])
+        all_area_ids = set()
+        for section in result["sections"]:
+            all_area_ids.update(section["article_ids"])
+        # Area fallback: 1 should NOT be blocked by inactive principal
+        # (it may be consumed by suplemento first, but principal alone must not block it)
+        self.assertNotIn(2, all_area_ids)  # 2 is NOT in any pool so won't appear
+
+    def test_inactive_suplemento_not_added_to_seen_ids(self):
+        """
+        Inactive suplemento must NOT contribute to seen_ids — its saved articles
+        must remain available for area fallbacks.
+        Active principal still contributes normally.
+        """
+        grid = {
+            "principal":  {"active": True, "article_ids": [10, 11]},
+            "suplemento": {"active": False, "article_ids": [1, 2]},
+        }
+        # area pool contains 1 (also in inactive suplemento) and 5
+        result = self._run(grid, area_ids=(1, 5))
+        all_area_ids = set()
+        for section in result["sections"]:
+            all_area_ids.update(section["article_ids"])
+        # 1 is only in inactive suplemento — must NOT be blocked from areas
+        self.assertIn(1, all_area_ids)
+        # Active principal IDs must still be blocked from areas
+        self.assertNotIn(10, all_area_ids)
+        self.assertNotIn(11, all_area_ids)
+
+    def test_inactive_especial_not_added_to_seen_ids(self):
+        """
+        Inactive especial must NOT contribute to seen_ids — its saved articles
+        must remain available for area fallbacks.
+        """
+        grid = {
+            "principal": {"active": True, "article_ids": [10]},
+            "especial":  {"active": False, "article_ids": [1, 2]},
+        }
+        # area pool contains 1 (also in inactive especial) and 5
+        result = self._run(grid, suplemento_ids=(), area_ids=(1, 5))
+        all_area_ids = set()
+        for section in result["sections"]:
+            all_area_ids.update(section["article_ids"])
+        # 1 is only in inactive especial — must NOT be blocked from areas
+        self.assertIn(1, all_area_ids)
+        # Active principal IDs must still be blocked
+        self.assertNotIn(10, all_area_ids)
+
 
 class BuildHomeDataLoUltimoTest(SimpleTestCase):
     """
