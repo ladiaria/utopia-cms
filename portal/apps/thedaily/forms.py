@@ -167,7 +167,7 @@ class CrispyModelForm(ModelForm):
 
 
 class PreLoginForm(CrispyForm):
-    email = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    email = CharField(label='Email', widget=EmailInput(attrs={'class': CSS_CLASS}))
     if terms_and_conditions_prelogin:
         terms_and_conds_accepted = terms_and_conditions_field()
 
