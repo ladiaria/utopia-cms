@@ -1,16 +1,10 @@
 {% load static %}
 
-{% if minimal_footer %}
-  <div class="footer-portada__container minimal">
-{% else %}
+{% if not minimal_footer %}
   <div class="footer-portada__container">
     {% block resume %}
       {% include 'core/templates/edition/resume.html' with footer_resume=True %}
     {% endblock %}
-  </div>
-{% endif %}
-
-{% if minimal_footer %}
   </div>
 {% endif %}
 

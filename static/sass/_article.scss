@@ -340,6 +340,9 @@ article#main-article {
     display: flex;
     align-items: center;
     gap: 4px;
+    a {
+      text-decoration: underline;
+    }
   }
 
   .article-body {
@@ -787,8 +790,8 @@ article#main-article {
     }
     .article-aditional-info {
       padding-block: 24px;
-      font-size: px-to-rem(14px);
-      line-height: px-to-rem(14px);
+      font-size: px-to-rem(15px);
+      line-height: normal;
     }
 
     .article-lead,
