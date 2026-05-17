@@ -173,11 +173,20 @@ def get_papel_url():
     try:
         today = timezone.localdate()
         publication = get_default_publication()
-        # Prefer today's edition with PDF; fall back to the most recent one with PDF.
-        edition = (
-            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
-            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-        )
+        weekday = today.weekday()
+        if weekday >= 5:
+            # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
+            fds_pub = Publication.objects.filter(slug="findesemana").first()
+            edition = (
+                Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
+                if fds_pub else None
+            ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        else:
+            # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
+            edition = (
+                Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+                or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+            )
         if not edition:
             return settings.PAPEL_FALLBACK_URL
         url = (
