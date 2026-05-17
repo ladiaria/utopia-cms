@@ -28,6 +28,9 @@
       <div class="header-search">
         <form id="header-search-form-menu" class="header-search__form" action="{% url 'search' %}" method="get" role="search">
           <input type="search" name="q" class="header-search__input" placeholder="Buscar" autocomplete="off" aria-label="Buscar">
+          <button type="submit" class="header-search__submit" aria-label="Buscar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10" fill="none" viewBox="0 0 6 10"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m.75 8.75 4-4-4-4"/></svg>
+          </button>
         </form>
         <button type="button" class="search-btn header-search__toggle" aria-label="Abrir buscador" aria-expanded="false" aria-controls="header-search-form-menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>

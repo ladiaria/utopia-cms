@@ -1,9 +1,14 @@
 {% extends base_template %}
-{% load core_tags %}
+{% load core_tags static %}
 
 {% block page_title %}{% spaceless %}
   {{ journalist.name }} | {{ journalist.get_job_display }} {% title_joinparts '' 'en ' %}
 {% endspaceless %}{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'sass/section/detail.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+{% endblock %}
 
 {% block meta_og_title %}
   <!-- Open Graph (http://ogp.me) -->
@@ -16,6 +21,10 @@
   <div class="section_background">
     <div class="container container--narrow">
       <div class="section-detail__head">
+        <a class="section-detail__toplink" href="javascript:history.back()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#81898b" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m14 16-4-4 4-4"/></svg>
+          Volver
+        </a>
         <h1 class="section-detail__title">{{ journalist.name }}</h1>
         {% if journalist.bio %}
           <p class="section-detail__description">{{ journalist.bio }}</p>
@@ -35,12 +44,12 @@
 {% endblock %}
 
 {% block content %}
-	<section class="section_module container--narrow">
+	<section class="section_module">
     {% for article in articles %}
       {% if forloop.first %}
-        {% render_article_card article=article media=article.home_display card_size="FD" img_load_lazy=False %}
+        {% render_card article=article variant="card_standard" img_load_lazy=False %}
       {% else %}
-        {% render_article_card article=article media=article.home_display card_size="FD" %}
+        {% render_card article=article variant="card_standard" %}
       {% endif %}
     {% endfor %}
 
