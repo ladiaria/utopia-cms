@@ -415,6 +415,10 @@ header {
   gap: 0;
   min-width: px-to-rem(139px);
 
+  .header-nav-wrapper > nav & {
+    align-items: stretch;
+  }
+
   &.is-open {
     visibility: visible;
     opacity: 1;
@@ -608,10 +612,6 @@ header {
         margin-left: 15px;
         margin-right: 15px;
       }
-    }
-
-    &.left {
-      float: left;
     }
   }
 
@@ -1507,7 +1507,7 @@ body {
 
   &__title {
     margin: 0 0 15px 0;
-    font-size: 14px;
+    font-size: px-to-rem(14px);
     font-family: $sans;
     font-weight: bold;
     color: $off-black;
@@ -1576,6 +1576,7 @@ body {
       font-weight: bold;
       font-size: px-to-rem(24px);
       margin: 0;
+      letter-spacing: px-to-rem(0.72px);
     }
 
     ul {
@@ -2204,9 +2205,7 @@ body.interior {
 }
 
 .popup-user-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
   background: #fff;
   border: 1px solid #c7d0d3;
   border-radius: 5px;
