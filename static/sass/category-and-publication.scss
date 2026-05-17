@@ -90,6 +90,9 @@
     }
 
     input:checked + .cover-newsletter__slider {
+      background-color: #6fcf97;
+      border-color: #27ae60;
+
       &::before {
         transform: translateX(29px);
         top: 0.5px;

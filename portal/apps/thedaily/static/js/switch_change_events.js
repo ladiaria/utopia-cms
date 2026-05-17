@@ -56,7 +56,15 @@ function nl_header_subscribe_init() {
   const btn = document.querySelector('.newsletter-header');
   if (!config || !btn || config.isAnonymous) return;
 
-  btn.addEventListener('click', function () {
+  if (config.isSubscribed) {
+    initUnsubscribeMode(btn, config);
+  } else {
+    initSubscribeMode(btn, config);
+  }
+}
+
+function initSubscribeMode(btn, config) {
+  function handleClick() {
     const textSpan = btn.querySelector('.newsletter-header__text');
     $.ajax({
       type: 'POST',
@@ -71,6 +79,55 @@ function nl_header_subscribe_init() {
         if (textSpan) textSpan.textContent = 'No se pudo suscribir, intentá de nuevo';
       }
     });
+  }
+  btn.addEventListener('click', handleClick);
+}
+
+function initUnsubscribeMode(btn, config) {
+  const host = btn.closest('[data-nl-unsubscribe-host]');
+  const tooltip = host && host.querySelector('.nl-unsubscribe-tooltip');
+  if (!tooltip) return;
+
+  function showTooltip() {
+    tooltip.removeAttribute('hidden');
+  }
+
+  function hideTooltip() {
+    tooltip.setAttribute('hidden', '');
+  }
+
+  btn.addEventListener('click', showTooltip);
+
+  tooltip.querySelector('.nl-unsubscribe-tooltip__cancel').addEventListener('click', hideTooltip);
+
+  tooltip.querySelector('.nl-unsubscribe-tooltip__confirm').addEventListener('click', function () {
+    $.ajax({
+      type: 'POST',
+      url: config.subscribeUrl,
+      data: { [config.dataKey]: false },
+      success: function () {
+        hideTooltip();
+        const textSpan = btn.querySelector('.newsletter-header__text');
+        if (textSpan) textSpan.textContent = config.subscribeMessage;
+        btn.removeEventListener('click', showTooltip);
+        initSubscribeMode(btn, config);
+      },
+      error: function () {
+        hideTooltip();
+      }
+    });
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!tooltip.hasAttribute('hidden') && !host.contains(e.target)) {
+      hideTooltip();
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !tooltip.hasAttribute('hidden')) {
+      hideTooltip();
+    }
   });
 }
 
