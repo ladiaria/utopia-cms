@@ -52,7 +52,7 @@
       Tu navegador no soporta este elemento de <code>audio</code>.
     </audio>
   </div>
-  <p class="read-by">Leído por Andrés Alba</p>
+  {% if article.audio.description %}<p class="read-by">{{ article.audio.description }}</p>{% endif %}
 </div>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
