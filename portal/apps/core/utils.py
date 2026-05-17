@@ -42,6 +42,8 @@ def get_section_articles_sql(section_ids, excluded=[], limit=None):
 
 
 def datetime_isoformat(dt):
+    if dt is None:
+        return None
     dt = dt if is_aware(dt) else make_aware(dt)
     return datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, dt.tzinfo).isoformat()
 

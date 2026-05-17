@@ -14,8 +14,22 @@
   .minimal {
     padding: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    > p {
+      font-family: $sans-title;
+      font-size: px-to-rem(32px);
+      font-weight: 700;
+      letter-spacing: px-to-rem(0.32px);
+      padding-bottom: 32px;
+    }
+    @media #{$medium-and-down} {
+      gap: 0;
+      > p {
+        font-size: px-to-rem(28px);
+      }
+    }
   }
 
   .ld-main-menu__item--btn {
