@@ -1115,17 +1115,18 @@ def _fetch_area_articles(area_type, slug, saved_ids, exclude_ids=None):
     """Return articles for an ÁREAS Y PUBLICACIONES block (max 2).
     Priority: saved_ids (manually picked via picker).
     Fallback: 2 articles from the category or publication.
-    Special case "local": 1 article from "colonia" + 1 from "maldonado".
+    Special case "local": fetch 1 article from each of colonia/maldonado/paysandu/salto, return the 2 most recent.
     When exclude_ids is provided, fallback queries skip those articles (deduplication).
     """
     if saved_ids:
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     if area_type == "local":
-        articles = []
-        for cat_slug in ("colonia", "maldonado"):
-            articles.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
-        return articles
+        candidates = []
+        for cat_slug in ("colonia", "maldonado", "paysandu", "salto"):
+            candidates.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
+        candidates.sort(key=lambda a: a.date_published, reverse=True)
+        return candidates[:2]
     return _fetch_source_articles(area_type, slug, limit=2, exclude_ids=exclude_ids)
 
 
