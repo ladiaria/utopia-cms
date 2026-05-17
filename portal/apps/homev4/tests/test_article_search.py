@@ -149,3 +149,43 @@ class ArticleSearchTest(SimpleTestCase):
         article_search(req)
 
         qs.exclude.assert_not_called()
+
+    @patch("homev4.views.HomeLayout")
+    @patch("homev4.views.Article")
+    def test_db_fallback_skips_inactive_blocks(self, MockArticle, MockLayout):
+        """
+        Inactive blocks must NOT contribute to excluded_ids in the DB fallback path.
+        Only articles in blocks with active=True (or active missing, which defaults True)
+        should be excluded from search results.
+        """
+        layout = MagicMock()
+        layout.grid_data = {
+            "principal":  {"active": True,  "article_ids": [1]},   # active — must be excluded
+            "suplemento": {"active": False, "article_ids": [2]},   # inactive — must NOT be excluded
+            "especial":   {"active": False, "article_ids": [3]},   # inactive — must NOT be excluded
+            "sections":   [
+                {"slug": "cultura", "active": True,  "article_ids": [4]},  # active — must be excluded
+                {"slug": "deporte", "active": False, "article_ids": [5]},  # inactive — must NOT be excluded
+            ],
+            "componentes": [
+                {"key": "opinion",  "active": True,  "article_ids": [6]},  # active — must be excluded
+                {"key": "le_monde", "active": False, "article_ids": [7]},  # inactive — must NOT be excluded
+            ],
+        }
+        MockLayout.objects.get.return_value = layout
+        qs = _chain_qs()
+        MockArticle.published = qs
+
+        req = _staff_request({"q": "noticias", "layout_id": "5"})
+        article_search(req)
+
+        excluded = qs.exclude.call_args[1]["id__in"]
+        # Active blocks contribute
+        self.assertIn(1, excluded)
+        self.assertIn(4, excluded)
+        self.assertIn(6, excluded)
+        # Inactive blocks must NOT contribute
+        self.assertNotIn(2, excluded)
+        self.assertNotIn(3, excluded)
+        self.assertNotIn(5, excluded)
+        self.assertNotIn(7, excluded)
