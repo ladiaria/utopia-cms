@@ -18,6 +18,7 @@
             data-url="{% url 'nl-auth-subscribe' nltype=nltype nlslug=slug %}"
             data-key="nl_subscribe"
             data-bouncer="false"
+            {% if category_nl_subscribed %}checked{% endif %}
           >
         {% endif %}
         <span class="cover-newsletter__slider slider"></span>

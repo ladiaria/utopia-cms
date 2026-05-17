@@ -415,6 +415,10 @@ header {
   gap: 0;
   min-width: px-to-rem(139px);
 
+  .header-nav-wrapper > nav & {
+    align-items: stretch;
+  }
+
   &.is-open {
     visibility: visible;
     opacity: 1;
@@ -608,10 +612,6 @@ header {
         margin-left: 15px;
         margin-right: 15px;
       }
-    }
-
-    &.left {
-      float: left;
     }
   }
 

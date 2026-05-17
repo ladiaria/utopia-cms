@@ -6,7 +6,7 @@ def create_layout_editors_group(apps, schema_editor):
     Permission = apps.get_model("auth", "Permission")
     ContentType = apps.get_model("contenttypes", "ContentType")
 
-    content_type = ContentType.objects.get(app_label="homev4", model="homelayout")
+    content_type, _ = ContentType.objects.get_or_create(app_label="homev4", model="homelayout")
     permissions = Permission.objects.filter(
         content_type=content_type,
         codename__in=["view_homelayout", "change_homelayout"],

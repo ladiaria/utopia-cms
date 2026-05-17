@@ -84,10 +84,12 @@
     // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
     window.NL_HEADER_CONFIG = {
       isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
+      isSubscribed: {{ category_nl_subscribed|yesno:"true,false" }},
       subscribeUrl: "{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}",
       dataKey: "nl_subscribe",
       anonymousMessage: "Iniciá sesión para recibir el newsletter",
-      successMessage: "Newsletter activada"
+      successMessage: "Newsletter activada",
+      subscribeMessage: "Recibir newsletter de {{ publication }}"
     };
     document.addEventListener('DOMContentLoaded', function() {
       switch_change_events(document.querySelectorAll('.cover-newsletter__switch'));
