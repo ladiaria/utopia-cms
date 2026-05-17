@@ -1428,6 +1428,102 @@ article .article-body .collection-articles {
   }
 }
 
+#article-share-full {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border-top: 0.5px solid #ababab;
+  z-index: -1;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: 300ms ease;
+
+  &.active {
+    z-index: 1005;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 0 8px 32px;
+  }
+
+  .modal-close-container {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    padding-right: 8px;
+    .modal-close {
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 32px;
+      height: 32px;
+
+      svg path {
+        fill: #000;
+      }
+    }
+  }
+
+  .inline.share {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0 0;
+
+    li {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(227, 232, 234, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 0;
+
+      a,
+      span.cur-p {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        svg path {
+          fill: #000;
+        }
+      }
+
+      .copied-tooltip {
+        position: absolute;
+        right: 25px;
+        top: -30px;
+        background: white;
+        color: $off-black;
+        font-size: px-to-rem(14px);
+        padding: 14px;
+        border-radius: 16px;
+        width: 145px;
+        line-height: 1;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+        transition: all 0.2s ease-in-out;
+
+        &.off {
+          background: transparent;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+}
+
 .chip-article-already-viewd {
   width: fit-content;
   display: flex;

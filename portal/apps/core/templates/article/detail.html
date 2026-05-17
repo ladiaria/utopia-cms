@@ -723,6 +723,44 @@
     {% block article_extra %}{% endblock %}
 
     {# TODO: skip render many things bellow if the content is restricted #}
+    <div id="article-share-full">
+      <div class="modal-close-container">
+        <button class="modal-close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 14 14"><path fill="#000" d="M13.829 13.068a.538.538 0 1 1-.761.76l-6.081-6.08-6.081 6.08a.539.539 0 0 1-.761-.76l6.08-6.081L.145.906a.538.538 0 0 1 .76-.761l6.082 6.08 6.08-6.08a.539.539 0 0 1 .762.76l-6.08 6.082z"/></svg>
+        </button>
+      </div>
+      <div class="modal-content">
+        <ul class="inline share">
+          <li class="whatsapp">
+            <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }}%20{{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#000" d="M12.001 2c5.523 0 10 4.477 10 10s-4.477 10-10 10a9.95 9.95 0 0 1-5.03-1.355L2.005 22l1.352-4.968A9.95 9.95 0 0 1 2.001 12c0-5.523 4.477-10 10-10M8.593 7.3l-.2.008a1 1 0 0 0-.372.1 1.3 1.3 0 0 0-.294.228c-.12.113-.188.211-.261.306A2.73 2.73 0 0 0 6.9 9.62c.002.49.13.967.33 1.413.409.902 1.082 1.857 1.97 2.742.214.213.424.427.65.626a9.45 9.45 0 0 0 3.84 2.046l.568.087c.185.01.37-.004.556-.013a2 2 0 0 0 .833-.231q.196-.102.383-.22l.125-.09c.135-.1.218-.171.33-.288q.126-.13.21-.302c.078-.163.156-.474.188-.733.024-.198.017-.306.014-.373-.004-.107-.093-.218-.19-.265l-.582-.261s-.87-.379-1.402-.621a.5.5 0 0 0-.176-.041.48.48 0 0 0-.378.127c-.005-.002-.072.055-.795.931a.35.35 0 0 1-.368.13 1.4 1.4 0 0 1-.191-.066c-.124-.052-.167-.072-.252-.108a6 6 0 0 1-1.575-1.003c-.126-.11-.243-.23-.363-.346a6.3 6.3 0 0 1-1.02-1.268l-.059-.095a1 1 0 0 1-.102-.205c-.038-.147.061-.265.061-.265s.243-.266.356-.41c.11-.14.203-.276.263-.373.118-.19.155-.385.093-.536q-.42-1.026-.868-2.041c-.059-.134-.234-.23-.393-.249l-.162-.016a3 3 0 0 0-.403.004z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" rel="noopener" aria-label="Compartir en Facebook">
+              <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" fill="none" viewBox="0 0 25 24"><path fill="#000" d="M25 12.03C25 5.39 19.4 0 12.5 0S0 5.39 0 12.03c0 5.823 4.3 10.67 10 11.79v-8.18H7.5v-3.61H10V9.023c0-2.322 1.963-4.211 4.375-4.211H17.5v3.609H15c-.687 0-1.25.541-1.25 1.203v2.406h3.75v3.61h-3.75V24C20.063 23.398 25 18.274 25 12.03"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://x.com/intent/tweet?original_referer={{ SITE_URL_SD }}{{ article.get_absolute_url|urlencode }}&ref_src=twsrc%5Etfw&related={{ DEFAULT_PUB }}&text={{ article.headline|remove_markup|urlencode }}&tw_p=tweetbutton&url={{ SITE_URL_SD }}{{ article.get_absolute_url }}&via={{ publication.twitter_username|default:DEFAULT_PUB }}" rel="noopener" aria-label="Compartir en X">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 28 28"><g clip-path="url(#clip0_1_2)"><path fill="#000" d="M21.064 2.4h3.79l-8.28 9.488L26.317 24.8H18.69l-5.978-7.83-6.833 7.83H2.086l8.855-10.151L1.6 2.402h7.82l5.396 7.155zm-1.333 20.126h2.101L8.273 4.556H6.021z"/></g><defs><clipPath id="clip0_1_2"><path fill="#fff" d="M0 0h27.2v27.2H0z"/></clipPath></defs></svg>
+            </a>
+          </li>
+          <li>
+            <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
+              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="15" fill="none" viewBox="0 0 19 15"><path fill="#000" d="M1.9 15q-.784 0-1.341-.55A1.8 1.8 0 0 1 0 13.125V1.875Q0 1.101.559.551T1.9 0h15.2q.783 0 1.342.551.56.552.558 1.324v11.25q0 .774-.558 1.325-.557.55-1.342.55zm7.6-6.562 7.6-4.688V1.875L9.5 6.563 1.9 1.875V3.75z"/></svg>
+            </a>
+          </li>
+          <li>
+            <span class="cur-p" onclick="copyToClipboard('#url', '.tooltip-navbar')" aria-label="Copiar enlace">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="#000" d="M11.366 12.781 8.538 15.61q-1.467 1.467-3.536 1.466-2.068 0-3.535-1.466T0 12.074 1.467 8.54l2.828-2.83L5.71 7.124 2.881 9.953a2.9 2.9 0 0 0-.884 2.121q0 1.237.884 2.121.884.885 2.121.884 1.237 0 2.122-.884l2.828-2.828zm-4.95-.707L5.002 10.66l5.657-5.657 1.414 1.414zm6.364-.707-1.414-1.414 2.829-2.829q.883-.884.883-2.12 0-1.239-.883-2.122a2.9 2.9 0 0 0-2.122-.884q-1.238 0-2.121.884L7.124 5.71 5.709 4.296l2.829-2.828Q10.005 0 12.074 0t3.535 1.468 1.467 3.536-1.467 3.535z"/></svg>
+            </span>
+            <span class="copied-tooltip off tooltip-navbar"></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
   </aside>
 
 {% endblock %}
