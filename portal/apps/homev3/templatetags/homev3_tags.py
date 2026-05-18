@@ -157,9 +157,12 @@ def render_publication_grid(context, data):
             "featured_section": featured_section,
         }
     )
-    return loader.render_to_string(
-        '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication.slug), flatten_ctx
-    )
+    try:
+        return loader.render_to_string(
+            '%s/%s_grid.html' % (settings.HOMEV3_FEATURED_PUBLICATIONS_TEMPLATE_DIR, publication.slug), flatten_ctx
+        )
+    except TemplateDoesNotExist:
+        return ''
 
 
 
