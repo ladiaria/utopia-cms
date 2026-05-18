@@ -172,12 +172,6 @@
             alt="{{ article.photo_caption }}"
           >
         </a>
-        {% if article.photo.caption %}
-          <div class="especial-section__caption">
-            <p class="">{{ article.photo.caption|ldmarkup|bleach }}</p>
-            {% if article.photo_author %}<p class="">{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
-          </div>
-        {% endif %}
       </div>
       {% endif %}
     </article>
