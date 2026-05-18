@@ -15,7 +15,11 @@
                 <a href="{{ breadcrumb.parent_url }}">{{ breadcrumb.parent }}</a>
                 <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
               {% endif %}
-              <a href="{{ breadcrumb.section.get_absolute_url }}">{{ breadcrumb.section_name }}</a>
+              <a href="{{ breadcrumb.section.get_absolute_url }}">
+                {% block breadcrumb_section_name %}
+                  {{ breadcrumb.section_name }}
+                {% endblock %}
+              </a>
             </div>
           {% endif %}
         {% endblock %}
