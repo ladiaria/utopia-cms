@@ -710,6 +710,7 @@ article#main-article {
     figure,
     img {
       width: 100%;
+      height: auto;
     }
     .ld-caption {
       max-width: $max-article-width;
@@ -740,7 +741,7 @@ article#main-article {
     figure,
     img {
       width: 100%;
-      height: 100%;
+      height: auto;
     }
   }
 
@@ -753,6 +754,15 @@ article#main-article {
   .container-photo {
     max-width: $max-article-width;
     margin: 0 auto;
+
+    .ld-article__main-photo {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    #materialbox-overlay + .ld-article__main-photo {
+      z-index: 1002 !important;
+    }
   }
 
   @media #{$medium-and-down} {
@@ -922,12 +932,6 @@ article#main-article {
   to {
     background-position: 3000px 0;
   }
-}
-
-.ld-article__main-photo {
-  width: 100%;
-  height: auto;
-  display: block;
 }
 
 .materialboxed:not(.initialized) {
