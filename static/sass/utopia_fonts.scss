@@ -1,30 +1,111 @@
-/* AntennaCond */
+/* Dialect Gothic A */
 @font-face {
-  font-family: "AntennaCond";
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
-  src: url("/static/fonts/antenna/AntennaCond-Regular.eot");
-  src:
-    url("/static/fonts/antenna/AntennaCond-Regular.woff2") format("woff2"),
-    url("/static/fonts/antenna/AntennaCond-Regular.woff") format("woff"),
-    url("/static/fonts/antenna/AntennaCond-Regular.ttf") format("truetype");
   font-display: swap;
 }
 @font-face {
-  font-family: "AntennaCond";
-  src: url("/static/fonts/antenna/AntennaCond-RegularItalic.woff") format("woff");
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Italic.otf") format("opentype");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
-  font-family: "AntennaCond";
-  src: url("/static/fonts/antenna/AntennaCond-Bold.woff") format("woff");
-  font-weight: bold;
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-SemiItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Book.otf") format("opentype");
+  font-weight: 450;
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Booktalic.otf") format("opentype");
+  font-weight: 450;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BookSemiItalic.otf") format("opentype");
+  font-weight: 450;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-MediumSemiItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-BoldSemiItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: oblique;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-HeavyItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dialect Gothic A";
+  src: url("/static/fonts/dialect/DialectGothicA-HeavySemiItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: oblique;
+  font-display: swap;
+}
 
+/* Review Condensed */
 @font-face {
   font-family: "Review Condensed";
   src: url("/static/fonts/ReviewCondensed/ReviewCondensed-Bold.otf") format("opentype");
@@ -49,7 +130,7 @@
   font-display: swap;
 }
 
-/* Society */
+/* Society FullTrial */
 @font-face {
   font-family: "Society FullTrial";
   src: url("/static/fonts/Society/SocietyFullTrial-Light.otf") format("opentype");
