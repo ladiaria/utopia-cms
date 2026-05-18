@@ -95,7 +95,9 @@
     {% block mobile_breadcrumb_section %}
       {% if section %}
         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="9" fill="none" viewBox="0 0 6 9"><path stroke="#000" stroke-linejoin="round" stroke-width="1.2" d="m.424 8.424 4-4-4-4"/></svg>
-        <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+        {% block section_name %}
+          <a href="{{ section.get_absolute_url }}">{{ section }}</a>
+        {% endblock section_name %}
       {% endif %}
     {% endblock %}
   </div>
