@@ -224,9 +224,31 @@ def refresh_home_layouts_task():
         else:
             edition = get_current_edition(publication=publication)
         edition_ids = [a.id for a in edition.top_articles] if edition else []
+        # All article IDs in today's edition (regardless of home_top) so the merge can
+        # distinguish "explicitly turned off" (in edition, home_top=False) from
+        # "from another edition" (not in edition at all — keep in principal).
+        edition_all_ids = set(edition.articlerel_set.values_list("article_id", flat=True)) if edition else set()
         current_principal = old_grid.get("principal", {})
         current_principal_ids = current_principal.get("article_ids", []) if isinstance(current_principal, dict) else []
-        merged_ids = _merge_principal_article_ids(current_principal_ids, edition_ids)
+        merged_ids = _merge_principal_article_ids(current_principal_ids, edition_ids, edition_all_ids=edition_all_ids)
+
+        # Re-sort principal so that top_position changes made in the ArticleRel admin are
+        # reflected without requiring the editor to drag-and-drop again in the layout editor.
+        # Articles in today's edition are sorted by top_position; articles from other editions
+        # (manually pinned by editors) are appended in their current order.
+        if edition:
+            from core.models import ArticleRel as _ArticleRel
+            positions = dict(
+                _ArticleRel.objects.filter(
+                    edition=edition, article_id__in=merged_ids, home_top=True,
+                ).values_list("article_id", "top_position")
+            )
+            edition_sorted = sorted(
+                [aid for aid in merged_ids if aid in positions],
+                key=lambda aid: positions[aid],
+            )
+            others = [aid for aid in merged_ids if aid not in positions]
+            merged_ids = edition_sorted + others
 
         gd = copy.deepcopy(old_grid)
         if not isinstance(gd.get("principal"), dict):

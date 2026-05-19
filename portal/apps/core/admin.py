@@ -20,7 +20,7 @@ from martor.widgets import AdminMartorWidget
 from django.conf import settings
 from django.urls import path
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
@@ -640,6 +640,40 @@ def get_editions():
     return Edition.objects.filter(date_published__gte=since)
 
 
+def _shift_and_normalize_top_positions(article):
+    """Resolve top_position conflicts and normalize to sequential 1..N.
+
+    For each edition where *article* has home_top=True: if another article already occupies
+    the same top_position, shift all others at that position and above up by +1.  Then
+    renumber every home_top article in that edition as 1, 2, 3… so gaps never accumulate
+    across successive edits.  Deduplicates by edition_id to avoid double-work for articles
+    that appear in multiple sections of the same edition.
+    """
+    processed_editions = set()
+    for ar in ArticleRel.objects.filter(article=article, home_top=True, top_position__isnull=False):
+        if ar.edition_id in processed_editions:
+            continue
+        processed_editions.add(ar.edition_id)
+
+        # Shift-on-conflict: bump all rivals at or above the incoming position up by one.
+        conflict_exists = ArticleRel.objects.filter(
+            edition_id=ar.edition_id, home_top=True, top_position=ar.top_position,
+        ).exclude(article=article).exists()
+        if conflict_exists:
+            ArticleRel.objects.filter(
+                edition_id=ar.edition_id, home_top=True, top_position__gte=ar.top_position,
+            ).exclude(article=article).update(top_position=F('top_position') + 1)
+
+        # Normalize to sequential 1..N (also cleans up gaps from previous operations).
+        ranked = list(
+            ArticleRel.objects.filter(
+                edition_id=ar.edition_id, home_top=True, top_position__isnull=False,
+            ).order_by("top_position").values_list("id", flat=True)
+        )
+        for rank, rel_id in enumerate(ranked, start=1):
+            ArticleRel.objects.filter(pk=rel_id).update(top_position=rank)
+
+
 @admin.register(Article, site=site)
 class ArticleAdmin(AdminLockingBase, VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
@@ -837,6 +871,7 @@ class ArticleAdmin(AdminLockingBase, VersionAdmin):
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
+        _shift_and_normalize_top_positions(form.instance)
 
         # main "main" section radiobutton in inline (also has js hacks) mapped to main_section attribute:
         save = False

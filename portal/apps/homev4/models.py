@@ -151,6 +151,8 @@ class HomeLayoutAuditLog(models.Model):
         ("celery:5am", "Tarea 5am"),
         ("celery:refresh", "Tarea refresh"),
         ("propagation", "Propagación"),
+        ("editor:edition_sync", "Sync edición"),
+        ("articlerel_sync", "Sync ArticleRel"),
     ]
 
     layout = models.ForeignKey(HomeLayout, on_delete=models.CASCADE, related_name="audit_logs", verbose_name="layout")

@@ -19,7 +19,7 @@ from django.core.cache import cache
 from django.views.decorators.cache import cache_control, never_cache
 from django.views.decorators.vary import vary_on_cookie
 
-from core.models import Article, Edition, Publication, Section, Category, get_current_edition
+from core.models import Article, ArticleRel, Edition, Publication, Section, Category, get_current_edition
 from core.views.masleidos import mas_leidos
 from thedaily.utils import unsubscribed_newsletters
 
@@ -336,6 +336,55 @@ def _write_audit_log(layout, old_grid, new_grid, triggered_by, user=None):
         HomeLayoutAuditLog.objects.bulk_create(entries)
 
 
+def _sync_principal_to_edition(old_ids, new_ids, layout, user):
+    """Sync ArticleRel home_top/top_position to match the editor's changes to the principal block.
+    Prevents celery:refresh from reinserting articles the editor removed or reordered, since refresh
+    uses Edition.top_articles (filtered by home_top=True, ordered by top_position) as its source.
+    """
+    if old_ids == new_ids:
+        return
+    edition = get_current_edition(publication=layout.publication)
+    if edition is None:
+        return
+
+    removed_ids = set(old_ids) - set(new_ids)
+    if removed_ids:
+        # Clear cover flag so celery:refresh won't see them in Edition.top_articles
+        ArticleRel.objects.filter(
+            edition=edition, article_id__in=removed_ids, home_top=True
+        ).update(home_top=False, top_position=None)
+
+    added_ids = set(new_ids) - set(old_ids)
+    edition_article_ids = set(edition.articlerel_set.values_list("article_id", flat=True))
+    for idx, article_id in enumerate(new_ids):
+        if article_id in added_ids and article_id in edition_article_ids:
+            # Article newly added to principal and belongs to today's edition:
+            # enable cover flag on the row that belongs to this edition (one row per section,
+            # pick the one with the lowest position to avoid enabling a secondary-section row).
+            first_rel = ArticleRel.objects.filter(
+                edition=edition, article_id=article_id,
+            ).order_by("position").first()
+            if first_rel:
+                first_rel.home_top = True
+                first_rel.top_position = idx + 1
+                first_rel.save(update_fields=["home_top", "top_position"])
+        elif article_id not in added_ids:
+            # Align top_position with the new principal order.
+            # Filter by home_top=True to avoid accidentally setting top_position on
+            # secondary-section rows of articles that appear in multiple sections.
+            ArticleRel.objects.filter(
+                edition=edition, article_id=article_id, home_top=True
+            ).update(top_position=idx + 1)
+
+    _write_audit_log(
+        layout,
+        {"principal": {"article_ids": list(old_ids)}},
+        {"principal": {"article_ids": list(new_ids)}},
+        "editor:edition_sync",
+        user=user,
+    )
+
+
 @staff_member_required
 def save_grid(request, layout_id):
     if request.method != "POST":
@@ -374,6 +423,10 @@ def save_grid(request, layout_id):
             layout.refresh_from_db(fields=["grid_data"])
             _propagate_article_ids(layout, layout.grid_data)
             _write_audit_log(layout, old_grid, layout.grid_data, "editor", user=request.user)
+            # Keep edition ArticleRel in sync with editor's principal changes so celery:refresh doesn't revert them
+            old_principal_ids = old_grid.get("principal", {}).get("article_ids", [])
+            new_principal_ids = layout.grid_data.get("principal", {}).get("article_ids", [])
+            _sync_principal_to_edition(old_principal_ids, new_principal_ids, layout, request.user)
         stats = _grid_stats(layout.grid_data)
         logger.debug(
             "save_grid layout=%d user=%s | principal=%d suplemento=%d "
@@ -656,25 +709,31 @@ _RESOLVE_SKIP_KEYS = frozenset({
 })
 
 
-def _merge_principal_article_ids(current_ids, edition_ids):
-    """Insert new articles from edition_ids into current_ids at their edition index.
+def _merge_principal_article_ids(current_ids, edition_ids, edition_all_ids=None):
+    """Merge edition_ids into current_ids, preserving editor curation order.
 
-    Articles already in current_ids keep their saved position (editor curation preserved).
-    New articles (present in edition but absent from current) are inserted at
-    min(edition_index, len(result)) so top_position is respected even when the
-    current list is shorter than the edition index.
+    - Articles in current_ids keep their saved position (editor order preserved).
+    - New articles (in edition_ids but absent from current) are inserted at their
+      edition index so top_position is respected.
+    - If edition_all_ids is provided: articles explicitly in today's edition with
+      home_top=False are dropped (admin turned off EN PORTADA). Articles from other
+      editions or manually placed (not in edition_all_ids) are always kept.
 
-    Result is capped at BLOCK_ARTICLE_LIMITS["principal"] so the refresh task never
-    inflates principal beyond the editor limit (articles 11+ stay available for
-    suplemento and areas).
+    Result is capped at BLOCK_ARTICLE_LIMITS["principal"].
     """
-    current_set = set(current_ids)
-    result = list(current_ids)
+    edition_set = set(edition_ids)
+    if edition_all_ids:
+        # Drop only articles that are in today's edition with home_top=False.
+        # Articles from other editions (not in edition_all_ids) are preserved.
+        result = [aid for aid in current_ids if aid not in edition_all_ids or aid in edition_set]
+    else:
+        result = list(current_ids)
+    result_set = set(result)
     for edition_idx, article_id in enumerate(edition_ids):
-        if article_id not in current_set:
+        if article_id not in result_set:
             insert_at = min(edition_idx, len(result))
             result.insert(insert_at, article_id)
-            current_set.add(article_id)
+            result_set.add(article_id)
     return result[:BLOCK_ARTICLE_LIMITS["principal"]]
 
 
@@ -1115,17 +1174,18 @@ def _fetch_area_articles(area_type, slug, saved_ids, exclude_ids=None):
     """Return articles for an ÁREAS Y PUBLICACIONES block (max 2).
     Priority: saved_ids (manually picked via picker).
     Fallback: 2 articles from the category or publication.
-    Special case "local": 1 article from "colonia" + 1 from "maldonado".
+    Special case "local": fetch 1 article from each of colonia/maldonado/paysandu/salto, return the 2 most recent.
     When exclude_ids is provided, fallback queries skip those articles (deduplication).
     """
     if saved_ids:
         by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(_ARTICLE_AUTH_SELECT_RELATED)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     if area_type == "local":
-        articles = []
-        for cat_slug in ("colonia", "maldonado"):
-            articles.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
-        return articles
+        candidates = []
+        for cat_slug in ("colonia", "maldonado", "paysandu", "salto"):
+            candidates.extend(_fetch_source_articles("category", cat_slug, limit=1, exclude_ids=exclude_ids))
+        candidates.sort(key=lambda a: a.date_published, reverse=True)
+        return candidates[:2]
     return _fetch_source_articles(area_type, slug, limit=2, exclude_ids=exclude_ids)
 
 

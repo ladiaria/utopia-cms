@@ -384,3 +384,44 @@ class MergePrincipalArticleIdsTest(SimpleTestCase):
         result = _merge_principal_article_ids([], list(range(1, 25)))
         self.assertEqual(len(result), 10)
         self.assertEqual(result, list(range(1, 11)))
+
+    # --- edition_all_ids: precise removal of home_top=False articles ---
+
+    def test_article_in_todays_edition_home_top_false_is_dropped(self):
+        """An article in today's edition with home_top=False (unchecked EN PORTADA)
+        is removed from principal on the next celery:refresh run."""
+        current = [10, 20, 30]
+        edition_top = [10, 30]       # 20 is in today's edition but home_top=False
+        edition_all = {10, 20, 30}   # all three are in today's edition
+        result = _merge_principal_article_ids(current, edition_top, edition_all_ids=edition_all)
+        self.assertNotIn(20, result)
+        self.assertIn(10, result)
+        self.assertIn(30, result)
+
+    def test_article_from_other_edition_is_kept(self):
+        """An article in principal whose ArticleRel belongs to a different edition
+        (not today's) is NOT dropped — only today's explicitly-disabled articles are."""
+        current = [10, 20, 99]       # 99 is from a different edition
+        edition_top = [10, 20]
+        edition_all = {10, 20}       # 99 is not in today's edition
+        result = _merge_principal_article_ids(current, edition_top, edition_all_ids=edition_all)
+        self.assertIn(99, result)    # kept — from another edition
+        self.assertIn(10, result)
+        self.assertIn(20, result)
+
+    def test_without_edition_all_ids_no_article_is_dropped(self):
+        """Without edition_all_ids (backward-compatible call), no article is ever
+        dropped — same behaviour as before the bidirectional sync."""
+        current = [10, 20, 30]
+        edition_top = [10, 30]       # 20 not in edition but no edition_all_ids given
+        result = _merge_principal_article_ids(current, edition_top)
+        self.assertIn(20, result)    # kept — no information to decide otherwise
+
+    def test_editor_order_preserved_after_removal(self):
+        """The remaining articles keep their editor-set order after a dropped article."""
+        current = [10, 20, 30, 40]
+        edition_top = [10, 30, 40]
+        edition_all = {10, 20, 30, 40}   # 20 in today's edition, home_top=False
+        result = _merge_principal_article_ids(current, edition_top, edition_all_ids=edition_all)
+        self.assertEqual(result, [10, 30, 40])
+
