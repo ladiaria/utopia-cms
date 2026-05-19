@@ -1,11 +1,15 @@
 {% extends "subscribe.html" %}
-{% load static core_tags thedaily_tags ldml bleach_tags crispy_forms_tags %}
+{% load static homev3_tags core_tags thedaily_tags ldml bleach_tags crispy_forms_tags %}
 
 {% block page_title %}{% title_joinparts joinparts_first|default:'Muro de pago' %}{% endblock %}
 
 {% block body_class %}{{ block.super }} hard-paywall{% endblock %}
 
-{% block navbar_a_attrs %}class="header-logo" href="{% url "home" %}"{% endblock %}
+{% block navbar %}
+  <header class="{% block header_classes %}{% endblock %}">
+    {% render_header %}
+  </header>
+{% endblock %}
 
 {% block content %}
 

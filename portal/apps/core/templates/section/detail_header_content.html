@@ -26,7 +26,9 @@
     </a>
   {% endif %}
 {% endwith %}
-<h1 class="{% block h1_class %}section-detail__title{% endblock %}">{{ section.name }}</h1>
+{% block section_name %}
+  <h1 class="{% block h1_class %}section-detail__title{% endblock %}">{{ section.name }}</h1>
+{% endblock %}
 {% if section.show_description %}
   <p class="section-detail__description">{{ section.description|ldmarkup|bleach}}</p>
 {% endif %}

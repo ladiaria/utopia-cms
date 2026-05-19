@@ -70,10 +70,7 @@
               {% if article.photo_author %}
                 <p class="photo-author">{{ article.photo_type }}: {{ article.photo_author }}</p>
               {% endif %}
-              <svg width="44" height="35" viewBox="0 0 44 35" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12.82 10.0812L22 19.2612L31.18 10.0812L34 12.9212L22 24.9212L10 12.9212L12.82 10.0812Z"
-                      fill="#A4A4A4"/>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="44" height="35" fill="none" viewBox="0 0 44 35"><path fill="#a4a4a4" d="m12.82 10.081 9.18 9.18 9.18-9.18 2.82 2.84-12 12-12-12z"/></svg>
             </div>
             <figure class="js-figure principal">
               <amp-img class="responsive-img {{ article.photo_layout }}" alt="{{ article.photo_caption }}" width="250"
@@ -97,7 +94,7 @@
             </figure>
           </div>
         {% else %}
-          <div class="photo align-center">
+          <div class="photo">
             <figure class="principal">
               <amp-img id="main-photo" layout="responsive" media="(min-width: 320px) and (max-width: 700px)"
                       height="{{ article.photo_height }}" width="{{ article.photo_width }}"
@@ -116,10 +113,8 @@
                       src="{{ article.photo.get_1200w_url }}"></amp-img>
             </figure>
             <figcaption class="article-caption ld-caption">
-              <div class="container">
-                {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
-                {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
-              </div>
+              {% if article.photo.caption %}<p>{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
+              {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
             </figcaption>
           </div>
         {% endif %}
@@ -138,15 +133,43 @@
         {% if include_after_headline %}{% include include_after_headline %}{% endif %}
       {% endif %}
 
-      {% if article.date_published %}
-        <div class="article-date-author">
-          Publicado{% if article.date_published_seconds_ago >= 691200 %} el{% endif %} <span class="date small">{{ article.date_published_verbose.lower }}{% if authors %} · {% endif %}</span>
-        </div>
+      {% if article.has_deck or article.has_lead %}
+        {% if article.has_deck %}
+          {% block article_deck %}
+            <h2 class="article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
+          {% endblock %}
+        {% endif %}
+        {% if article.has_lead %}
+          <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
+        {% endif %}
       {% endif %}
-      <div class="article-date-author">
-        {% with authors=article.get_authors %}
-          {% if authors %}
-            Escribe
+
+      <div class="action-bar">
+        <div class="read-later-container">
+          <div amp-access="authenticated AND NOT followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+            <div class="read-later">
+              <button id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M4 4.133c0-.746 0-1.12.145-1.405a1.34 1.34 0 0 1 .583-.583C5.013 2 5.387 2 6.133 2h3.734c.746 0 1.12 0 1.405.145.25.128.455.332.583.583.145.285.145.659.145 1.405v8.87c0 .324 0 .486-.067.575a.33.33 0 0 1-.247.132c-.111.007-.246-.083-.515-.263L8 11.333l-3.17 2.114c-.27.18-.405.27-.517.263a.33.33 0 0 1-.246-.132C4 13.489 4 13.328 4 13.003z"/></svg>
+              </button>
+              <div id="rl-info0" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+              <button id="rl-toggle1" data-vars-event-label="remove" class="read-later__btn read-later__saved first" hidden on="tap:rl-toggle1.hide,rl-info1.hide,rl-toggle0.show,rl-info0.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
+              <div id="rl-info1" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+            </div>
+          </div>
+          <div amp-access="NOT access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
+            <div class="read-later">
+              <button id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</button>
+              <button id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path fill="none" d="M0 0h17.672v17.672H0Z"/><path fill="#262626" d="M12.518 2.209H5.155a1.477 1.477 0 0 0-1.473 1.473v11.781l5.154-2.209 5.154 2.209V3.682a1.477 1.477 0 0 0-1.472-1.473m0 11.045-3.682-1.605-3.681 1.605V4.418a.74.74 0 0 1 .736-.736h5.891a.74.74 0 0 1 .736.736Z"/></svg> Leer después</button>
+              <div id="rl-wall-1" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+              <div id="rl-wall-3" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% with authors=article.get_authors %}
+        {% if authors %}
+          <p class="article-date-author">
             {% for author in authors %}
               <span class="small">
                 <a href="{{ author.get_absolute_url }}" title="Ver más artículos de {{ author.name }}.">
@@ -154,63 +177,35 @@
                 </a>
               </span>{% if not forloop.last %}, {% endif %}
             {% endfor %}
-            {% if section %}<span class="small">en</span>{% endif %}
+            <span class="reading-time" amp-access="article_allowed OR NOT article_restricted" amp-access-hide>
+              - <span class="eta">{{ article.reading_time }}</span> de lectura
+            </span>
+          </p>
+          {% if article.date_published %}
+            <p class="article-date-author">
+              <span class="date small">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</span>
+            </p>
           {% endif %}
-        {% endwith %}
-        {% if section %}
-          <span class="small">
-            {% block byline_section %}
-              <a href="{% url 'section_detail' section_slug=section.slug %}" title="Más artículos en {{ section }}.">{{ section }}</a>
-            {% endblock %}
-          </span>
+        {% else %}
+          <p class="article-date-author">
+            {% if article.date_published %}
+              <span class="date small">{{ article.date_published|date:"j \d\e F \d\e Y"|lower }}</span>
+            {% endif %}
+            <span class="reading-time" amp-access="article_allowed OR NOT article_restricted" amp-access-hide>
+              - <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#000" d="M8.5 1.563a6.51 6.51 0 0 0-6.5 6.5 6.51 6.51 0 0 0 6.5 6.5 6.51 6.51 0 0 0 6.5-6.5 6.51 6.51 0 0 0-6.5-6.5m0 1.3c2.88 0 5.2 2.32 5.2 5.2s-2.32 5.2-5.2 5.2a5.19 5.19 0 0 1-5.2-5.2c0-2.88 2.32-5.2 5.2-5.2m-.65 1.3v4.169l2.79 2.79.92-.92-2.41-2.409v-3.63z"/></svg>
+              <span class="eta">{{ article.reading_time }}</span> de lectura
+            </span>
+          </p>
         {% endif %}
-      </div>
+      {% endwith %}
 
-      <div class="reading-time" amp-access="article_allowed OR NOT article_restricted" amp-access-hide>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-          <path d="M9.992,2a8,8,0,1,0,5.664,2.339A8,8,0,0,0,9.992,2ZM10,16.4A6.4,6.4,0,1,1,16.4,10,6.4,6.4,0,0,1,10,16.4ZM9.824,6H9.776a.576.576,0,0,0-.576.576v3.776a.792.792,0,0,0,.392.688l3.32,1.992a.576.576,0,1,0,.584-.984l-3.1-1.84V6.577A.576.576,0,0,0,9.824,6Z" transform="translate(-2.001 -2)" fill="#262626"/>
-        </svg>
-        <span class="eta">{{ article.reading_time }}</span>
-        de lectura
-      </div>
       {% if not article.is_public %}
         <div class="premium" amp-access="subscriber AND article_restricted" amp-access-hide>
-          <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12.1296 7.33325H4.87037C4.29763 7.33325 3.83333 7.93021 3.83333 8.66659V13.3333C3.83333 14.0696 4.29763 14.6666 4.87037 14.6666H12.1296C12.7024 14.6666 13.1667 14.0696 13.1667 13.3333V8.66659C13.1667 7.93021 12.7024 7.33325 12.1296 7.33325Z" fill="#262626" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M5.16667 7.33344V4.66677C5.16584 3.84013 5.47219 3.04268 6.02625 2.42921C6.58031 1.81575 7.34255 1.43004 8.165 1.34696C8.98745 1.26389 9.81143 1.48937 10.477 1.97964C11.1425 2.46992 11.6022 3.19 11.7667 4.0001" stroke="#262626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" fill="none" viewBox="0 0 17 16"><path fill="#262626" stroke="#262626" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12.13 7.333H4.87c-.572 0-1.037.597-1.037 1.334v4.666c0 .737.465 1.334 1.037 1.334h7.26c.572 0 1.037-.597 1.037-1.334V8.667c0-.737-.465-1.334-1.037-1.334"/><path stroke="#262626" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.167 7.333V4.667a3.333 3.333 0 0 1 6.6-.667"/></svg>
           Contenido exclusivo con tu suscripción de pago
         </div>
       {% endif %}
-      <div amp-access="authenticated AND NOT followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        <div class="read-later">
-          <button id="rl-toggle0" data-vars-event-label="add" class="read-later__btn read-later__add" on="tap:rl-toggle0.hide,rl-info0.hide,rl-toggle1.show,rl-info1.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
-          <div id="rl-info0" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-          <button id="rl-toggle1" data-vars-event-label="remove" class="read-later__btn read-later__saved first" hidden on="tap:rl-toggle1.hide,rl-info1.hide,rl-toggle0.show,rl-info0.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
-          <div id="rl-info1" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        </div>
-      </div>
-      <div amp-access="NOT access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-        <div class="read-later">
-          <button id="rl-wall-0" data-vars-event-label="remove" class="read-later__btn read-later__saved" on="tap:rl-wall-0.hide,rl-wall-3.hide,rl-wall-1.show,rl-wall-2.show"> Quitar de Leer después</button>
-          <button id="rl-wall-2" data-vars-event-label="add" class="read-later__btn read-later__add" hidden on="tap:rl-wall-2.hide,rl-wall-1.hide,rl-wall-0.show,rl-wall-3.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"/><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"/></svg> Leer después</button>
-          <div id="rl-wall-1" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-          <div id="rl-wall-3" class="info read-later__saved__info first" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        </div>
-      </div>
-
     </div>
-
-    {% if article.has_deck or article.has_lead %}
-      {% if article.has_deck %}
-        {% block article_deck %}
-          <h2 class="article__deck">{{ article.deck|ldmarkup|bleach }}</h2>
-        {% endblock %}
-      {% endif %}
-      {% if article.has_lead %}
-        <p class="article-lead">{{ article.get_lead|urlize|ldmarkup|bleach }}</p>
-      {% endif %}
-    {% endif %}
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT article_allowed AND article_restricted" amp-access-hide>
@@ -229,7 +224,7 @@
       </div>
     {% endif %}
 
-    {% if article.audio %}{% include audio_template %}{% endif %}{# TODO: not restricted only #}
+    {% if article.audio %}{% include "amp/article/audio.html" %}{% endif %}
 
     {% if not article.public %}
       <div amp-access="authenticated AND NOT subscriber AND NOT access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
@@ -242,13 +237,6 @@
 
     <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
       {% block detail_content %}{% include 'article/detail_content.html' %}{% endblock %}
-    </div>
-
-    <div amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      <div class="ld-fin ld-block"></div>
-      <div amp-access="feedback_allowed" class="send-feedback" amp-access-hide>
-        {% include "article/feedback_form_header.html" %}
-      </div>
     </div>
 
     {% block subscribe_box %}
@@ -270,35 +258,6 @@
       </div>
 
     {% endblock %}
-
-    <div amp-access="access AND authenticated AND followed AND (article_allowed OR NOT article_restricted)" amp-access-hide>
-      <div class="read-later u-mb-60">
-        <div id="rlt1" class="info read-later__saved__info">
-          Este artículo está guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a><br>
-          ¿Terminaste de leerlo?
-        </div>
-        <button id="rlt2" data-vars-event-label="remove" class="read-later__btn read-later__saved" on="tap:rlt1.hide,rlt2.hide,rlt3.show,rlt4.show"> Quitar de Leer después</button>
-        <button id="rlt3" data-vars-event-label="add" class="read-later__btn read-later__add" hidden on="tap:rlt3.hide,rlt4.hide,rlt5.show,rlt6.show"><svg xmlns="http://www.w3.org/2000/svg" width="17.672" height="17.672" viewBox="0 0 17.672 17.672"><path d="M0,0H17.672V17.672H0Z" fill="none"></path><path d="M13.836,3H6.473A1.477,1.477,0,0,0,5,4.473V16.254l5.154-2.209,5.154,2.209V4.473A1.477,1.477,0,0,0,13.836,3Zm0,11.045L10.154,12.44,6.473,14.045V5.209a.738.738,0,0,1,.736-.736H13.1a.738.738,0,0,1,.736.736Z" transform="translate(-1.318 -0.791)" fill="#262626"></path></svg> Leer después</button>
-        <div id="rlt4" class="info read-later__add__info" hidden>El artículo fue removido para leer después de tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-        <button id="rlt5" data-vars-event-label="remove" class="read-later__btn read-later__saved" hidden on="tap:rlt5.hide,rlt6.hide,rlt3.show,rlt4.show"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M0,0H18V18H0Z" fill="none"/><path d="M14,3H6.5A1.5,1.5,0,0,0,5,4.5v12l5.25-2.25L15.5,16.5V4.5A1.5,1.5,0,0,0,14,3Z" transform="translate(-1.25 -0.75)" fill="#fff"/></svg> Guardado</button>
-        <div id="rlt6" class="info read-later__saved__info" hidden>El artículo quedó guardado para leer después en tu <a href="{% url 'lista-lectura-leer-despues' %}">lista de lectura</a></div>
-      </div>
-    </div>
-
-    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND favourited AND (article_allowed OR NOT article_restricted)">
-      <button id="rltf1" data-vars-event-label="favToggle" class="fav__btn fav__saved" on="tap:rltf1.hide,rltf_favourited.hide,rltf2.show,rltf3.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
-      <div id="rltf_favourited" class="info">Guardaste este artículo como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <div id="rltf4" class="info" hidden >El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <button id="rltf2" data-vars-event-label="favToggle" class="fav__btn fav__add" hidden on="tap:rltf2.hide,rltf3.hide,rltf1.show,rltf4.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
-      <div id="rltf3" class="info" hidden>El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-    </div>
-
-    <div class="fav u-mb-60" amp-access-hide amp-access="access AND authenticated AND NOT favourited AND (article_allowed OR NOT article_restricted)">
-      <button id="rltf5" data-vars-event-label="favToggle" class="fav__btn fav__saved" hidden on="tap:rltf5.hide,rltf8.hide,rltf7.show,rltf6.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-874 -9241)"><g transform="translate(874 9241)"><path d="M0,0H24V24H0Z" fill="none" /><path d="M0,0H24V24H0Z" fill="none"/></g><g transform="translate(874.557 9242.428)"  fill="none"><path d="M11.291,16.135l3.806,2.3a.915.915,0,0,0,1.366-.99l-1.009-4.329L18.82,10.2A.915.915,0,0,0,18.3,8.6l-4.43-.376L12.134,4.13a.917.917,0,0,0-1.687,0L8.714,8.211l-4.43.376a.915.915,0,0,0-.523,1.6l3.366,2.916L6.118,17.437a.915.915,0,0,0,1.366.99Z" transform="translate(0 0)" fill="#fff"/></g></g></svg> Quitar de favoritos</button>
-      <button id="rltf7" data-vars-event-label="favToggle" class="fav__btn fav__add" on="tap:rltf6.hide,rltf7.hide,rltf5.show,rltf8.show"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g transform="translate(-1433 -9241)"><path d="M0,0H24V24H0Z" transform="translate(1433 9241)" fill="none"/><path d="M18.3,8.583,13.861,8.2,12.129,4.119a.917.917,0,0,0-1.686,0L8.71,8.207l-4.427.376a.915.915,0,0,0-.522,1.6L7.125,13.1,6.117,17.428a.914.914,0,0,0,1.366.99l3.8-2.291,3.8,2.3a.914.914,0,0,0,1.366-.99L15.447,13.1l3.364-2.915a.913.913,0,0,0-.513-1.6Zm-7.012,5.829L7.84,16.493l.917-3.923L5.713,9.93l4.014-.348,1.558-3.694,1.567,3.7,4.014.348-3.043,2.64.917,3.923Z" transform="translate(1433.556 9242.438)" fill="#262626"/></g></svg> Guardar como favorito</button>
-      <div id="rltf6" class="info" hidden>El artículo fue removido de favoritos en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-      <div id="rltf8" class="info" hidden>El artículo quedó guardado como favorito en tu <a href="{% url 'lista-lectura-favoritos' %}">lista de lectura</a></div>
-    </div>
 
     {% if tag_list %}
       <div class="article-tags align-center" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
@@ -327,7 +286,7 @@
       <div class="container" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="talk-login align-center">
         <span class="title">Comentar este artículo</span>
-          <a href="{{ request.path }}#comentarios" class="ld-btn--sm ld-btn-subscribe-to-comment">
+          <a href="{{ request.path }}#comentarios" class="btn">
             {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
           </a>
         </div>
@@ -340,20 +299,12 @@
         <ul class="inline share ld-share-widget__list">
           <li class="whatsapp">
             <a href="https://wa.me/?text={{ article.headline|remove_markup|urlencode }} {{ SITE_URL_SD }}{{ article.get_absolute_url }}" data-action="share/whatsapp/share" aria-label="Compartir en WhatsApp">
-              <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="34" height="34" fill="transparent"/>
-                <path d="M27.9657 6.03291C24.7348 2.80048 20.3277 1.16952 15.7002 1.54196C9.47894 2.04164 4.02586 6.3681 2.20092 12.3364C0.897395 16.6008 1.44519 21.0529 3.56807 24.7307L1.55692 31.4082C1.36449 32.0491 1.94953 32.6528 2.59663 32.4805L9.58602 30.6075C11.8501 31.8427 14.3982 32.4929 16.9928 32.4945H16.999C23.5089 32.4945 29.5238 28.5125 31.6047 22.3441C33.6314 16.3292 32.1324 10.2042 27.9657 6.03291ZM24.5843 22.5225C24.2615 23.4272 22.6802 24.2993 21.9695 24.363C21.2588 24.4281 20.5931 24.6842 17.3218 23.3946C13.3849 21.8428 10.8989 17.8065 10.7064 17.5489C10.5125 17.2898 9.12513 15.4493 9.12513 13.5437C9.12513 11.6381 10.126 10.7008 10.4814 10.3144C10.8368 9.92642 11.2558 9.83021 11.5149 9.83021C11.7725 9.83021 12.0317 9.83021 12.2567 9.83952C12.5329 9.85038 12.8386 9.86435 13.1288 10.5084C13.4733 11.2749 14.2259 13.1899 14.3222 13.3839C14.4184 13.5778 14.4835 13.8044 14.3547 14.062C14.2259 14.3196 14.1608 14.481 13.9683 14.7076C13.7744 14.9341 13.5618 15.2119 13.388 15.3857C13.194 15.5781 12.9923 15.7892 13.2173 16.1756C13.4438 16.5635 14.2197 17.8314 15.3712 18.8571C16.8516 20.1762 18.0977 20.5843 18.4857 20.7798C18.8736 20.9738 19.0986 20.9412 19.3252 20.6821C19.5518 20.4245 20.2935 19.5523 20.5511 19.1644C20.8088 18.7764 21.0679 18.8416 21.4233 18.9704C21.7786 19.0992 23.6827 20.0365 24.0691 20.2305C24.4571 20.4245 24.7147 20.5207 24.8109 20.6821C24.9071 20.8419 24.9071 21.6178 24.5843 22.5225Z" fill="#262626"/>
-                <title>Compartir en WhatsApp</title>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="none" viewBox="0 0 34 34"><path fill="transparent" d="M0 0h34v34H0z"/><path fill="#262626" d="M27.966 6.033C24.735 2.8 20.328 1.17 15.7 1.542c-6.221.5-11.674 4.826-13.5 10.794-1.303 4.265-.755 8.717 1.368 12.395l-2.011 6.677a.855.855 0 0 0 1.04 1.072l6.989-1.872a15.5 15.5 0 0 0 7.407 1.887h.006c6.51 0 12.525-3.982 14.606-10.15 2.026-6.016.527-12.14-3.64-16.312m-3.382 16.49c-.322.904-1.904 1.776-2.614 1.84-.711.065-1.377.321-4.648-.968-3.937-1.552-6.423-5.588-6.616-5.846-.194-.26-1.58-2.1-1.58-4.005 0-1.906 1-2.843 1.355-3.23a1.42 1.42 0 0 1 1.034-.484c.258 0 .517 0 .742.01.276.01.582.024.872.668.344.767 1.097 2.682 1.193 2.876s.162.42.033.678c-.13.258-.194.419-.387.646-.194.226-.406.504-.58.678-.194.192-.396.403-.17.79.226.388 1.002 1.655 2.153 2.681 1.48 1.32 2.727 1.727 3.115 1.923.388.194.613.161.84-.098.226-.258.968-1.13 1.225-1.518s.517-.322.872-.194c.356.13 2.26 1.067 2.646 1.26.388.194.646.29.742.452.096.16.096.936-.227 1.84"/><title>Compartir en WhatsApp</title></svg>
             </a>
           </li>
           <li>
             <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL_SD }}{{ article.get_absolute_url }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
-              <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="34" height="34" fill="transparent"/>
-                <path d="M25.6111 1.5H8.38889C4.5845 1.5 1.5 4.5845 1.5 8.38889V25.6111C1.5 29.4155 4.5845 32.5 8.38889 32.5H18.0695V20.5116H14.0343V15.8186H18.0695V12.3655C18.0695 8.36306 20.5168 6.181 24.0887 6.181C25.2925 6.17756 26.4946 6.23956 27.6916 6.36183V10.5468H25.2322C23.2861 10.5468 22.9072 11.4665 22.9072 12.8236V15.8117H27.5572L26.9527 20.5047H22.8797V32.5H25.6111C29.4155 32.5 32.5 29.4155 32.5 25.6111V8.38889C32.5 4.5845 29.4155 1.5 25.6111 1.5Z" fill="#262626"/>
-                <title>Compartir en Facebook</title>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="none" viewBox="0 0 34 34"><path fill="transparent" d="M0 0h34v34H0z"/><path fill="#262626" d="M25.611 1.5H8.39A6.89 6.89 0 0 0 1.5 8.389V25.61a6.89 6.89 0 0 0 6.889 6.89h9.68V20.512h-4.035v-4.693h4.036v-3.453c0-4.003 2.447-6.185 6.019-6.185a35 35 0 0 1 3.603.18v4.186h-2.46c-1.946 0-2.325.92-2.325 2.277v2.988h4.65l-.604 4.693H22.88V32.5h2.731a6.89 6.89 0 0 0 6.889-6.889V8.39a6.89 6.89 0 0 0-6.889-6.89"/><title>Compartir en Facebook</title></svg>
             </a>
           </li>
           <li>
@@ -364,16 +315,12 @@
           </li>
           <li>
             <a href="mailto:?subject={{ article.headline|remove_markup|urlencode }}&body={{ SITE_URL_SD }}{{ article.get_absolute_url }}" aria-label="Compartir vía email">
-              <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="34" height="34" fill="transparent"/>
-                <path d="M29 5H5C4.20695 5.00397 3.44774 5.32179 2.88837 5.88397C2.329 6.44615 2.01499 7.20694 2.015 8L2 26C2.00237 26.7949 2.31921 27.5566 2.8813 28.1187C3.4434 28.6808 4.20508 28.9976 5 29H29C29.7949 28.9976 30.5566 28.6808 31.1187 28.1187C31.6808 27.5566 31.9976 26.7949 32 26V8C31.9976 7.20508 31.6808 6.4434 31.1187 5.8813C30.5566 5.31921 29.7949 5.00237 29 5ZM28.4 11.375L17.8 18C17.5609 18.1471 17.2857 18.225 17.005 18.225C16.7243 18.225 16.4491 18.1471 16.21 18L5.6 11.375C5.45357 11.2886 5.32591 11.1737 5.22456 11.0372C5.12321 10.9007 5.05022 10.7452 5.00988 10.5801C4.96954 10.4149 4.96268 10.2433 4.98969 10.0754C5.0167 9.90755 5.07704 9.74679 5.16716 9.6026C5.25728 9.45841 5.37534 9.33372 5.5144 9.23588C5.65347 9.13804 5.81071 9.06902 5.97686 9.0329C6.14301 8.99678 6.31471 8.99428 6.48184 9.02555C6.64897 9.05683 6.80815 9.12124 6.95 9.215L17 15.5L27.05 9.215C27.1918 9.12124 27.351 9.05683 27.5182 9.02555C27.6853 8.99428 27.857 8.99678 28.0231 9.0329C28.1893 9.06902 28.3465 9.13804 28.4856 9.23588C28.6247 9.33372 28.7427 9.45841 28.8328 9.6026C28.923 9.74679 28.9833 9.90755 29.0103 10.0754C29.0373 10.2433 29.0305 10.4149 28.9901 10.5801C28.9498 10.7452 28.8768 10.9007 28.7754 11.0372C28.6741 11.1737 28.5464 11.2886 28.4 11.375Z" fill="#262626"/>
-                <title>Compartir vía email</title>
-              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" fill="none" viewBox="0 0 34 34"><path fill="transparent" d="M0 0h34v34H0z"/><path fill="#262626" d="M29 5H5a3 3 0 0 0-2.985 3L2 26a3.01 3.01 0 0 0 3 3h24a3.01 3.01 0 0 0 3-3V8a3.01 3.01 0 0 0-3-3m-.6 6.375L17.8 18a1.52 1.52 0 0 1-1.59 0L5.6 11.375a1.274 1.274 0 1 1 1.35-2.16L17 15.5l10.05-6.285a1.273 1.273 0 1 1 1.35 2.16"/><title>Compartir vía email</title></svg>
             </a>
           </li>
           <li class="copy-link">
             <amp-iframe sandbox="allow-scripts" width="170" height="66" frameborder="0" src="{% url 'copier' %}#{{ article.get_absolute_url }}">
-              <button class="copy-button" placeholder disabled aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path d="M24.5,7H20a1.5,1.5,0,0,0,0,3h4.5a4.5,4.5,0,0,1,0,9H20a1.5,1.5,0,0,0,0,3h4.5a7.5,7.5,0,0,0,0-15ZM11,14.5A1.5,1.5,0,0,0,12.5,16h9a1.5,1.5,0,0,0,0-3h-9A1.5,1.5,0,0,0,11,14.5ZM14,19H9.5a4.5,4.5,0,0,1,0-9H14a1.5,1.5,0,0,0,0-3H9.5a7.5,7.5,0,1,0,0,15H14a1.5,1.5,0,1,0,0-3Z" transform="translate(-2 -7)" fill="#262626"/></svg><title>Copiar enlace</title></button>
+              <button class="copy-button" placeholder disabled aria-label="Copiar enlace"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="15" viewBox="0 0 30 15"><path fill="#262626" d="M22.5 0H18a1.5 1.5 0 0 0 0 3h4.5a4.5 4.5 0 0 1 0 9H18a1.5 1.5 0 0 0 0 3h4.5a7.5 7.5 0 0 0 0-15M9 7.5A1.5 1.5 0 0 0 10.5 9h9a1.5 1.5 0 0 0 0-3h-9A1.5 1.5 0 0 0 9 7.5m3 4.5H7.5a4.5 4.5 0 0 1 0-9H12a1.5 1.5 0 0 0 0-3H7.5a7.5 7.5 0 1 0 0 15H12a1.5 1.5 0 1 0 0-3"/></svg><title>Copiar enlace</title></button>
             </amp-iframe>
           </li>
         </ul>

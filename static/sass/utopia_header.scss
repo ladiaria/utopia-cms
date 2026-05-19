@@ -308,6 +308,22 @@ header {
       -webkit-appearance: none;
     }
   }
+
+  &__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    flex-shrink: 0;
+    color: #c7d0d3;
+  }
+
+  &__input:not(:placeholder-shown) + &__submit {
+    color: #000;
+  }
 }
 
 .mobile-header-search {
