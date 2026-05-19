@@ -544,11 +544,6 @@ a {
     justify-content: left;
   }
 
-  .mobile-header .ladiaria-amp-logo-img {
-    height: 25px;
-    margin-left: 15px;
-  }
-
   .mobile-header:not(.logged-in) .btn.ingresar {
     position: absolute;
     right: 15px;
@@ -1168,17 +1163,17 @@ span.small.soft {
 
 .article-tags .title {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
 .article-tags .tag {
   display: inline-block;
   text-decoration: none;
-  line-height: 20px;
-  padding: 10px 20px;
-  background-color: #e0e0e0;
-  border-radius: 20px;
-  margin-bottom: 10px;
+  line-height: normal;
+  padding: 10px 16px;
+  background-color: #E3E8EA;
+  border-radius: 5px;
+  margin-bottom: 12px;
 }
 
 .article-tags .tag:hover {
@@ -1319,7 +1314,7 @@ span.small.soft {
 }
 
 a.ld-text-secondary,
-.ld-text-secondary a {
+.ld-text-secondary a:not(.btn) {
   color: #595959;
   text-decoration: underline;
 }
@@ -2490,22 +2485,21 @@ amp-selector {
 
 .ld-snackbar {
   text-align: center;
-  background-color: #fff;
+  background-color: transparent;
   bottom: 0;
   color: #000;
   font-family: "Dialect Gothic A", sans-serif;
   position: fixed;
   width: 99%;
-  border-radius: 10px 10px 0 0;
   z-index: 1010;
   font-weight: 400;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   padding-top: 0;
   -webkit-backface-visibility: hidden;
   left: 50%;
   padding-bottom: 30px;
-  border: 1px solid #c3c3c3;
+  border-top: 1px solid #ABABAB;
+  border-bottom: 1px solid #ABABAB;
   transform: translate3d(-50%, 45px, 0);
   animation-duration: 400ms;
   animation-name: ld-slideDown;
@@ -2533,8 +2527,7 @@ amp-selector {
   position: static;
   animation: none;
   transform: none;
-  margin: 0 auto;
-  border-radius: 10px;
+  margin: 32px auto;
   border-bottom: 0;
   padding-bottom: 25px;
   max-width: 90%;
@@ -2574,12 +2567,13 @@ amp-selector {
 }
 
 .ld-snackbar__title {
-  background-color: #C2FCFF;
+  font-family: "Review Condensed", "Dialect Gothic A",
+    sans-serif;
   text-align: center;
   padding: 15px 40px;
-  font-size: 18px;
-  line-height: 25px;
-  font-weight: 400;
+  font-size: 1.625rem;
+  line-height: normal;
+  font-weight: 500;
 }
 
 .ld-snackbar__cross {
@@ -2639,7 +2633,6 @@ amp-selector {
   right: 10px;
   top: 10px;
   border: none;
-  border-radius: 36px;
   vertical-align: middle;
   width: 36px;
   height: 36px;
@@ -2662,9 +2655,7 @@ amp-selector {
   position: relative;
   left: 0;
   transform: none;
-  margin: 0 20px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
+  margin: 32px 0;
   width: auto;
 }
 
@@ -2694,12 +2685,11 @@ amp-selector {
   box-sizing: border-box;
   text-align: center;
   margin: 0 auto;
-  max-width: 300px;
-  padding: 26px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12), 0 1px 5px 0 rgba(0, 0, 0, 0.2);
-  margin-bottom: 8px;
+  width: 100%;
+  padding: 16px 0;
   display: inline-block;
-  border-radius: 10px;
+  border-top: 0.5px solid #ABABAB;
+  border-bottom: 0.5px solid #ABABAB;
 }
 
 .ld-subscribe-box__title {
@@ -2723,10 +2713,6 @@ amp-selector {
   color: #000;
 }
 
-.ld-subscribe-box__login a {
-  color: #000;
-  text-decoration: underline;
-}
 
 @media (min-width: 1000px) {
   .ld-subscribe-box__login {
@@ -2770,9 +2756,10 @@ amp-selector {
   text-align: center;
   position: relative;
   padding: 20px 0;
-  font-family: "Dialect Gothic A", sans-serif;
-  font-size: 16px;
-  line-height: 22px;
+  font-family: "Review Condensed", "Dialect Gothic A",
+    sans-serif;
+  font-size: 1.125rem;
+  line-height: normal;
   display: flex;
   flex-direction: column;
   gap: 16px;
