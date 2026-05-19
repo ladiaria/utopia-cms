@@ -343,7 +343,15 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
     """
     if old_ids == new_ids:
         return
-    edition = get_current_edition(publication=layout.publication)
+    # On weekends the active edition belongs to "findesemana", not the layout's publication.
+    # Mirror the same weekday logic used in refresh_home_layouts_task so both functions
+    # operate on the same edition.
+    weekday = timezone.localdate().weekday()
+    if weekday >= 5:
+        fds_pub = Publication.objects.filter(slug="findesemana").first()
+        edition = get_current_edition(publication=fds_pub) if fds_pub else get_current_edition(publication=layout.publication)
+    else:
+        edition = get_current_edition(publication=layout.publication)
     if edition is None:
         return
 
@@ -368,6 +376,23 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
                 first_rel.home_top = True
                 first_rel.top_position = idx + 1
                 first_rel.save(update_fields=["home_top", "top_position"])
+        elif article_id in added_ids:
+            # Article added via picker but not yet in this edition — create an ArticleRel so
+            # celery:refresh can see it in Edition.top_articles and the principal order is preserved.
+            try:
+                article = Article.objects.get(pk=article_id)
+                section = article.main_section.section if article.main_section_id else None
+                if section:
+                    ArticleRel.objects.create(
+                        edition=edition,
+                        article=article,
+                        section=section,
+                        position=1,
+                        home_top=True,
+                        top_position=idx + 1,
+                    )
+            except Article.DoesNotExist:
+                pass
         elif article_id not in added_ids:
             # Align top_position with the new principal order.
             # Filter by home_top=True to avoid accidentally setting top_position on
