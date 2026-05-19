@@ -122,7 +122,8 @@ a {
     }
   }
   @media #{$medium-and-down} {
-    &:active {
+    &:active,
+    &:focus {
       color: $link-color-hover;
     }
   }
