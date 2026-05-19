@@ -68,8 +68,8 @@ article a {
   }
   &__summary {
     font-family: $serif;
-    font-size: px-to-rem(15px);
-    font-weight: 300;
+    font-size: px-to-rem(16px);
+    font-weight: 400;
     line-height: 1.35em;
   }
 
@@ -149,8 +149,19 @@ article a {
       }
     }
 
-    .article::after {
-      display: none;
+    .article {
+      &:hover,
+      &:hover a:not(.btn__dark) {
+        color: #000;
+      }
+
+      &:active {
+        color: $link-color-hover;
+      }
+
+      &::after {
+        display: none;
+      }
     }
   }
 }
