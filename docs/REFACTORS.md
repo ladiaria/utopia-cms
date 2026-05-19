@@ -21,6 +21,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Remove `collapsible.js` (Materialize) from access pages
 - [ ] Audit `render_article_card` and remove card templates unused in the v4 redesign
 - [ ] Evaluate and remove `MENU_PUBLICATIONS_MORE_EXTRA` local setting if unused
+- [ ] Refactor and remove `subscribe-body` class from HTML and SCSS
 
 ---
 
@@ -185,4 +186,21 @@ Si no tiene usos activos, eliminar el setting del código y de la documentación
 
 ```bash
 grep -r "MENU_PUBLICATIONS_MORE_EXTRA" --include="*.py" --include="*.html" .
+```
+
+---
+
+## 15. Refactor and remove `subscribe-body` class from HTML and SCSS
+
+La clase `subscribe-body` se usa como wrapper en los templates de suscripción y acumula estilos
+mezclados con modificadores de estado (`.subscribe-body.already-subscribed`) anidados dentro de
+media queries. Este patrón dificulta el mantenimiento: los modificadores de estado deberían
+aplicarse al nivel del `<body>` o del contenedor de página, no como variante de un wrapper interno.
+
+Auditar todos los usos de `subscribe-body` en templates y SCSS, reemplazar el wrapper por
+clases semánticas del sistema de diseño actual y mover los estilos condicionales a selectores
+de nivel superior.
+
+```bash
+grep -r "subscribe-body" --include="*.html" --include="*.scss" .
 ```
