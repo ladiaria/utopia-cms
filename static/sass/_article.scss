@@ -132,6 +132,7 @@ article#main-article {
       overflow: hidden;
       transition: all 0.3s ease-in-out;
       font-size: px-to-rem(14px);
+      color: #000;
 
       &.hidden {
         display: none;
