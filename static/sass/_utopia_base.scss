@@ -110,14 +110,20 @@ a {
   color: $link-color;
   text-decoration: none;
   cursor: pointer;
-
-  &:hover {
-    color: $link-color-hover;
-    svg [fill]:not([fill="none"]) {
-      fill: $link-color-hover;
+  @media #{$medium-and-up} {
+    &:hover {
+      color: $link-color-hover;
+      svg [fill]:not([fill="none"]) {
+        fill: $link-color-hover;
+      }
+      svg [stroke]:not([stroke="none"]) {
+        stroke: $link-color-hover;
+      }
     }
-    svg [stroke]:not([stroke="none"]) {
-      stroke: $link-color-hover;
+  }
+  @media #{$medium-and-down} {
+    &:active {
+      color: $link-color-hover;
     }
   }
 }
