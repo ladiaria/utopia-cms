@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.apps import AppConfig
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save
 from django.utils.formats import date_format
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ def _update_crossword_in_layouts(sender, instance, **kwargs):
         logger.info("_update_crossword_in_layouts: updated %d layouts for crossword id=%d", len(to_update), instance.id)
 
 
+
 class Homev4Config(AppConfig):
     name = "homev4"
     verbose_name = "Portada"
@@ -64,7 +65,6 @@ class Homev4Config(AppConfig):
 
         try:
             from utopia_cms_ladiaria.models import Crossword
-            from django.db.models.signals import post_save
             post_save.connect(_update_crossword_in_layouts, sender=Crossword)
         except ImportError:
             pass
