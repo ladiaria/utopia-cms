@@ -75,6 +75,34 @@ p {
       }
     }
   }
+
+  /* Change password */
+  .change-password & {
+    .ld-title-huge {
+      padding-bottom: 24px;
+    }
+
+    form#change_password {
+      padding-top: 64px;
+    }
+
+    .submit-btn-container {
+      padding-top: 64px;
+      display: flex;
+      justify-content: center;
+    }
+    @media #{$medium-and-down} {
+      .ld-title-huge {
+        padding-bottom: 16px;
+      }
+      form#change_password {
+        padding-top: 48px;
+      }
+      .submit-btn-container {
+        padding-top: 48px;
+      }
+    }
+  }
 }
 
 @media #{$medium-and-down} {

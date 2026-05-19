@@ -2237,6 +2237,7 @@ body.interior {
   transition:
     opacity 0.15s ease,
     visibility 0.15s ease;
+  max-width: px-to-rem(301px);
 
   &.is-open {
     visibility: visible;
