@@ -20,6 +20,7 @@ See also [`REDESIGNV4.md`](REDESIGNV4.md) for deploy-time steps related to the v
 - [ ] Remove all Materialize CSS dependencies from the project
 - [ ] Remove `collapsible.js` (Materialize) from access pages
 - [ ] Audit `render_article_card` and remove card templates unused in the v4 redesign
+- [ ] Evaluate and remove `MENU_PUBLICATIONS_MORE_EXTRA` local setting if unused
 
 ---
 
@@ -174,3 +175,14 @@ ls portal/apps/core/templates/article/card_*.html
 
 Cross-reference both lists and remove any template that has no active `render_card` usage and is
 not referenced by `render_article_card` either.
+
+---
+
+## 14. Evaluate and remove `MENU_PUBLICATIONS_MORE_EXTRA` local setting if unused
+
+Auditar si `MENU_PUBLICATIONS_MORE_EXTRA` sigue siendo referenciado en algún template, vista o tag.
+Si no tiene usos activos, eliminar el setting del código y de la documentación.
+
+```bash
+grep -r "MENU_PUBLICATIONS_MORE_EXTRA" --include="*.py" --include="*.html" .
+```
