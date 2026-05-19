@@ -38,6 +38,16 @@ article a {
     color: $link-color-hover;
   }
 
+  @media #{$medium-and-down} {
+    &:hover,
+    &:hover a:not(.btn__dark) {
+      color: #000;
+    }
+    &:active {
+      color: $link-color-hover;
+    }
+  }
+
   &__article-image {
     display: flex;
   }
@@ -149,19 +159,8 @@ article a {
       }
     }
 
-    .article {
-      &:hover,
-      &:hover a:not(.btn__dark) {
-        color: #000;
-      }
-
-      &:active {
-        color: $link-color-hover;
-      }
-
-      &::after {
-        display: none;
-      }
+    .article::after {
+      display: none;
     }
   }
 }
