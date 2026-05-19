@@ -765,7 +765,7 @@ class PhoneSubscriptionForm(CrispyForm):
             HTML('<div class="">'),  # next field will close this div tag
             Field('preferred_time', template='preferred_time_visible.html'),
             HTML('<div class="align-center">'),
-            FormActions(Submit('save', 'Enviar', css_class='ut-btn ut-btn-l')),
+            FormActions(Submit('save', 'Enviar', css_class='btn btn__dark')),
             HTML('</div>'),
         )
 
@@ -782,7 +782,7 @@ class WebSubscriptionForm(ModelForm):
             *terms_and_conditions_layout_tuple()
             + (
                 HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                FormActions(Submit('save', 'Continuar', css_class='btn btn__dark')),
                 HTML(
                     '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
                     'Paso 1 de 2'
@@ -830,7 +830,7 @@ class SubscriptionForm(WebSubscriptionForm):
             + terms_and_conditions_layout_tuple()
             + (
                 HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                FormActions(Submit('save', 'Continuar', css_class='btn btn__dark')),
                 HTML(
                     '<div class="ld-text-secondary align-center ld-subscription-step" style="display:none;">'
                     'Paso 1 de 2'
@@ -854,7 +854,7 @@ class SubscriptionPromoCodeForm(SubscriptionForm):
             Field('payment_type', template='payment_type.html'),
             Field('preferred_time', template='preferred_time.html'),
             HTML('</div><div class="align-center">'),
-            FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+            FormActions(Submit('save', 'Continuar', css_class='btn btn__dark')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
             Field('subscription_type_prices'),
         )
@@ -892,7 +892,7 @@ class SubscriptionCaptchaForm(SubscriptionForm):
                 ),
                 'captcha',
                 HTML('</div><div class="align-center">'),
-                FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+                FormActions(Submit('save', 'Continuar', css_class='btn btn__dark')),
                 HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
                 Field('subscription_type_prices'),
             )
@@ -915,7 +915,7 @@ class SubscriptionPromoCodeCaptchaForm(SubscriptionPromoCodeForm):
             ),
             'captcha',
             HTML('</div><div class="align-center">'),
-            FormActions(Submit('save', 'Continuar', css_class='ut-btn ut-btn-l')),
+            FormActions(Submit('save', 'Continuar', css_class='btn btn__dark')),
             HTML('<div class="ld-text-secondary align-center ld-subscription-step">Paso 1 de 2'),
             Field('subscription_type_prices'),
         )
@@ -939,7 +939,7 @@ class GoogleSigninForm(CrispyModelForm):
         self.helper.layout = Layout(
             *('phone', "next_page")
             + terms_and_conditions_layout_tuple(**({"type": "hidden"} if assume_tnc_accepted else {}))
-            + (FormActions(Submit('save', submit_label, css_class='ut-btn ut-btn-l')),)
+            + (FormActions(Submit('save', submit_label, css_class='btn btn__dark')),)
         )
 
     class Meta:
@@ -1066,7 +1066,7 @@ class ConfirmEmailRequestForm(CrispyForm):
                 template='materialize_css_forms/layout/email-login.html',
             ),
             HTML('<div class="align-center form-group">'),
-            FormActions(Submit('save', 'Enviar mensaje de activación', css_class='ut-btn ut-btn-l')),
+            FormActions(Submit('save', 'Enviar mensaje de activación', css_class='btn btn__dark')),
             HTML('</div>'),
         )
 
@@ -1119,8 +1119,8 @@ class PasswordChangeBaseForm(CrispyForm):
             or Layout(
                 Field('new_password_1', template='materialize_css_forms/layout/password.html'),
                 Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-                HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('<div class="submit-btn-container">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='btn btn__dark')),
                 HTML('</div>'),
             )
         )
@@ -1153,8 +1153,8 @@ class PasswordChangeForm(PasswordChangeBaseForm):
                 Field('old_password', template='materialize_css_forms/layout/password.html'),
                 Field('new_password_1', template='materialize_css_forms/layout/password.html'),
                 Field('new_password_2', template='materialize_css_forms/layout/password.html'),
-                HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('<div class="submit-btn-container">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='btn btn__dark')),
                 HTML('</div>'),
             )
         )
@@ -1203,8 +1203,8 @@ class PasswordResetForm(PasswordChangeBaseForm):
                 Field('new_password_2', template='materialize_css_forms/layout/password.html'),
                 Field('gonzo', type='hidden', value=initial['gonzo']),
                 Field('hash', type='hidden', value=initial['gonzo']),
-                HTML('<div class="align-center">'),
-                FormActions(Submit('save', 'Elegir contraseña', css_class='ut-btn ut-btn-l')),
+                HTML('<div class="submit-btn-container">'),
+                FormActions(Submit('save', 'Elegir contraseña', css_class='btn btn__dark')),
                 HTML('</div>'),
             )
         )
