@@ -28,9 +28,8 @@
     <div class="article__footer">
       {% if authors %}
         <div class="article__byline">
-          Por
           {% for author in authors %}
-            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
           {% endfor %}
         </div>
       {% endif %}
