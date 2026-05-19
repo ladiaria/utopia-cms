@@ -257,3 +257,242 @@ class SyncAuditLogTest(SimpleTestCase):
         user = MagicMock()
         _, mock_audit = _run([1, 2], [2, 1], MagicMock(), user=user)
         self.assertEqual(mock_audit.call_args[1].get("user"), user)
+
+
+# ---------------------------------------------------------------------------
+# Helpers for weekend-edition and picker-create tests
+# ---------------------------------------------------------------------------
+
+class _FakeArticleDoesNotExist(Exception):
+    """Substitute for Article.DoesNotExist when Article itself is mocked."""
+
+
+def _make_article(has_main_section=True):
+    """Return a mock Article with or without a valid main_section link."""
+    article = MagicMock()
+    if has_main_section:
+        article.main_section_id = 1
+        article.main_section = MagicMock()
+        article.main_section.section = MagicMock()
+    else:
+        article.main_section_id = None
+        article.main_section = None
+    return article
+
+
+def _edition_without(article_ids=()):
+    """Return a mock Edition whose articlerel_set reports the given article IDs."""
+    edition = MagicMock()
+    edition.articlerel_set.values_list.return_value = list(article_ids)
+    return edition
+
+
+def _run_full(old_ids, new_ids, edition, layout=None, user=None,
+              weekday=1, mock_article=None, fds_pub="default", article_raises=False):
+    """Run _sync_principal_to_edition with extended mock isolation.
+
+    In addition to the patches in _run(), this helper also patches:
+    - timezone.localdate      — controlled by weekday (int 0–6)
+    - Publication             — .objects.filter().first() returns fds_pub
+    - Article                 — .objects.get() returns mock_article or raises DoesNotExist
+
+    fds_pub="default" creates a fresh MagicMock so callers can verify it was used.
+    Pass fds_pub=None to simulate "no findesemana publication exists".
+
+    Returns (mock_ar, mock_article_cls, mock_pub, mock_get_edition, mock_audit).
+    """
+    if layout is None:
+        layout = MagicMock()
+    if user is None:
+        user = MagicMock()
+    if fds_pub == "default":
+        fds_pub = MagicMock()
+
+    mock_ar = MagicMock()
+
+    mock_article_cls = MagicMock()
+    mock_article_cls.DoesNotExist = _FakeArticleDoesNotExist
+    if article_raises or mock_article is None:
+        mock_article_cls.objects.get.side_effect = _FakeArticleDoesNotExist
+    else:
+        mock_article_cls.objects.get.return_value = mock_article
+        mock_article_cls.objects.get.side_effect = None
+
+    mock_pub = MagicMock()
+    mock_pub.objects.filter.return_value.first.return_value = fds_pub
+
+    mock_date = MagicMock()
+    mock_date.weekday.return_value = weekday
+
+    with patch("homev4.views.timezone.localdate", return_value=mock_date), \
+         patch("homev4.views.get_current_edition", return_value=edition) as mock_get_edition, \
+         patch("homev4.views.ArticleRel", mock_ar), \
+         patch("homev4.views.Publication", mock_pub), \
+         patch("homev4.views.Article", mock_article_cls), \
+         patch("homev4.views._write_audit_log") as mock_audit:
+        _sync_principal_to_edition(old_ids, new_ids, layout, user)
+
+    return mock_ar, mock_article_cls, mock_pub, mock_get_edition, mock_audit
+
+
+# ---------------------------------------------------------------------------
+# Weekend edition selection
+# ---------------------------------------------------------------------------
+
+class SyncWeekendEditionTest(SimpleTestCase):
+    """_sync_principal_to_edition must resolve the edition via findesemana on weekends."""
+
+    def test_saturday_uses_findesemana_publication(self):
+        """On Saturday (weekday=5) get_current_edition is called with the findesemana pub."""
+        fds_pub = MagicMock()
+        layout = MagicMock()
+        _, _, _, mock_get_edition, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]),
+            layout=layout, weekday=5, fds_pub=fds_pub,
+        )
+        mock_get_edition.assert_called_once_with(publication=fds_pub)
+
+    def test_sunday_uses_findesemana_publication(self):
+        """On Sunday (weekday=6) get_current_edition is called with the findesemana pub."""
+        fds_pub = MagicMock()
+        layout = MagicMock()
+        _, _, _, mock_get_edition, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]),
+            layout=layout, weekday=6, fds_pub=fds_pub,
+        )
+        mock_get_edition.assert_called_once_with(publication=fds_pub)
+
+    def test_weekday_uses_layout_publication(self):
+        """On a weekday (weekday=2) get_current_edition is called with layout.publication."""
+        layout = MagicMock()
+        _, _, _, mock_get_edition, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]),
+            layout=layout, weekday=2,
+        )
+        mock_get_edition.assert_called_once_with(publication=layout.publication)
+
+    def test_weekend_no_fds_pub_falls_back_to_layout_publication(self):
+        """Weekend with no findesemana publication → falls back to layout.publication."""
+        layout = MagicMock()
+        _, _, _, mock_get_edition, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]),
+            layout=layout, weekday=6, fds_pub=None,
+        )
+        mock_get_edition.assert_called_once_with(publication=layout.publication)
+
+    def test_weekend_publication_lookup_uses_findesemana_slug(self):
+        """The Publication query on weekends filters by slug='findesemana'."""
+        _, _, mock_pub, _, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]), weekday=5,
+        )
+        mock_pub.objects.filter.assert_called_once_with(slug="findesemana")
+
+    def test_weekday_skips_publication_lookup(self):
+        """On a weekday Publication is never queried (no findesemana lookup)."""
+        _, _, mock_pub, _, _ = _run_full(
+            [1, 2], [2, 1], _edition_without([1, 2]), weekday=3,
+        )
+        mock_pub.objects.filter.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Picker ArticleRel creation
+# ---------------------------------------------------------------------------
+
+class SyncPickerCreateTest(SimpleTestCase):
+    """When a picker-added article is absent from the current edition, an ArticleRel must be
+    created so celery:refresh can include it in Edition.top_articles."""
+
+    def test_create_called_for_picker_article_not_in_edition(self):
+        """ArticleRel.objects.create is called when the picker article is not in the edition."""
+        article = _make_article()
+        edition = _edition_without()  # article 99 not present
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
+        )
+        mock_ar.objects.create.assert_called_once()
+
+    def test_create_receives_correct_fields(self):
+        """The new ArticleRel has home_top=True, position=1, and the article's main section."""
+        article = _make_article()
+        edition = _edition_without()
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
+        )
+        mock_ar.objects.create.assert_called_once_with(
+            edition=edition,
+            article=article,
+            section=article.main_section.section,
+            position=1,
+            home_top=True,
+            top_position=3,  # idx=2 → 1-based position 3
+        )
+
+    def test_create_top_position_reflects_order_in_new_ids(self):
+        """top_position equals the 1-based index of the article in new_ids."""
+        article = _make_article()
+        edition = _edition_without()
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [99, 1, 2], edition, weekday=1, mock_article=article,
+        )
+        mock_ar.objects.create.assert_called_once_with(
+            edition=edition,
+            article=article,
+            section=article.main_section.section,
+            position=1,
+            home_top=True,
+            top_position=1,  # idx=0 → 1-based position 1
+        )
+
+    def test_no_create_when_article_has_no_main_section(self):
+        """If the article has no main_section, create is skipped (section would be None)."""
+        article = _make_article(has_main_section=False)
+        edition = _edition_without()
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
+        )
+        mock_ar.objects.create.assert_not_called()
+
+    def test_no_create_when_article_does_not_exist(self):
+        """If Article.objects.get raises DoesNotExist, no ArticleRel is created."""
+        edition = _edition_without()
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [1, 2, 99], edition, weekday=1, article_raises=True,
+        )
+        mock_ar.objects.create.assert_not_called()
+
+    def test_no_create_when_article_already_in_edition(self):
+        """If the picker article already belongs to the edition, the existing row is used
+        (home_top set via update, not a new create)."""
+        article = _make_article()
+        edition = _edition_without(article_ids=[99])  # 99 IS in the edition
+        mock_ar, _, _, _, _ = _run_full(
+            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
+        )
+        mock_ar.objects.create.assert_not_called()
+
+    def test_multiple_picker_articles_each_get_their_own_create(self):
+        """Two picker articles both absent from the edition → two separate create calls."""
+        article_a = _make_article()
+        article_b = _make_article()
+        edition = _edition_without()
+
+        mock_article_cls = MagicMock()
+        mock_article_cls.DoesNotExist = _FakeArticleDoesNotExist
+        mock_article_cls.objects.get.side_effect = lambda pk: article_a if pk == 88 else article_b
+
+        mock_ar = MagicMock()
+        layout = MagicMock()
+        mock_date = MagicMock()
+        mock_date.weekday.return_value = 1
+        mock_pub = MagicMock()
+
+        with patch("homev4.views.timezone.localdate", return_value=mock_date), \
+             patch("homev4.views.get_current_edition", return_value=edition), \
+             patch("homev4.views.ArticleRel", mock_ar), \
+             patch("homev4.views.Publication", mock_pub), \
+             patch("homev4.views.Article", mock_article_cls), \
+             patch("homev4.views._write_audit_log"):
+            _sync_principal_to_edition([1], [1, 88, 99], layout, MagicMock())
+
+        self.assertEqual(mock_ar.objects.create.call_count, 2)
