@@ -20,7 +20,7 @@ from martor.widgets import AdminMartorWidget
 from django.conf import settings
 from django.urls import path
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
@@ -609,6 +609,62 @@ def get_editions():
     return Edition.objects.filter(date_published__gte=since)
 
 
+def _shift_and_normalize_top_positions(article, old_top_positions=None):
+    """Resolve top_position conflicts and normalize to sequential 1..N.
+
+    For each edition where *article* has home_top=True:
+    - If old_top_positions is provided and the position changed, shift displaced rivals in
+      the correct direction: rivals between old and new positions slide toward the vacated
+      slot (up when article moves down, down when article moves up).  Without this
+      direction-aware shift the sequential renumber would snap the article back to its
+      original slot (e.g. moving from 1→2 would land back at 1 because position 1 is left
+      empty after the conflict-shift pushes the rival to 3).
+    - If no previous position is known (new portada entry), fall back to shift-on-conflict.
+    Then renumber every home_top article in that edition as 1, 2, 3… so gaps never
+    accumulate across successive edits.
+    """
+    processed_editions = set()
+    for ar in ArticleRel.objects.filter(article=article, home_top=True, top_position__isnull=False):
+        if ar.edition_id in processed_editions:
+            continue
+        processed_editions.add(ar.edition_id)
+
+        new_pos = ar.top_position
+        old_pos = old_top_positions.get(ar.edition_id) if old_top_positions else None
+
+        if old_pos is not None and old_pos != new_pos:
+            if new_pos < old_pos:
+                # Moving UP (lower number = higher rank): push rivals in [new_pos, old_pos-1] down by one.
+                ArticleRel.objects.filter(
+                    edition_id=ar.edition_id, home_top=True,
+                    top_position__gte=new_pos, top_position__lt=old_pos,
+                ).exclude(article=article).update(top_position=F('top_position') + 1)
+            else:
+                # Moving DOWN (higher number = lower rank): pull rivals in (old_pos, new_pos] up by one.
+                ArticleRel.objects.filter(
+                    edition_id=ar.edition_id, home_top=True,
+                    top_position__gt=old_pos, top_position__lte=new_pos,
+                ).exclude(article=article).update(top_position=F('top_position') - 1)
+        else:
+            # No previous position known (new portada entry or unchanged): shift-on-conflict.
+            conflict_exists = ArticleRel.objects.filter(
+                edition_id=ar.edition_id, home_top=True, top_position=new_pos,
+            ).exclude(article=article).exists()
+            if conflict_exists:
+                ArticleRel.objects.filter(
+                    edition_id=ar.edition_id, home_top=True, top_position__gte=new_pos,
+                ).exclude(article=article).update(top_position=F('top_position') + 1)
+
+        # Normalize to sequential 1..N (also cleans up gaps from previous operations).
+        ranked = list(
+            ArticleRel.objects.filter(
+                edition_id=ar.edition_id, home_top=True, top_position__isnull=False,
+            ).order_by("top_position").values_list("id", flat=True)
+        )
+        for rank, rel_id in enumerate(ranked, start=1):
+            ArticleRel.objects.filter(pk=rel_id).update(top_position=rank)
+
+
 @admin.register(Article, site=site)
 class ArticleAdmin(VersionAdmin):
     # TODO: Do not allow delete if the article is the main article in a category home (home.models.Home)
@@ -805,7 +861,15 @@ class ArticleAdmin(VersionAdmin):
                     logging.error(f"Secondary operation failed after DB save: {e.errors}")
 
     def save_related(self, request, form, formsets, change):
+        # Snapshot old positions before the inline formset overwrites them.
+        old_top_positions = {
+            ar.edition_id: ar.top_position
+            for ar in ArticleRel.objects.filter(
+                article=form.instance, home_top=True, top_position__isnull=False,
+            )
+        }
         super().save_related(request, form, formsets, change)
+        _shift_and_normalize_top_positions(form.instance, old_top_positions)
 
         # main "main" section radiobutton in inline (also has js hacks) mapped to main_section attribute:
         save = False
