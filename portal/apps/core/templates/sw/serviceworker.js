@@ -45,8 +45,9 @@ self.addEventListener('fetch', e => {
               return response;
             } catch (error) {
               console.warn('SW fetch failed:', error);
-              // Optionally return a fallback response, e.g., an offline page
-              return caches.match('/offline.html') || new Response('Network error occurred', {
+              // caches.match() returns a Promise, so await it before the || fallback
+              const offlinePage = await caches.match('/offline.html');
+              return offlinePage || new Response('Network error occurred', {
                 status: 503,
                 statusText: 'Service Unavailable',
               });

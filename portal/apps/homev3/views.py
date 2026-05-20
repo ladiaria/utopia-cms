@@ -6,7 +6,7 @@ from django_user_agents.utils import get_user_agent
 
 from django.conf import settings
 from django.urls import reverse
-from django.http import Http404, HttpResponsePermanentRedirect
+from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.vary import vary_on_cookie
 from django.views.decorators.cache import cache_control, never_cache
@@ -263,4 +263,41 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
 
 def custom_500_handler(request):
     context = {'HOMEV3_LOGO': settings.HOMEV3_LOGO}
-    return render(request, getattr(settings, "HOMEV3_500_TEMPLATE", "500.html"), context, status=500)
+    try:
+        return render(request, getattr(settings, "HOMEV3_500_TEMPLATE", "500.html"), context, status=500)
+    except Exception:
+        # Template rendering failed (e.g. a context processor raised an exception).
+        # Return a static fallback that mirrors the real 500 page without any template engine involvement.
+        static_url = getattr(settings, "STATIC_URL", "/static/")
+        logo = getattr(settings, "HOMEV3_LOGO", "")
+        fallback_html = f"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <title>Error de sistema</title>
+    <link rel="stylesheet" type="text/css" href="{static_url}admin/css/base.css">
+    <link rel="stylesheet" type="text/css" href="{static_url}admin/css/login.css">
+    <meta name="robots" content="NONE,NOARCHIVE">
+  </head>
+  <body class="login">
+    <div id="container">
+      <div id="header">
+        <div id="branding">
+          <h1 id="site-name">
+            <a href="/"><img src="{static_url}{logo}" alt="site logo"></a>
+          </h1>
+        </div>
+      </div>
+      <div id="content" class="colM">
+        <div id="content-main">
+          <h1 style="text-align:center;margin-bottom:12px;">Error de sistema</h1>
+          <p>Ha ocurrido un error en el sistema, los administradores ya fueron alertados.
+             A la brevedad será solucionado.</p>
+          <p>Gracias por tu paciencia.</p>
+        </div>
+        <br class="clear">
+      </div>
+      <div id="footer"></div>
+    </div>
+  </body>
+</html>"""
+        return HttpResponse(fallback_html, status=500, content_type="text/html; charset=utf-8")
