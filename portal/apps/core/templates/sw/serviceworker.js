@@ -45,12 +45,17 @@ self.addEventListener('fetch', e => {
               return response;
             } catch (error) {
               console.warn('SW fetch failed:', error);
-              // caches.match() returns a Promise, so await it before the || fallback
-              const offlinePage = await caches.match('/offline.html');
-              return offlinePage || new Response('Network error occurred', {
-                status: 503,
-                statusText: 'Service Unavailable',
-              });
+              // Retry once — handles transient failures when mobile app resumes
+              // and the TCP connection hasn't fully re-established yet.
+              try {
+                return await fetch(e.request);
+              } catch (retryError) {
+                console.warn('SW fetch retry failed:', retryError);
+                return new Response('Network error occurred', {
+                  status: 503,
+                  statusText: 'Service Unavailable',
+                });
+              }
             }
           })();
 
