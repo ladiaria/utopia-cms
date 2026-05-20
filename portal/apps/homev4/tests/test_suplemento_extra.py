@@ -190,6 +190,7 @@ class SupplementoExtraBuildHomeDataTest(SimpleTestCase):
             qs = MagicMock()
             qs.__iter__ = lambda self: iter(articles)
             qs.select_related.return_value = qs
+            qs.prefetch_related.return_value = qs
             return qs
         published = MagicMock()
         published.filter.side_effect = side_effect

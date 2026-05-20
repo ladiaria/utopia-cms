@@ -44,6 +44,9 @@ def _make_published_mock(available_ids):
         def select_related(self, *args):
             return self
 
+        def prefetch_related(self, *args):
+            return self
+
         def __iter__(self):
             return (articles[i] for i in self._ids if i in articles)
 
