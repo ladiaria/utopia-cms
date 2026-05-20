@@ -31,17 +31,6 @@
   {% if home_data.principal_active %}
   <section class="main-section{% if tarde_mode %} main-section--tarde{% endif %}">
 
-    <!-- ── Lo último (tarde mobile) ────────────────────────────────────────── -->
-    {% if tarde_mode %}
-      {% for comp in home_data.componentes %}
-        {% if comp.key == "lo_ultimo" %}
-          <div class="lo-ultimo-top">
-            {% include comp.sidebar_component_template %}
-          </div>
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-
     {% with articles=home_data.principal_articles %}
     {% if articles %}
 
@@ -53,7 +42,15 @@
         {% with secondary=articles|slice:"1:3" %}
           {% include "homev4/main_section/_secondary_tarde.html" %}
         {% endwith %}
-        {% with tertiary=articles|slice:"3:6" position_offset=4 %}
+        <!-- ── Lo último (tarde mobile) ────────────────────────────────────────── -->
+        {% for comp in home_data.componentes %}
+          {% if comp.key == "lo_ultimo" %}
+            <div class="lo-ultimo-top">
+              {% include comp.sidebar_component_template %}
+            </div>
+          {% endif %}
+        {% endfor %}
+        {% with tertiary=articles|slice:"2:6" position_offset=3 %}
           {% include "homev4/main_section/_tertiary.html" %}
         {% endwith %}
       {% else %}
