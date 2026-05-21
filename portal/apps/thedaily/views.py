@@ -278,8 +278,8 @@ def nl_subscribe(request, publication_slug=None, hashed_id=None):
         publication = get_object_or_404(Publication, slug=publication_slug, has_newsletter=True)
         ctx = {
             'publication': publication,
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+            'logo': settings.HOMEV3_LOGO,
+            'logo_width': settings.HOMEV3_LOGO_WIDTH,
         }
         decoded = decode_hashid(hashed_id)
         if decoded:
@@ -316,8 +316,8 @@ def nl_category_subscribe(request, slug, hashed_id=None):
         category = get_object_or_404(Category, slug=slug, has_newsletter=True)
         ctx = {
             'category': category,
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+            'logo': settings.HOMEV3_LOGO,
+            'logo_width': settings.HOMEV3_LOGO_WIDTH,
         }
         decoded = decode_hashid(hashed_id)
         if decoded:
@@ -2316,8 +2316,8 @@ def nlunsubscribe(request, publication_slug, hashed_id):
         subscriber_id = decode_hashid(hashed_id)[0]
         ctx = {
             'publication': publication,
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+            'logo': settings.HOMEV3_LOGO,
+            'logo_width': settings.HOMEV3_LOGO_WIDTH,
         }
         # subscriber_id can be 0 (test from /custom_email in allowed hosts)
         if subscriber_id:
@@ -2345,8 +2345,8 @@ def nl_category_unsubscribe(request, category_slug, hashed_id):
         subscriber_id = decode_hashid(hashed_id)[0]
         ctx = {
             'publication': category,
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+            'logo': settings.HOMEV3_LOGO,
+            'logo_width': settings.HOMEV3_LOGO_WIDTH,
         }
         # subscriber_id can be 0 (test from /custom_email in allowed hosts)
         if subscriber_id:
@@ -2412,8 +2412,8 @@ def disable_profile_property(request, property_id, hashed_id):
                 'allow_promotions': 'Promociones',
                 'allow_polls': 'Encuestas',
             }.get(property_id),
-            'logo': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO', settings.HOMEV3_LOGO),
-            'logo_width': getattr(settings, 'THEDAILY_NL_SUBSCRIPTIONS_LOGO_WIDTH', ''),
+            'logo': settings.HOMEV3_LOGO,
+            'logo_width': settings.HOMEV3_LOGO_WIDTH,
         }
         try:
             subscriber.save()
