@@ -104,6 +104,9 @@ class FakeQS:
     def select_related(self, *args):
         return self
 
+    def prefetch_related(self, *args):
+        return self
+
     def order_by(self, *args):
         return self
 
