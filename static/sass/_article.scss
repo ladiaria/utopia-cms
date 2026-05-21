@@ -335,6 +335,34 @@ article#main-article {
     p {
       font-family: $sans;
     }
+
+    .article-date__reading-time {
+      display: none;
+    }
+
+    &.authors-many {
+      .article-author__separator,
+      .article-author .reading-time {
+        display: none;
+      }
+      .article-date__reading-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+
+    @media #{$medium-and-down} {
+      &.authors-two {
+        .article-author__separator,
+        .article-author .reading-time {
+          display: none;
+        }
+        .article-date__reading-time {
+          display: inline;
+        }
+      }
+    }
   }
 
   .article-author {
