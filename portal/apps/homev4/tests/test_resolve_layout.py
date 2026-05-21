@@ -465,6 +465,7 @@ class BuildHomeDataLoUltimoTest(SimpleTestCase):
             qs = MagicMock()
             qs.__iter__ = lambda self: iter(articles)
             qs.select_related.return_value = qs
+            qs.prefetch_related.return_value = qs
             return qs
         published = MagicMock()
         published.filter.side_effect = side_effect
@@ -1124,6 +1125,9 @@ class FetchComponentArticlesLoUltimoTest(SimpleTestCase):
                 return FakeQS([i for i in self._ids if i in id__in])
 
             def select_related(self, *args):
+                return self
+
+            def prefetch_related(self, *args):
                 return self
 
             def order_by(self, *args):

@@ -861,6 +861,11 @@
       line-height: normal;
       letter-spacing: px-to-rem(0.16px);
     }
+
+    .sidebar__block .article__time-ago {
+      display: none;
+    }
+
     .sidebar__articles-container {
       flex-direction: row;
       overflow-x: auto;
