@@ -43,8 +43,8 @@
   font-weight: 500;
 
   @if $variant == mobile {
-    font-size: px-to-rem(18px);
-    line-height: px-to-rem(24.3px);
+    font-size: px-to-rem(22px);
+    line-height: px-to-rem(29.7px);
   } @else {
     font-size: px-to-rem(24px);
     line-height: px-to-rem(31.2px);
@@ -785,7 +785,6 @@
 
       .article__title {
         @include featured-article-title(mobile);
-        font-size: px-to-rem(22px);
       }
 
       .article__lead {
