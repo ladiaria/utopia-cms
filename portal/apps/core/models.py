@@ -54,6 +54,7 @@ from django.db.models import (
     CASCADE,
     TextChoices,
     FloatField,
+    prefetch_related_objects,
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
@@ -983,9 +984,7 @@ class Section(Model):
                 LIMIT 6"""
                 % (self.id, exclude_id)
             ))
-            for article in articles:
-                authors = list(article.byline.all())
-                article.get_authors = lambda a=authors: a
+            prefetch_related_objects(articles, 'byline')
             cache.set(cache_key, articles, 300)
             result = articles
         return result
@@ -1012,9 +1011,7 @@ class Section(Model):
                 LIMIT 6"""
                 % (category, exclude_id)
             ))
-            for article in articles:
-                authors = list(article.byline.all())
-                article.get_authors = lambda a=authors: a
+            prefetch_related_objects(articles, 'byline')
             cache.set(cache_key, articles, 300)
             result = articles
         return result
@@ -1038,9 +1035,7 @@ class Section(Model):
                 GROUP BY a.id ORDER BY a.date_published DESC LIMIT 6"""
                 % (publication, exclude_id)
             ))
-            for article in articles:
-                authors = list(article.byline.all())
-                article.get_authors = lambda a=authors: a
+            prefetch_related_objects(articles, 'byline')
             cache.set(cache_key, articles, 300)
             result = articles
         return result
