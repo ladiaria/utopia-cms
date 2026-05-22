@@ -54,6 +54,7 @@ from django.db.models import (
     CASCADE,
     TextChoices,
     FloatField,
+    prefetch_related_objects,
 )
 from django.db.models.signals import post_save
 from django.db.utils import OperationalError
@@ -968,54 +969,76 @@ class Section(Model):
         devuelve los últimos 6 articulos de la sección que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw(
-            """
-            SELECT core_article.*
-            FROM core_article JOIN core_articlerel
-                ON core_article.id = core_articlerel.article_id
-            WHERE core_articlerel.section_id=%s AND is_published
-                AND allow_related AND core_article.id!=%s
-            GROUP BY id ORDER BY date_published DESC
-            LIMIT 6"""
-            % (self.id, exclude_id)
-        )
+        from django.core.cache import cache
+        cache_key = f"related_{self.id}_{exclude_id}"
+        result = cache.get(cache_key)
+        if result is None:
+            articles = list(Article.objects.raw(
+                """
+                SELECT core_article.*
+                FROM core_articlerel STRAIGHT_JOIN core_article
+                    ON core_article.id = core_articlerel.article_id
+                WHERE core_articlerel.section_id=%s AND is_published
+                    AND allow_related AND core_article.id!=%s
+                GROUP BY core_article.id ORDER BY date_published DESC
+                LIMIT 6"""
+                % (self.id, exclude_id)
+            ))
+            prefetch_related_objects(articles, 'byline')
+            cache.set(cache_key, articles, 300)
+            result = articles
+        return result
 
     def latest6relatedbycategory(self, category, exclude_id):
         """
         devuelve los últimos 6 articulos de la categoría que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return Article.objects.raw(
-            """
-            SELECT core_article.*
-            FROM core_article JOIN core_articlerel
-                ON core_article.id = core_articlerel.article_id
-                JOIN core_section
-                ON core_articlerel.section_id = core_section.id
-            WHERE is_published AND allow_related
-                AND core_section.category_id=%s AND core_article.id!=%s
-            GROUP BY id ORDER BY date_published DESC
-            LIMIT 6"""
-            % (category, exclude_id)
-        )
+        from django.core.cache import cache
+        cache_key = f"related_cat_{category}_{exclude_id}"
+        result = cache.get(cache_key)
+        if result is None:
+            articles = list(Article.objects.raw(
+                """
+                SELECT core_article.*
+                FROM core_article JOIN core_articlerel
+                    ON core_article.id = core_articlerel.article_id
+                    JOIN core_section
+                    ON core_articlerel.section_id = core_section.id
+                WHERE is_published AND allow_related
+                    AND core_section.category_id=%s AND core_article.id!=%s
+                GROUP BY id ORDER BY date_published DESC
+                LIMIT 6"""
+                % (category, exclude_id)
+            ))
+            prefetch_related_objects(articles, 'byline')
+            cache.set(cache_key, articles, 300)
+            result = articles
+        return result
 
     def latest6relatedbypublication(self, publication, exclude_id):
         """
         devuelve los últimos 6 articulos de la publicacion que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        return (
-            Article.objects.raw(
+        if not settings.CORE_ENABLE_RELATED_ARTICLES:
+            return []
+        from django.core.cache import cache
+        cache_key = f"related_pub_{publication}_{exclude_id}"
+        result = cache.get(cache_key)
+        if result is None:
+            articles = list(Article.objects.raw(
                 """
-            SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
-                JOIN core_edition e ON ar.edition_id=e.id
-            WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
-            GROUP BY a.id ORDER BY a.date_published DESC LIMIT 6"""
+                SELECT a.* FROM core_article a JOIN core_articlerel ar ON a.id=ar.article_id
+                    JOIN core_edition e ON ar.edition_id=e.id
+                WHERE a.is_published AND a.allow_related AND e.publication_id=%s AND a.id!=%s
+                GROUP BY a.id ORDER BY a.date_published DESC LIMIT 6"""
                 % (publication, exclude_id)
-            )
-            if settings.CORE_ENABLE_RELATED_ARTICLES
-            else []
-        )
+            ))
+            prefetch_related_objects(articles, 'byline')
+            cache.set(cache_key, articles, 300)
+            result = articles
+        return result
 
     def latest_article(self):
         """
