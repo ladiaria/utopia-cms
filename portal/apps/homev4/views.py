@@ -1517,6 +1517,7 @@ def active_layout(request, publication_slug=None):
         "is_portada": True,
         "allow_ads": allow_ads,
         "papel_url": papel_url,
+        "cache_maxage": _cache_maxage,
     }
 
     # Each publication can store arbitrary extra template vars in its extra_context
