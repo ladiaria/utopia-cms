@@ -971,11 +971,11 @@ class Section(Model):
         return Article.objects.raw(
             """
             SELECT core_article.*
-            FROM core_article JOIN core_articlerel
+            FROM core_articlerel STRAIGHT_JOIN core_article
                 ON core_article.id = core_articlerel.article_id
             WHERE core_articlerel.section_id=%s AND is_published
                 AND allow_related AND core_article.id!=%s
-            GROUP BY id ORDER BY date_published DESC
+            GROUP BY core_article.id ORDER BY date_published DESC
             LIMIT 6"""
             % (self.id, exclude_id)
         )
