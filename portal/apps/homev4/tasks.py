@@ -12,7 +12,7 @@ from celeryapp import celery_app
 from .models import HomeLayout
 from .views import (
     _fetch_source_articles, _SUPLEMENTO_SOURCE_BY_WEEKDAY, _propagate_article_ids, _write_audit_log,
-    get_papel_url, _PAPEL_CACHE_KEY,
+    _sync_principal_to_edition, get_papel_url, _PAPEL_CACHE_KEY,
 )
 
 logger = logging.getLogger("homev4")
@@ -105,6 +105,8 @@ def resolve_daily_layouts_task():
                 layout = HomeLayout.get_active_layout(publication) or pending_layout
                 # Capture before overwriting so audit log can diff what changed.
                 old_grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
+                old_principal_ids = old_grid.get("principal", {}).get("article_ids", []) if isinstance(old_grid.get("principal"), dict) else []
+                new_principal_ids = grid_to_apply.get("principal", {}).get("article_ids", []) if isinstance(grid_to_apply.get("principal"), dict) else []
                 with transaction.atomic():
                     pending_layout.pending_grid_data = None
                     pending_layout.save(update_fields=["pending_grid_data"])
@@ -113,6 +115,10 @@ def resolve_daily_layouts_task():
                     layout.refresh_from_db(fields=["grid_data"])
                     _propagate_article_ids(layout, layout.grid_data)
                     _write_audit_log(layout, old_grid, layout.grid_data, "celery:5am")
+                # Sync home_top/top_position on ArticleRel so celery:refresh preserves
+                # the principal order set by the editor — without this, articles that
+                # didn't have EN PORTADA marked before 5am get dropped on the next refresh.
+                _sync_principal_to_edition(old_principal_ids, new_principal_ids, layout, None)
                 logger.info(
                     "resolve_daily_layouts_task: publication=%s — applied pending_grid_data from editor",
                     publication.slug,
