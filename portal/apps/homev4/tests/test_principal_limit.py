@@ -159,6 +159,7 @@ class SaveGridPrincipalLimitTest(SimpleTestCase):
              patch("homev4.views.transaction"), \
              patch("homev4.views._propagate_article_ids"), \
              patch("homev4.views._write_audit_log"), \
+             patch("homev4.views._sync_principal_to_edition"), \
              patch("homev4.views._grid_stats", return_value={
                  "principal": len(principal_ids), "suplemento": 0,
                  "sections_active": 0, "sections_total": 0, "componentes_active": [],
@@ -248,6 +249,7 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
              patch("homev4.views.transaction"), \
              patch("homev4.views._propagate_article_ids"), \
              patch("homev4.views._write_audit_log"), \
+             patch("homev4.views._sync_principal_to_edition"), \
              patch("homev4.views._grid_stats", return_value={
                  "principal": 0, "suplemento": 0,
                  "sections_active": 0, "sections_total": 0, "componentes_active": [],

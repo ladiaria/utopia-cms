@@ -53,8 +53,16 @@ def _log_timing(view_func):
 # select_related chains and prefetch targets for all article queries on the home.
 # Ensures template and auth checks don't trigger lazy DB hits per article.
 # Update these constants if the Article/ArticleRel model relationships change.
-_ARTICLE_AUTH_SELECT_RELATED = ("main_section__edition__publication", "main_section__section")
+_ARTICLE_AUTH_SELECT_RELATED = (
+    "main_section__edition__publication",
+    "main_section__section",
+    # render_hierarchy accesses section.category per article — pre-load to avoid N+1
+    "main_section__section__category",
+)
 _ARTICLE_PREFETCH_RELATED = ("photo__extended__photographer", "byline")
+# Extra prefetch names specific to the deployment (e.g. "verifica_check_option" for ladiaria).
+# Configured via HOMEV4_ARTICLE_EXTRA_PREFETCH in local settings.
+_ARTICLE_EXTRA_PREFETCH = tuple(getattr(settings, 'HOMEV4_ARTICLE_EXTRA_PREFETCH', ()))
 
 
 def _block_active(block_key, saved_flag):
@@ -940,18 +948,50 @@ def build_home_data(grid_data, publication=None, layout=None):
     resolved = resolve_layout_grid_data(grid_data, publication=publication, layout=layout)
     logger.warning("  build: resolve=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
+    # --- BULK FETCH ---
+    # resolve_layout_grid_data already populated article_ids for every static block.
+    # Collect all IDs in one pass and fire a single DB query instead of one per block.
+    # lo_ultimo and apuntes_del_dia are excluded: they are always dynamic (no fixed IDs).
+    _dynamic_comp_keys = frozenset({"lo_ultimo", "apuntes_del_dia"})
+
+    _bulk_ids: set = set()
+    for _block_key in ("principal", "suplemento", "extra_articles", "especial", "suplemento_extra"):
+        _bulk_ids.update(resolved.get(_block_key, {}).get("article_ids", []))
+    for _area in resolved.get("sections", []):
+        if _area.get("active", True):
+            _bulk_ids.update(_area.get("article_ids", []))
+    for _comp in resolved.get("componentes", []):
+        if _comp.get("active", True) and _comp.get("key", "") not in _dynamic_comp_keys:
+            _bulk_ids.update(_comp.get("article_ids", []))
+
+    by_id: dict = {}
+    if _bulk_ids:
+        by_id = {
+            a.id: a for a in Article.published.filter(id__in=_bulk_ids)
+            .select_related(*_ARTICLE_AUTH_SELECT_RELATED)
+            .prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)
+        }
+    logger.warning("  build: bulk_fetch=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
+
     # IDs excluded from "Lo último": principal, suplemento, especial, recomendadas.
     # Areas are intentionally NOT excluded — an article in Deporte can still appear in Lo último.
-    static_ids = set()
+    # Built directly from resolved IDs (no article objects needed).
+    # Only active blocks contribute — inactive blocks don't occupy the pool.
+    static_ids: set = set()
+    for _block_key in ("principal", "suplemento", "extra_articles", "especial"):
+        static_ids.update(resolved.get(_block_key, {}).get("article_ids", []))
+    _se_data = resolved.get("suplemento_extra")
+    if _se_data and _block_active("suplemento_extra", _se_data.get("active", True)):
+        static_ids.update(_se_data.get("article_ids", []))
+    for _comp in resolved.get("componentes", []):
+        if _comp.get("key") in ("recomendadas_lv", "recomendadas_domingo") and _comp.get("active", True):
+            static_ids.update(_comp.get("article_ids", []))
 
     # PRINCIPAL
     principal_data = resolved.get("principal") or {}
     result["principal_active"] = _block_active("principal", principal_data.get("active", True))
     p_ids = principal_data.get("article_ids", [])
-    if p_ids:
-        by_id = {a.id: a for a in Article.published.filter(id__in=p_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
-        result["principal_articles"] = [by_id[aid] for aid in p_ids if aid in by_id]
-    static_ids.update(a.id for a in result["principal_articles"])
+    result["principal_articles"] = [by_id[aid] for aid in p_ids if aid in by_id]
     logger.warning("  build: principal=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # SUPLEMENTO
@@ -960,9 +1000,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["suplemento_active"] = _block_active("suplemento", suplemento_data.get("active", True))
     if result["suplemento_active"]:
         s_ids = suplemento_data.get("article_ids", [])
-        if s_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=s_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
-            result["suplemento_articles"] = [by_id[aid] for aid in s_ids if aid in by_id]
+        result["suplemento_articles"] = [by_id[aid] for aid in s_ids if aid in by_id]
         _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
@@ -970,27 +1008,22 @@ def build_home_data(grid_data, publication=None, layout=None):
         if layout is not None and getattr(layout, "day", None) == "sa":
             extra_ids = resolved.get("extra_articles", {}).get("article_ids", [])
             if extra_ids:
-                by_id = {a.id: a for a in Article.published.filter(id__in=extra_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
                 result["extra_articles"] = [by_id[aid] for aid in extra_ids if aid in by_id]
                 result["suplemento_title"] = "Extra"
-    static_ids.update(a.id for a in result["suplemento_articles"])
-    static_ids.update(a.id for a in result["extra_articles"])
-    # SUPLEMENTO_EXTRA — fetch articles for the template and exclude from lo_ultimo
+
+    # SUPLEMENTO_EXTRA
     se_data = resolved.get("suplemento_extra")
     result["suplemento_extra_active"] = bool(
         se_data and _block_active("suplemento_extra", se_data.get("active", True))
     )
     if result["suplemento_extra_active"]:
         se_ids = se_data.get("article_ids", [])
-        if se_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=se_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
-            result["suplemento_extra_articles"] = [by_id[aid] for aid in se_ids if aid in by_id]
+        result["suplemento_extra_articles"] = [by_id[aid] for aid in se_ids if aid in by_id]
         result["suplemento_extra_source_type"] = se_data.get("source_type", "")
         result["suplemento_extra_source_slug"] = se_data.get("source_slug", "")
         result["suplemento_extra_title"] = _area_name_by_source.get(
             (se_data.get("source_type", ""), se_data.get("source_slug", "")), ""
         )
-    static_ids.update(a.id for a in result["suplemento_extra_articles"])
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # ESPECIAL
@@ -998,10 +1031,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     result["especial_active"] = _block_active("especial", especial_data.get("active", True))
     if result["especial_active"]:
         e_ids = especial_data.get("article_ids", [])
-        if e_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=e_ids)}
-            result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
-    static_ids.update(a.id for a in result["especial_articles"])
+        result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # ÁREAS Y PUBLICACIONES — resolved dict already has all default areas merged and article_ids populated
@@ -1014,24 +1044,14 @@ def build_home_data(grid_data, publication=None, layout=None):
         if not slug or (_today_suplemento_source and (area_type, slug) == _today_suplemento_source):
             continue
         a_ids = area.get("article_ids", [])
-        if a_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=a_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
-            articles = [by_id[aid] for aid in a_ids if aid in by_id]
-        else:
-            articles = []
         result["sections"].append({
             "type": area_type,
             "slug": slug,
             "name": area.get("name", slug),
-            "articles": articles,
+            "articles": [by_id[aid] for aid in a_ids if aid in by_id],
             "section_template": _resolve_section_template(slug),
         })
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
-
-    # Recomendadas IDs into static_ids so lo_ultimo excludes them
-    for item in resolved.get("componentes", []):
-        if item.get("key") in ("recomendadas_lv", "recomendadas_domingo") and item.get("active", True):
-            static_ids.update(item.get("article_ids", []))
 
     # COMPONENTES — active ones only
     for item in resolved.get("componentes", []):
@@ -1050,11 +1070,10 @@ def build_home_data(grid_data, publication=None, layout=None):
             comp_entry["newsletters"] = _resolve_newsletter_refs(item.get("newsletter_refs", []))
             comp_entry["articles"] = []
         elif key == "lo_mas_leido":
-            # Populated hourly by sync_article_views; read from saved article_ids.
-            # Fallback to live DB query when the block has not been populated yet.
+            # Populated hourly by sync_article_views; read from saved article_ids (already in by_id).
+            # Fallback to live DB query only when the block has not been populated yet.
             c_ids = item.get("article_ids", [])
             if c_ids:
-                by_id = {a.id: a for a in Article.published.filter(id__in=c_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
                 comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
             else:
                 comp_entry["articles"] = _fetch_component_articles(key)
@@ -1082,7 +1101,7 @@ def build_home_data(grid_data, publication=None, layout=None):
                 except ImportError:
                     pass
         elif key in ("lo_ultimo", "apuntes_del_dia"):
-            # Dynamic: always fetched fresh at request time.
+            # Dynamic: always fetched fresh at request time — not covered by the bulk fetch.
             if key == "lo_ultimo":
                 articles = _fetch_component_articles(
                     key,
@@ -1101,11 +1120,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             comp_entry["articles"] = articles
         else:
             c_ids = item.get("article_ids", [])
-            if c_ids:
-                by_id = {a.id: a for a in Article.published.filter(id__in=c_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
-                comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
-            else:
-                comp_entry["articles"] = []
+            comp_entry["articles"] = [by_id[aid] for aid in c_ids if aid in by_id]
         result["componentes"].append(comp_entry)
 
     logger.warning("  build: componentes=%.1f ms", (time.perf_counter() - _tb) * 1000)
@@ -1191,7 +1206,7 @@ def _fetch_suplemento_articles(suplemento_data, exclude_ids=None):
     if saved_ids:
         if exclude_ids:
             saved_ids = [aid for aid in saved_ids if aid not in exclude_ids]
-        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     return []
 
@@ -1204,7 +1219,7 @@ def _fetch_area_articles(area_type, slug, saved_ids, exclude_ids=None):
     When exclude_ids is provided, fallback queries skip those articles (deduplication).
     """
     if saved_ids:
-        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+        by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
         return [by_id[aid] for aid in saved_ids if aid in by_id]
     if area_type == "local":
         candidates = []
@@ -1284,7 +1299,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             if candidate_ids:
                 valid_saved = {
                     a.id: a
-                    for a in Article.published.filter(id__in=candidate_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)
+                    for a in Article.published.filter(id__in=candidate_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)
                 }
             anchored = valid_saved
         else:
@@ -1295,7 +1310,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
                 if candidate_ids:
                     valid_pinned = {
                         a.id: a
-                        for a in Article.published.filter(id__in=candidate_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)
+                        for a in Article.published.filter(id__in=candidate_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)
                     }
             anchored = valid_pinned
 
@@ -1304,7 +1319,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
         dynamic_articles = []
         if dynamic_slots > 0:
             dynamic_exclude = exclude_set | set(anchored)
-            qs = Article.published.select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED).order_by("-date_published")
+            qs = Article.published.select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH).order_by("-date_published")
             qs = qs.exclude(id__in=dynamic_exclude)
             # Exclude articles from specific sources — manual pins still allowed.
             _excl_sections = getattr(
@@ -1359,7 +1374,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             # return mas_leidos(days=1, limit=5)
 
             ids = mas_leidos(days=1, limit=5)
-            articles = {a.id: a for a in Article.published.filter(id__in=ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+            articles = {a.id: a for a in Article.published.filter(id__in=ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [articles[i] for i in ids if i in articles]
         except Exception:
             logger.exception("_fetch_component_articles: lo_mas_leido failed")
@@ -1367,7 +1382,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
 
     if key == "opinion":
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         slug = getattr(settings, "HOMEV4_OPINION_CATEGORY_SLUG", "opinion")
         try:
@@ -1390,7 +1405,7 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
                 by_id = {
                     a.id: a for a in Article.published.filter(id__in=ids)
                     .select_related(*_ARTICLE_AUTH_SELECT_RELATED)
-                    .prefetch_related(*_ARTICLE_PREFETCH_RELATED)
+                    .prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)
                 }
                 return [by_id[aid] for aid in ids if aid in by_id]
         except Section.DoesNotExist:
@@ -1400,20 +1415,20 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
     # recomendadas_lv, recomendadas_domingo: fully manual — only saved articles are shown
     if key in ("recomendadas_lv", "recomendadas_domingo"):
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return []
 
     if key in ("le_monde", "lento"):
         pub_slug = "le-monde-diplomatique" if key == "le_monde" else "lento"
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         return _fetch_source_articles("publication", pub_slug, limit=2)
 
     if key == "humor":
         if saved_ids:
-            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED)}
+            by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
         slug = getattr(settings, "HOMEV4_HUMOR_SECTION_SLUG", "humor")
         try:
@@ -1533,22 +1548,9 @@ def active_layout(request, publication_slug=None):
 
         # Flatten all articles visible in the home so we can evaluate each one.
         # Principal articles + all active section articles are included.
-        # Component articles are not yet included (pending data source implementation).
-        #
-        # top_articles uses prefetch_related from the ArticleRel perspective, which does
-        # not populate main_section cache on Article instances for direct access.
-        # Re-fetch principal articles by ID with select_related so is_restricted()
-        # does not trigger lazy loads per article.
-        principal_ids = [a.id for a in home_data.get("principal_articles", [])]
-        if principal_ids:
-            principal_by_id = {
-                a.id: a for a in Article.published.filter(id__in=principal_ids)
-                .select_related(*_ARTICLE_AUTH_SELECT_RELATED)
-                .prefetch_related(*_ARTICLE_PREFETCH_RELATED)
-            }
-            all_articles = [principal_by_id[aid] for aid in principal_ids if aid in principal_by_id]
-        else:
-            all_articles = []
+        # build_home_data already fetches principal_articles with select_related +
+        # prefetch_related, so no re-fetch is needed here.
+        all_articles = list(home_data.get("principal_articles", []))
         for sec in home_data.get("sections", []):
             all_articles.extend(sec.get("articles", []))
 
