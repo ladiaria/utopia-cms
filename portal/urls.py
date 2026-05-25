@@ -390,7 +390,7 @@ else:
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
         re_path(r'^feeds/seccion/(?P<section_slug>[\w-]+)/$', LatestArticlesByCategory()),
         path('feeds/suplementos/', LatestSupplements()),
-        path('feeds/google-news-ai/', GoogleNewsAIFeed(), name='google-news-ai-rss'),
+        path('feeds/google-news-ai/', cache_page(300)(GoogleNewsAIFeed()), name='google-news-ai-rss'),
     ]
 
 if 'debug_toolbar' in settings.INSTALLED_APPS:
