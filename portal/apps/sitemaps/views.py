@@ -6,10 +6,12 @@ from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.http import Http404
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.response import TemplateResponse
+from django.views.decorators.cache import cache_page
 
 from .sitemaps import ArticleSitemap, ArticleNewsSitemap, ArticleNews48hsSitemap
 
 
+@cache_page(60 * 60)
 def index(
     request,
     template_name='sitemap_index.xml',
@@ -33,6 +35,7 @@ def index(
     return TemplateResponse(request, template_name, {'sitemaps': sites}, content_type=mimetype)
 
 
+@cache_page(60 * 60)
 def sitemap(request, section=None, template_name='sitemap.xml', mimetype='application/xml'):
 
     sitemaps = {'articles': ArticleSitemap, 'news_sitemap': ArticleNewsSitemap, 'news_48hs': ArticleNews48hsSitemap}
