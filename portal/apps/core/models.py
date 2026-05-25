@@ -2003,15 +2003,21 @@ class Article(ArticleBase):
                 # No pub given or pub matches main_section => return main section
                 return self.main_section.section
             else:
-                # Return the first match, if no matches return the main section
-                s = self.articlerel_set.filter(edition__publication=publication)[:1]
+                # order_by('position') overrides ArticleRel.Meta ordering which includes
+                # '-article__date_published' and forces an unnecessary core_article JOIN.
+                # select_related('section__category') avoids lazy category hits in render_hierarchy.
+                s = self.articlerel_set.filter(
+                    edition__publication=publication,
+                ).select_related('section__category').order_by('position')[:1]
                 return s[0].section if s else self.main_section.section
 
         elif self.sections.exists():
 
             if publication:
                 # Return the first match with the pub given or the first if no matches
-                s = self.articlerel_set.filter(edition__publication=publication)[:1]
+                s = self.articlerel_set.filter(
+                    edition__publication=publication,
+                ).select_related('section__category').order_by('position')[:1]
                 return s[0].section if s else self.sections.first()
 
             else:

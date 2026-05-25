@@ -34,8 +34,10 @@ def _run(old_ids, new_ids, edition, layout=None, user=None):
     if user is None:
         user = MagicMock()
     mock_ar = MagicMock()
+    mock_pub = MagicMock()
     with patch("homev4.views.get_current_edition", return_value=edition), \
          patch("homev4.views.ArticleRel", mock_ar), \
+         patch("homev4.views.Publication", mock_pub), \
          patch("homev4.views._write_audit_log") as mock_audit:
         _sync_principal_to_edition(old_ids, new_ids, layout, user)
     return mock_ar, mock_audit
