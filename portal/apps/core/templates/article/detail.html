@@ -122,7 +122,7 @@
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
         {% block main_photo %}
-        {% if header_display == 'FW' %}
+        {% if header_display == 'FW' %}{# FW = "Ancho completo" (full width); la alternativa es BG = "Grande" (ancho regular) #}
           <div>{# closed in line 300 #}
             <div class="fullwidth-container">
               <div class="main-photo">
@@ -130,6 +130,7 @@
                         alt="{{ article.photo_caption }}">
                   <img
                     class="ld-article__main-photo materialboxed responsive-img {{ article.photo_layout }}"
+                    src="{{ article.photo.get_700w_url }}"
                     srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_350w_url }} 350w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
                     sizes="100vw"
                     width="700"
@@ -167,6 +168,7 @@
               <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
                 <img
                   class="ld-article__main-photo responsive-img {{ article.photo_layout }}"
+                  src="{{ article.photo.get_700w_url }}"
                   srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_350w_url }} 350w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
                   sizes="100vw"
                   width="700"
@@ -182,6 +184,7 @@
               <figure class="principal" data-src="{{ article.photo.get_1200w_url }}" alt="{{ article.photo_caption }}">
                 <img
                   class="ld-article__main-photo responsive-img {{ article.photo_layout }} materialboxed"
+                  src="{{ article.photo.get_700w_url }}"
                   srcset="{{ article.photo.get_250w_url }} 250w, {{ article.photo.get_450w_url }} 450w, {{ article.photo.get_700w_url }} 700w, {{ article.photo.get_900w_url }} 900w, {{ article.photo.get_1200w_url }} 1200w"
                   sizes="100vw"
                   width="700"
