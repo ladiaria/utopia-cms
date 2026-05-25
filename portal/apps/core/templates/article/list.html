@@ -72,9 +72,9 @@
 
     {% for article in articles.object_list %}
       {% if forloop.first %}
-        {% render_card article=article variant="card_standard" img_load_lazy=False %}
+        {% render_card article=article variant="v4_cards/card_standard" img_load_lazy=False %}
       {% else %}
-        {% render_card article=article variant="card_standard" %}
+        {% render_card article=article variant="v4_cards/card_standard" %}
       {% endif %}
     {% endfor %}
 

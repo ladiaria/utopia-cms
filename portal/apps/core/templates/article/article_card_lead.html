@@ -1,9 +1,0 @@
-{% extends 'article/article_card.html' %}
-
-{% block lead %}
-  {% if article.home_lead %}
-    <div class="article__intro">{{ article.home_lead|ldmarkup|bleach }}</div>
-  {% elif article.lead %}
-    <div class="article__intro">{{ article.lead|ldmarkup|bleach }}</div>
-  {% endif %}
-{% endblock %}

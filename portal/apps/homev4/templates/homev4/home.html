@@ -35,7 +35,7 @@
     {% if articles %}
 
       {% with featured=articles.0 position=1 %}
-        {% render_card article=featured variant="card_featured_home" %}
+        {% render_card article=featured variant="v4_cards/card_featured_home" %}
       {% endwith %}
 
       {% if tarde_mode %}

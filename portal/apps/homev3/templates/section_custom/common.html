@@ -23,7 +23,7 @@
       {# 4 Article grid for section #}
       <section class="articles-grid articles-grid--scroll">
         {% for article in articles|slice:":4" %}
-          {% render_card article=article variant="article_card" %}
+          {% render_card article=article variant="v4_cards/article_card" %}
         {% endfor %}
       </section>
       {# End article grid #}
