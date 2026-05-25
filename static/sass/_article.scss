@@ -789,9 +789,10 @@ article#main-article {
       height: auto;
       display: block;
     }
-    #materialbox-overlay + .ld-article__main-photo {
-      z-index: 1002 !important;
-    }
+  }
+
+  #materialbox-overlay + img {
+    z-index: 1002 !important;
   }
 
   @media #{$medium-and-down} {
