@@ -12,6 +12,7 @@ from django.views.generic import TemplateView, RedirectView
 from django.contrib import admin
 from django.contrib.sites.models import Site
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views.decorators.cache import cache_page
 from django.views.static import serve
 
 from core.models import Article, Publication, Category, Section, Journalist, get_current_edition, get_latest_edition
@@ -383,7 +384,7 @@ else:
         GoogleNewsAIFeed,
     )
     urlpatterns += [
-        path('feeds/articulos/', LatestArticles(), name='ultimos-articulos-rss'),
+        path('feeds/articulos/', cache_page(300)(LatestArticles()), name='ultimos-articulos-rss'),
         path('feeds/ediciones/', LatestEditions()),
         re_path(r'^feeds/articulos_rss_72hs\.xml$', LatestArticles72hs(), name='articles_rss_72hs'),
         re_path(r'^feeds/periodista/(?P<journalist_slug>[\w-]+)/$', ArticlesByJournalist()),
