@@ -5,7 +5,7 @@
   {% with total=secondary|length %}
     {% for article in secondary %}
       {% with slider_class=forloop.counter|slider_position_class:total position=forloop.counter0|add:2 %}
-        {% render_card article=article variant="card_secondary_manana_home" %}
+        {% render_card article=article variant="v4_cards/card_secondary_manana_home" %}
       {% endwith %}
     {% endfor %}
   {% endwith %}

@@ -7,7 +7,7 @@
       <div class="ld-grid-3-6">
         {% for article in articles %}
           {% with hide_date_published=True %}
-            {% render_card article=article variant="card_tertiary_home" %}
+            {% render_card article=article variant="v4_cards/card_tertiary_home" %}
           {% endwith %}
           {% if not forloop.last and forloop.counter|divisibleby:3 %}<hr>{% endif %}
         {% endfor %}

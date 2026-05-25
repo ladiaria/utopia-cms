@@ -3,7 +3,7 @@
 {% if art_count > 0 and is_portada %}
   <div class="articles-grid articles-grid--scroll">
     {% for article in articles %}
-      {% render_card article=article variant="article_card" %}
+      {% render_card article=article variant="v4_cards/article_card" %}
     {% endfor %}
   </div>
 {% endif %}
