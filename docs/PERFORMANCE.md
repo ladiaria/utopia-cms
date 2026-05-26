@@ -6,6 +6,7 @@ This document tracks performance investigations and the fixes applied.
 
 ## RSS feed `feeds/articulos/` — slow response in production (>2.5s)
 
+**Date:** 2026-05-25
 **Branch:** `perf/feed-performance`
 
 ### Root causes identified
@@ -55,3 +56,37 @@ change at most once a day, so these results are safe to cache for several minute
 Both caches use the 300-second default. If a new edition is published and the feed must reflect it
 immediately, run `python -W ignore manage.py clear_cache` (the `runserver` script does this
 automatically on restart).
+
+---
+
+## `/masleidos/` — cache stampede on every request (>4s under load)
+
+**Date:** 2026-05-26
+**Branch:** `perf/masleidos-cache-fix`
+
+### Root cause identified
+
+`index` view called `mas_leidos_fullcontent(request)` directly as a Python function. The
+`@cache_page` decorator on `mas_leidos_fullcontent` only intercepts requests routed through
+Django's URL dispatcher — a direct Python call bypasses it entirely. This meant every visit to
+`/masleidos/` executed three raw SQL aggregation queries (daily, weekly, monthly views counts)
+with no caching, regardless of traffic volume.
+
+Under high load this caused a cache stampede: multiple workers hitting the same heavy queries
+simultaneously, producing response times of 4–8 seconds observed in uwsgi logs.
+
+### Fix applied
+
+#### `core/views/masleidos.py`
+- Extracted `_get_full_content_ids()`: computes the three ranking lists and stores the result in
+  Memcached under `masleidos_full_content` with a 600-second TTL (same as the previous
+  `@cache_page` TTL). On cache hit the three SQL queries are skipped entirely.
+- `index` now calls `_get_full_content_ids()` directly instead of calling the view function.
+- `mas_leidos_fullcontent` (the JSON endpoint) also delegates to `_get_full_content_ids()`, so
+  both endpoints share the same cached data and the queries run at most once per 10 minutes.
+- Removed orphaned `from json import loads` import.
+
+### Expected impact
+- Cold request (cache miss): three SQL queries run once, result cached for 10 minutes.
+- Warm request (cache hit): zero SQL queries, data served from Memcached.
+- Cache stampede eliminated: concurrent requests all hit the same Memcached key.
