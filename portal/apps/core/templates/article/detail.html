@@ -115,7 +115,7 @@
 {% block content %}
   {% include 'profile/notification_box.html' %}
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <article id="main-article" class="{{ header_display }} {{ publication.slug }} ld-article">
 
       {# TODO: - apply this 'render_allowed' condition also in all places that render article's photos #}

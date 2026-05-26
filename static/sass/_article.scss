@@ -1663,3 +1663,14 @@ header.with-article-counter-container {
     background: #ff5c8d;
   }
 }
+
+// El <main> del artículo lleva id="main-content" (target del skip link de
+// accesibilidad). Eso hace que matchee la regla global de _utopia_global.scss
+// (main#main-content { padding-top: 16px } en $small-and-down), que no aplica
+// al artículo porque article#main-article ya maneja su propio espaciado.
+// La neutralizamos para no duplicar el padding superior en celulares.
+@media #{$small-and-down} {
+  main#main-content {
+    padding-top: 0;
+  }
+}
