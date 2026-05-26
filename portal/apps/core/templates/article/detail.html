@@ -293,11 +293,11 @@
         <div class="left-buttons">
           {% if user.is_authenticated %}
             {% if not article_restricted_cf or restricted_access %}
-              <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}">
+              <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}" aria-label="Guardar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
                 <span>Guardar</span>
               </button>
-              <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}">
+              <button class="ld-audio__action-bar-read-later-saved{% if not followed %} hidden{% endif %}" aria-label="Guardado">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
                 <span>Guardado</span>
               </button>
@@ -308,12 +308,13 @@
           {% endif %}
         </div>
         <div class="right-buttons">
-          <button id="action-bar__share-button" class="">
+          <button id="action-bar__share-button" class="" aria-label="Compartir">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" fill-rule="evenodd" d="M15.667 6.833h-2.334v-1h2.501c.459 0 .833.372.833.83v10.84a.833.833 0 0 1-.83.83H4.163a.834.834 0 0 1-.83-.83V6.663a.833.833 0 0 1 .833-.83h2.5v1H4.334v10.5h11.334zM10.5 3.552v7.698h-1V3.552L7.76 5.29l-.707-.708 2.358-2.356a.833.833 0 0 1 1.178 0l2.358 2.356-.708.708z" clip-rule="evenodd"/></svg>
             <span>Compartir</span>
             <div class="popup-compartir">
               <ul>
                 <li>
+                  <span class="hide" id="url">{{ SITE_URL_SD }}{{ article.get_absolute_url }}</span>
                   <span class="copy-link-to-clipboard" onclick="copyToClipboard('#url', '', true)" aria-label="Copiar enlace">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#262626" d="M14.829 16.242 12 19.071q-1.467 1.467-3.535 1.466-2.07-.001-3.536-1.466t-1.466-3.536T4.929 12l2.829-2.83 1.414 1.414-2.829 2.829a2.9 2.9 0 0 0-.884 2.121q0 1.237.884 2.122.885.883 2.122.883 1.238 0 2.12-.883l2.83-2.829zm-4.95-.707-1.414-1.414 5.656-5.657 1.415 1.414zm6.364-.707-1.414-1.414 2.828-2.829q.885-.884.884-2.12 0-1.239-.884-2.122a2.9 2.9 0 0 0-2.121-.884q-1.237 0-2.122.884L10.586 9.17 9.172 7.757 12 4.929q1.467-1.468 3.536-1.468t3.535 1.468 1.467 3.536T19.072 12z"/></svg>
                     <span>Copiar link</span>
@@ -346,7 +347,7 @@
               </ul>
             </div>
           </button>
-          <button class="action-bar-comment-btn">
+          <button class="action-bar-comment-btn" aria-label="Comentar">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
             <span>Comentar</span>
           </button>
