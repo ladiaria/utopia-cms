@@ -2,7 +2,7 @@
 from django.urls import path, re_path
 from django.views.generic import TemplateView
 
-from core.views.edition import edition_detail, edition_download, rawpic_cover
+from core.views.edition import edition_detail, edition_download, rawpic_cover, rawpic_papel_cover
 
 
 urlpatterns = [
@@ -30,4 +30,5 @@ urlpatterns = [
     ),
     path('descargar/suscribite/', edition_download, name='edition_download_subscribe'),
     path('imagenportada/', rawpic_cover, name='rawpic_cover'),
+    path('imagenportada/papel/', rawpic_papel_cover, name='rawpic_papel_cover'),
 ]

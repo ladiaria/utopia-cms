@@ -113,3 +113,14 @@ def rawpic_cover(request):
             return HttpResponse(open(edition.cover.path, "rb").read(), content_type="image/jpeg")
         except IOError:
             raise Http404
+
+
+def rawpic_papel_cover(request):
+    from homev4.views import _get_papel_edition
+    edition = _get_papel_edition()
+    if not edition:
+        raise Http404
+    try:
+        return HttpResponse(open(edition.cover.path, "rb").read(), content_type="image/jpeg")
+    except (IOError, ValueError):
+        raise Http404
