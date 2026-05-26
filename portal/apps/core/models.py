@@ -19,6 +19,7 @@ import w3storage
 import re
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
@@ -969,7 +970,6 @@ class Section(Model):
         devuelve los últimos 6 articulos de la sección que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        from django.core.cache import cache
         cache_key = f"related_{self.id}_{exclude_id}"
         result = cache.get(cache_key)
         if result is None:
@@ -994,7 +994,6 @@ class Section(Model):
         devuelve los últimos 6 articulos de la categoría que acepten ser
         relacionados excluyendo al que se le pasa por parametro.
         """
-        from django.core.cache import cache
         cache_key = f"related_cat_{category}_{exclude_id}"
         result = cache.get(cache_key)
         if result is None:
@@ -1023,7 +1022,6 @@ class Section(Model):
         """
         if not settings.CORE_ENABLE_RELATED_ARTICLES:
             return []
-        from django.core.cache import cache
         cache_key = f"related_pub_{publication}_{exclude_id}"
         result = cache.get(cache_key)
         if result is None:
@@ -1590,6 +1588,8 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_caption(self):
+        if not self.photo:
+            return None
         result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
         if self.photo_author:
             result += ' · %s: %s' % (self.photo_type, self.photo_author)
@@ -2660,26 +2660,35 @@ def get_current_feeds():
     """
     NOTE: if no current_edition found, next editions are taken using "today" as date contition.
     """
-    # editions for "root" publications (current and "next")
-    today, current_edition = now().date(), get_current_edition()
-    next_editions = Edition.objects.filter(
-        publication__public=True,
-        publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
-        date_published__gt=current_edition.date_published if current_edition else today,
-    ).order_by('date_published')
-    editions_ids = ([str(current_edition.id)] if current_edition else []) + (
-        [str(next_editions[0].id)] if next_editions else []
-    )
+    # Cache edition IDs for 5 minutes — editions change at most once a day, so 300s is safe.
+    cache_key = 'get_current_feeds_edition_ids'
+    editions_ids = cache.get(cache_key)
 
-    # editions for all the other publications (current and "next")
-    for p in Publication.objects.filter(public=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
-        current_edition = get_current_edition(p)
+    if editions_ids is None:
+        today = now().date()
+
+        # editions for "root" publications (current and "next")
+        current_edition = get_current_edition()
         next_editions = Edition.objects.filter(
-            publication=p, date_published__gt=current_edition.date_published if current_edition else today
+            publication__public=True,
+            publication__slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL,
+            date_published__gt=current_edition.date_published if current_edition else today,
         ).order_by('date_published')
-        editions_ids += ([str(current_edition.id)] if current_edition else []) + (
+        editions_ids = ([str(current_edition.id)] if current_edition else []) + (
             [str(next_editions[0].id)] if next_editions else []
         )
+
+        # editions for all the other publications (current and "next")
+        for p in Publication.objects.filter(public=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL):
+            current_edition = get_current_edition(p)
+            next_editions = Edition.objects.filter(
+                publication=p, date_published__gt=current_edition.date_published if current_edition else today
+            ).order_by('date_published')
+            editions_ids += ([str(current_edition.id)] if current_edition else []) + (
+                [str(next_editions[0].id)] if next_editions else []
+            )
+
+        cache.set(cache_key, editions_ids, 300)
 
     return Article.published.extra(
         where=[
@@ -2687,7 +2696,9 @@ def get_current_feeds():
             'core_articlerel.edition_id IN (%s)' % ','.join(editions_ids),
         ],
         tables=['core_articlerel'],
-    ).distinct()
+    ).distinct().select_related(
+        'photo', 'photo__extended', 'photo__extended__photographer',
+    ).prefetch_related('byline', 'sections')
 
 
 class DeviceSubscribed(Model):
