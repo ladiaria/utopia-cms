@@ -1662,3 +1662,27 @@ header.with-article-counter-container {
     background: #ff5c8d;
   }
 }
+
+// Foto principal: evita el flash del placeholder/glyph nativo de "imagen rota"
+// que el navegador pinta en la caja reservada (width/height) mientras descarga.
+// Gateado en html.js: sin JS la imagen se muestra normal (degradación elegante).
+// El JS de detail.html agrega .is-loaded en el evento load (o si ya está cacheada).
+html.js .ld-article__main-photo {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+
+  &.is-loaded {
+    opacity: 1;
+  }
+}
+
+// El <main> del artículo lleva id="main-content" (target del skip link de
+// accesibilidad). Eso hace que matchee la regla global de _utopia_global.scss
+// (main#main-content { padding-top: 16px } en $small-and-down), que no aplica
+// al artículo porque article#main-article ya maneja su propio espaciado.
+// La neutralizamos para no duplicar el padding superior en celulares.
+@media #{$small-and-down} {
+  main#main-content {
+    padding-top: 0;
+  }
+}
