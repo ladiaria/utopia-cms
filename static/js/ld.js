@@ -459,6 +459,31 @@
       loadComments();
     }
 
+    // Fetch comment count asynchronously via Django proxy endpoint
+    (function fetchCommentCount() {
+      const coralStream = qs("#coral_talk_stream");
+      if (!coralStream) return;
+      const articleId = coralStream.getAttribute("data-article-id");
+      if (!articleId) return;
+
+      fetch("/articulo/" + articleId + "/comment-count/")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          const count = data && data.count;
+          if (!count) return;
+          const btnComments = qs(".btn-comments");
+          if (btnComments) {
+            btnComments.querySelector("p").innerHTML =
+              "<span>" + count + "</span> <span>comentario" + (count !== 1 ? "s" : "") + "</span>";
+          }
+          const upperP = qs("#comentarios .upper-content p");
+          if (upperP) {
+            upperP.textContent = "Comentarios (" + count + ")";
+          }
+        })
+        .catch(function () {});
+    })();
+
     const commentsContainer = qs("#comentarios");
     if (commentsContainer) {
       commentsContainer.addEventListener(
