@@ -124,8 +124,13 @@ was never revisited.
   Coral load).
 - uwsgi workers are no longer blocked waiting for Coral responses.
 
-### Follow-up: async comment count via JS
-The template already embeds `data-talk-url` and `data-article-id` on the Coral container element
-(line 704 of `article/detail.html`). A small JS snippet could query Coral's GraphQL API after
-page load and update the button/header count asynchronously — zero blocking, same UX as before.
-Not implemented yet; tracked as a follow-up.
+### Async comment count via JS
+The template embeds `data-talk-url` and `data-article-id` on the Coral container element. A
+self-invoking `fetchCommentCount()` function was added to `portal/static/js/ld.js` that runs
+after page load, queries Coral's GraphQL API (`story { commentCount }`) without authentication,
+and updates both the floating action button and the comments section header with the real count.
+The UX is identical to before: the count appears a moment after the page renders instead of
+being baked into the HTML.
+
+> **Note:** needs testing against the Coral instance in the test environment to confirm the
+> `commentCount` field is available on the version of Coral in use.
