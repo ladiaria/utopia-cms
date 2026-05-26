@@ -90,7 +90,12 @@ class TrackingFakeQS:
 
     # Assertion helpers
     def prefetch_was_called_with(self, *args):
-        return ("prefetch_related", args) in self._log
+        # Subset check: true if any prefetch_related call included all given args.
+        # Extra args (e.g. Prefetch objects added by callers) are allowed.
+        for call_name, call_args in self._log:
+            if call_name == "prefetch_related" and all(a in call_args for a in args):
+                return True
+        return False
 
     def select_was_called_with(self, *args):
         return ("select_related", args) in self._log
