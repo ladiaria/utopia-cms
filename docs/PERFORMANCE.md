@@ -130,7 +130,7 @@ the user auth token. A thin Django proxy endpoint was added instead:
 
 - **`GET /articulo/<id>/comment-count/`** (`coral_comment_count` view in `core/views/article.py`)
   calls Coral's GraphQL API server-side using `TALK_API_TOKEN`, caches the result in Memcached
-  under `coral_comment_count_<id>` with a 300-second TTL, and returns `{"count": N}`.
+  under `coral_comment_count_<id>` with a 120-second TTL, and returns `{"count": N}`.
 - On failure, retries up to 2 times with exponential backoff (0.5s, 1s) before returning 0.
 - A `fetchCommentCount()` IIFE in `static/js/ld.js` calls this endpoint after page load and
   updates the comments button and section header with the real count. The page renders
