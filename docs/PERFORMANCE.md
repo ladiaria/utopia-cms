@@ -124,13 +124,14 @@ was never revisited.
   Coral load).
 - uwsgi workers are no longer blocked waiting for Coral responses.
 
-### Async comment count via JS
-The template embeds `data-talk-url` and `data-article-id` on the Coral container element. A
-self-invoking `fetchCommentCount()` function was added to `portal/static/js/ld.js` that runs
-after page load, queries Coral's GraphQL API (`story { commentCount }`) without authentication,
-and updates both the floating action button and the comments section header with the real count.
-The UX is identical to before: the count appears a moment after the page renders instead of
-being baked into the HTML.
+### Follow-up: async comment count via JS — not implemented
+Coral's GraphQL API returns `RAW_QUERY_NOT_AUTHORIZED` for all unauthenticated queries, and also
+for queries with the user auth token. Only the official Coral embed JS (loaded via
+`assets/js/embed.js`) is authorized to query the API. A direct `fetch()` from Django-rendered JS
+is blocked regardless of token.
 
-> **Note:** needs testing against the Coral instance in the test environment to confirm the
-> `commentCount` field is available on the version of Coral in use.
+Options for future work:
+- Add a thin Django endpoint that proxies the count query using the server-side `TALK_API_TOKEN`
+  (admin token), with a short Memcached TTL per article ID.
+- Listen to Coral embed events (`events.on(...)`) after `Coral.createStreamEmbed()` to extract
+  the count from the already-loaded widget — avoids a second round-trip entirely.

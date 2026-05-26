@@ -459,33 +459,23 @@
       loadComments();
     }
 
-    // Fetch comment count from Coral asynchronously and update the UI
+    // Fetch comment count asynchronously via Django proxy endpoint
     (function fetchCommentCount() {
       const coralStream = qs("#coral_talk_stream");
       if (!coralStream) return;
-      const talkURL = coralStream.getAttribute("data-talk-url");
-      const storyID = coralStream.getAttribute("data-article-id");
-      if (!talkURL || !storyID) return;
+      const articleId = coralStream.getAttribute("data-article-id");
+      if (!articleId) return;
 
-      fetch(talkURL + "api/graphql", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: "query GetCount($id:ID!){story(id:$id){commentCount}}",
-          variables: { id: storyID }
-        })
-      })
+      fetch("/articulo/" + articleId + "/comment-count/")
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          const count = data && data.data && data.data.story && data.data.story.commentCount;
+          const count = data && data.count;
           if (!count) return;
-          // update the floating action button
           const btnComments = qs(".btn-comments");
           if (btnComments) {
             btnComments.querySelector("p").innerHTML =
               "<span>" + count + "</span><span>comentario" + (count !== 1 ? "s" : "") + "</span>";
           }
-          // update the comments section header
           const upperP = qs("#comentarios .upper-content p");
           if (upperP) {
             upperP.textContent = "Comentarios (" + count + ")";
