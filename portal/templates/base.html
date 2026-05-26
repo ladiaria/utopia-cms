@@ -10,7 +10,6 @@
 <html class="no-js" lang="{{ local_lang }}-{{ LOCAL_COUNTRY }}">
 {% endblock %}
   <head>
-    <script>document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/, 'js');</script>
     {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
     {% if PWA_ENABLED %}
       <!-- Progressive Web App (PWA) -->
