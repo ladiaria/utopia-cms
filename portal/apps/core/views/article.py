@@ -590,3 +590,36 @@ def perplexity_ask(request):
                     pass
         return JsonResponse(response)
     return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)
+
+
+_CORAL_COUNT_CACHE_PREFIX = 'coral_comment_count_'
+_CORAL_COUNT_TTL = 300
+
+
+def coral_comment_count(request, article_id):
+    from django.core.cache import cache
+    cache_key = _CORAL_COUNT_CACHE_PREFIX + str(article_id)
+    count = cache.get(cache_key)
+    if count is None:
+        talk_url = getattr(settings, 'TALK_URL', None)
+        talk_token = getattr(settings, 'TALK_API_TOKEN', None)
+        if talk_url and talk_token:
+            try:
+                resp = requests.post(
+                    talk_url + 'api/graphql',
+                    headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + talk_token},
+                    json={
+                        'query': 'query GetCount($id:ID!){story(id:$id){commentCounts{totalPublished}}}',
+                        'variables': {'id': str(article_id)},
+                    },
+                    timeout=2,
+                )
+                data = resp.json()
+                story = data.get('data', {}).get('story') or {}
+                count = (story.get('commentCounts') or {}).get('totalPublished', 0)
+            except Exception:
+                count = 0
+        else:
+            count = 0
+        cache.set(cache_key, count, _CORAL_COUNT_TTL)
+    return JsonResponse({'count': count})
