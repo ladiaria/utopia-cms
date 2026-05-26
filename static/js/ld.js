@@ -474,7 +474,7 @@
           const btnComments = qs(".btn-comments");
           if (btnComments) {
             btnComments.querySelector("p").innerHTML =
-              "<span>" + count + "</span><span>comentario" + (count !== 1 ? "s" : "") + "</span>";
+              "<span>" + count + "</span> <span>comentario" + (count !== 1 ? "s" : "") + "</span>";
           }
           const upperP = qs("#comentarios .upper-content p");
           if (upperP) {
