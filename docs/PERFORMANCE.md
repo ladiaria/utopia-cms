@@ -90,3 +90,42 @@ simultaneously, producing response times of 4–8 seconds observed in uwsgi logs
 - Cold request (cache miss): three SQL queries run once, result cached for 10 minutes.
 - Warm request (cache hit): zero SQL queries, data served from Memcached.
 - Cache stampede eliminated: concurrent requests all hit the same Memcached key.
+
+---
+
+## Article detail — blocking Coral API call on every request (>4s under load)
+
+**Date:** 2026-05-26
+**Branch:** `perf/remove-coral-sync-call`
+
+### Root cause identified
+
+`article_detail()` (`core/views/article.py`) made a synchronous `requests.post()` to the Coral
+Talk GraphQL API on every article page render to fetch `comments_count`. This call blocked the
+uwsgi worker for the full Coral round-trip time. Under load (or whenever Coral had any latency)
+this was the primary contributor to 4–5s response times observed for article pages.
+
+The call has been in place since 2019 and the original commit already contained a
+`# TODO: check talk API for a count operation` note — it was a provisional implementation that
+was never revisited.
+
+### Fix applied
+
+#### `core/views/article.py` — `article_detail()`
+- Removed the `try/except` block that called the Coral GraphQL API.
+- `comments_count` is now hardcoded to `0` server-side.
+- The article templates already had `{% if comments_count > 0 %}...{% else %}Comentar{% endif %}`
+  fallback branches, so the UI degrades gracefully: the button shows "Comentar" and the header
+  shows "Comentarios" without a count. Coral renders the real count client-side when the widget
+  loads anyway.
+
+### Expected impact
+- Every article page request saves one outbound HTTP call (typically 200–3000ms depending on
+  Coral load).
+- uwsgi workers are no longer blocked waiting for Coral responses.
+
+### Follow-up: async comment count via JS
+The template already embeds `data-talk-url` and `data-article-id` on the Coral container element
+(line 704 of `article/detail.html`). A small JS snippet could query Coral's GraphQL API after
+page load and update the button/header count asynchronously — zero blocking, same UX as before.
+Not implemented yet; tracked as a follow-up.
