@@ -593,7 +593,7 @@ def perplexity_ask(request):
 
 
 _CORAL_COUNT_CACHE_PREFIX = 'coral_comment_count_'
-_CORAL_COUNT_TTL = 300
+_CORAL_COUNT_TTL = 120
 _CORAL_COUNT_RETRIES = 2
 _CORAL_COUNT_RETRY_BACKOFF = 0.5  # seconds; doubles on each attempt
 
