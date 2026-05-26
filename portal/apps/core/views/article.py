@@ -594,6 +594,27 @@ def perplexity_ask(request):
 
 _CORAL_COUNT_CACHE_PREFIX = 'coral_comment_count_'
 _CORAL_COUNT_TTL = 300
+_CORAL_COUNT_RETRIES = 2
+_CORAL_COUNT_RETRY_BACKOFF = 0.5  # seconds; doubles on each attempt
+
+
+def _fetch_coral_comment_count(talk_url, talk_token, article_id):
+    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + talk_token}
+    payload = {
+        'query': 'query GetCount($id:ID!){story(id:$id){commentCounts{totalPublished}}}',
+        'variables': {'id': str(article_id)},
+    }
+    delay = _CORAL_COUNT_RETRY_BACKOFF
+    for attempt in range(_CORAL_COUNT_RETRIES + 1):
+        try:
+            resp = requests.post(talk_url + 'api/graphql', headers=headers, json=payload, timeout=2)
+            story = resp.json().get('data', {}).get('story') or {}
+            return (story.get('commentCounts') or {}).get('totalPublished', 0)
+        except Exception:
+            if attempt < _CORAL_COUNT_RETRIES:
+                time.sleep(delay)
+                delay *= 2
+    return 0
 
 
 def coral_comment_count(request, article_id):
@@ -603,23 +624,6 @@ def coral_comment_count(request, article_id):
     if count is None:
         talk_url = getattr(settings, 'TALK_URL', None)
         talk_token = getattr(settings, 'TALK_API_TOKEN', None)
-        if talk_url and talk_token:
-            try:
-                resp = requests.post(
-                    talk_url + 'api/graphql',
-                    headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + talk_token},
-                    json={
-                        'query': 'query GetCount($id:ID!){story(id:$id){commentCounts{totalPublished}}}',
-                        'variables': {'id': str(article_id)},
-                    },
-                    timeout=2,
-                )
-                data = resp.json()
-                story = data.get('data', {}).get('story') or {}
-                count = (story.get('commentCounts') or {}).get('totalPublished', 0)
-            except Exception:
-                count = 0
-        else:
-            count = 0
+        count = _fetch_coral_comment_count(talk_url, talk_token, article_id) if talk_url and talk_token else 0
         cache.set(cache_key, count, _CORAL_COUNT_TTL)
     return JsonResponse({'count': count})
