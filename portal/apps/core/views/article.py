@@ -245,21 +245,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         else:
             report_form = feedback_form(article=article, request=request)
 
-    # comments count/widget
-    try:
-        talk_url = getattr(settings, 'TALK_URL', None)
-        if talk_url and article.allow_comments:
-            talk_story = requests.post(
-                talk_url + 'api/graphql',
-                headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
-                data='{"query":"query GetComments($id:ID!){story(id: $id){comments{nodes{status}}}}","variables":'
-                '{"id":%d},"operationName":"GetComments"}' % article.id,
-            ).json()['data']['story']
-            comments_count = len(talk_story['comments']['nodes']) if talk_story else 0
-        else:
-            comments_count = 0
-    except (ConnectionError, ValueError, KeyError):
-        comments_count = 0
+    comments_count = 0
 
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
@@ -607,3 +593,40 @@ def perplexity_ask(request):
                     pass
         return JsonResponse(response)
     return JsonResponse({"error": True, "message": "Método no permitido."}, status=405)
+
+
+_CORAL_COUNT_CACHE_PREFIX = 'coral_comment_count_'
+_CORAL_COUNT_TTL = 120
+_CORAL_COUNT_RETRIES = 2
+_CORAL_COUNT_RETRY_BACKOFF = 0.5  # seconds; doubles on each attempt
+
+
+def _fetch_coral_comment_count(talk_url, talk_token, article_id):
+    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + talk_token}
+    payload = {
+        'query': 'query GetCount($id:ID!){story(id:$id){commentCounts{totalPublished}}}',
+        'variables': {'id': str(article_id)},
+    }
+    delay = _CORAL_COUNT_RETRY_BACKOFF
+    for attempt in range(_CORAL_COUNT_RETRIES + 1):
+        try:
+            resp = requests.post(talk_url + 'api/graphql', headers=headers, json=payload, timeout=2)
+            story = resp.json().get('data', {}).get('story') or {}
+            return (story.get('commentCounts') or {}).get('totalPublished', 0)
+        except Exception:
+            if attempt < _CORAL_COUNT_RETRIES:
+                time.sleep(delay)
+                delay *= 2
+    return 0
+
+
+def coral_comment_count(request, article_id):
+    from django.core.cache import cache
+    cache_key = _CORAL_COUNT_CACHE_PREFIX + str(article_id)
+    count = cache.get(cache_key)
+    if count is None:
+        talk_url = getattr(settings, 'TALK_URL', None)
+        talk_token = getattr(settings, 'TALK_API_TOKEN', None)
+        count = _fetch_coral_comment_count(talk_url, talk_token, article_id) if talk_url and talk_token else 0
+        cache.set(cache_key, count, _CORAL_COUNT_TTL)
+    return JsonResponse({'count': count})
