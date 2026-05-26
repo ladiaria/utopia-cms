@@ -1588,6 +1588,8 @@ class ArticleBase(Model, CT):
 
     @property
     def photo_caption(self):
+        if not self.photo:
+            return None
         result = self.photo.caption or "Foto principal del artículo '%s'" % remove_markup(self.headline)
         if self.photo_author:
             result += ' · %s: %s' % (self.photo_type, self.photo_author)
