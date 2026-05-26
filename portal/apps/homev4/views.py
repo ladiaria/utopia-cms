@@ -166,7 +166,27 @@ def get_default_publication():
 
 
 _PAPEL_CACHE_KEY = "homev4:papel_url"
+
 _PAPEL_DAY_NAMES = {0: "lunes", 1: "martes", 2: "miercoles", 3: "jueves", 4: "viernes", 5: "sabado", 6: "domingo"}
+
+
+def _get_papel_edition():
+    """Return the Edition to use for papel URL and cover: today's or most recent with PDF."""
+    today = timezone.localdate()
+    publication = get_default_publication()
+    if today.weekday() >= 5:
+        # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
+        fds_pub = Publication.objects.filter(slug="findesemana").first()
+        return (
+            Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
+            if fds_pub else None
+        ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+    else:
+        # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
+        return (
+            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        )
 
 
 def get_papel_url():
@@ -180,22 +200,7 @@ def get_papel_url():
         return cached
 
     try:
-        today = timezone.localdate()
-        publication = get_default_publication()
-        weekday = today.weekday()
-        if weekday >= 5:
-            # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
-            fds_pub = Publication.objects.filter(slug="findesemana").first()
-            edition = (
-                Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
-                if fds_pub else None
-            ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-        else:
-            # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
-            edition = (
-                Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
-                or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-            )
+        edition = _get_papel_edition()
         if not edition:
             return settings.PAPEL_FALLBACK_URL
         url = (
@@ -210,6 +215,7 @@ def get_papel_url():
         return url
     except Exception:
         return settings.PAPEL_FALLBACK_URL
+
 
 
 def _propagate_article_ids(source_layout, source_grid):
