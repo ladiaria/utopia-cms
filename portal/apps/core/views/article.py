@@ -245,21 +245,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
         else:
             report_form = feedback_form(article=article, request=request)
 
-    # comments count/widget
-    try:
-        talk_url = getattr(settings, 'TALK_URL', None)
-        if talk_url and article.allow_comments:
-            talk_story = requests.post(
-                talk_url + 'api/graphql',
-                headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.TALK_API_TOKEN},
-                data='{"query":"query GetComments($id:ID!){story(id: $id){comments{nodes{status}}}}","variables":'
-                '{"id":%d},"operationName":"GetComments"}' % article.id,
-            ).json()['data']['story']
-            comments_count = len(talk_story['comments']['nodes']) if talk_story else 0
-        else:
-            comments_count = 0
-    except (ConnectionError, ValueError, KeyError):
-        comments_count = 0
+    comments_count = 0
 
     publication = article.main_section.edition.publication if article.main_section else None
     context = {
