@@ -34,7 +34,7 @@ change at most once a day, so these results are safe to cache for several minute
 #### `core/models.py` — `get_current_feeds()`
 - Added `from django.core.cache import cache` to the top-level imports (also removed three
   redundant inline imports of the same symbol from `Section` methods).
-- The computed list of edition IDs is now stored in Memcached under the key
+- The computed list of edition IDs is now stored in the Django cache under the key
   `get_current_feeds_edition_ids` with a 300-second TTL. Subsequent requests within that window
   skip the publication loop entirely.
 - The returned queryset now chains `.select_related('photo', 'photo__extended',
@@ -43,14 +43,14 @@ change at most once a day, so these results are safe to cache for several minute
 
 #### `urls.py` — `feeds/articulos/` URL
 - Wrapped `LatestArticles()` with `cache_page(300)` so the full rendered XML response is cached
-  in Memcached for 5 minutes. Requests within that window return immediately without hitting the
+  for 5 minutes. Requests within that window return immediately without hitting the
   database at all.
 - `cache_page` import added alongside the other `django.views` imports.
 
 ### Expected impact
 - Cold request (cache miss): query count drops from ~2N+3+90–120 to ~2N+3+3 (select + 2 prefetch
   JOINs). Typical time should fall well under 1 second.
-- Warm request (cache hit on `cache_page`): <10 ms, served entirely from Memcached.
+- Warm request (cache hit on `cache_page`): <10 ms, served entirely from cache.
 
 ### Cache invalidation note
 Both caches use the 300-second default. If a new edition is published and the feed must reflect it
@@ -79,7 +79,7 @@ simultaneously, producing response times of 4–8 seconds observed in uwsgi logs
 
 #### `core/views/masleidos.py`
 - Extracted `_get_full_content_ids()`: computes the three ranking lists and stores the result in
-  Memcached under `masleidos_full_content` with a 600-second TTL (same as the previous
+  cache under `masleidos_full_content` with a 600-second TTL (same as the previous
   `@cache_page` TTL). On cache hit the three SQL queries are skipped entirely.
 - `index` now calls `_get_full_content_ids()` directly instead of calling the view function.
 - `mas_leidos_fullcontent` (the JSON endpoint) also delegates to `_get_full_content_ids()`, so
@@ -88,8 +88,8 @@ simultaneously, producing response times of 4–8 seconds observed in uwsgi logs
 
 ### Expected impact
 - Cold request (cache miss): three SQL queries run once, result cached for 10 minutes.
-- Warm request (cache hit): zero SQL queries, data served from Memcached.
-- Cache stampede eliminated: concurrent requests all hit the same Memcached key.
+- Warm request (cache hit): zero SQL queries, data served from cache.
+- Cache stampede eliminated: concurrent requests all hit the same cache key.
 
 ---
 
@@ -129,7 +129,7 @@ Coral's GraphQL API blocks direct queries from client JS (`RAW_QUERY_NOT_AUTHORI
 the user auth token. A thin Django proxy endpoint was added instead:
 
 - **`GET /articulo/<id>/comment-count/`** (`coral_comment_count` view in `core/views/article.py`)
-  calls Coral's GraphQL API server-side using `TALK_API_TOKEN`, caches the result in Memcached
+  calls Coral's GraphQL API server-side using `TALK_API_TOKEN`, caches the result
   under `coral_comment_count_<id>` with a 120-second TTL, and returns `{"count": N}`.
 - On failure, retries up to 2 times with exponential backoff (0.5s, 1s) before returning 0.
 - A `fetchCommentCount()` IIFE in `static/js/ld.js` calls this endpoint after page load and
