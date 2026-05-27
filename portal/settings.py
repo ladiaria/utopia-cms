@@ -651,7 +651,13 @@ COMPRESS_OFFLINE_CONTEXT['base_template'] = PORTAL_BASE_TEMPLATE
 if locals().get("DEBUG_TOOLBAR_ENABLE"):
     # NOTE when enabled, you need to: pip install django-debug-toolbar && ./manage.py collectstatic
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE = MIDDLEWARE[:9] + ('debug_toolbar.middleware.DebugToolbarMiddleware',) + MIDDLEWARE[9:]
+    _mw = list(MIDDLEWARE)
+    try:
+        _gzip_idx = _mw.index("django.middleware.gzip.GZipMiddleware")
+        _mw.insert(_gzip_idx + 1, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    except ValueError:
+        _mw.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE = tuple(_mw)
 
 DEBUG = locals().get("DEBUG", False)
 if DEBUG:
