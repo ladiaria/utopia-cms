@@ -22,27 +22,6 @@
 
 {% block content %}
 
-  {% comment %}
-  {% if publication.is_emergente %}
-    <div class="container container--wide">
-      <div class="section-detail__head">
-        <h1 class="section-detail__title">{{ publication.name|capfirst }}</h1>
-        <div class="section-detail__sub-cats">
-          <ul class="section-detail__sub-cats-list">
-            {% for section in publication.primary_sections %}
-              <li>
-                <a class="section-detail__header-sub-cat" href="{% url 'section_detail' section_slug=section.slug %}">
-                  {% section_name_in_publication_menu publication section %}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-  {% endif %}
-  {% endcomment %}
-
   {% include cover_grid_template|default:'category/cover_grid.html' %}
 
   {% block cover_ads %}
@@ -52,10 +31,6 @@
       </section>
     {% endif %}
   {% endblock %}
-
-  {% comment %}
-  {% render_cover %}
-  {% endcomment %}
 
   {% for section in featured_sections %}
     {% render_section section %}
