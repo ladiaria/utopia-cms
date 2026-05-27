@@ -192,7 +192,7 @@ def _sort_sections_by_recency(grid_data):
     )
     min_date = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
     sections.sort(
-        key=lambda s: dates.get(s["article_ids"][0], min_date) if s.get("article_ids") else min_date,
+        key=lambda s: (dates.get(s["article_ids"][0]) or min_date) if s.get("article_ids") else min_date,
         reverse=True,
     )
 
