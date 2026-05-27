@@ -487,7 +487,12 @@ def render_hierarchy(context, article, force_use_links=False):
                 )
             parent.append(article.main_section.edition.publication)
         else:
-            return publication_section(context, article)
+            # section is already resolved — render it directly without re-querying
+            s_name = _resolve_section_name_override(section, article)
+            if use_section_link:
+                return '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
+            else:
+                return '<span>%s</span>' % s_name
         s_name = _resolve_section_name_override(section, article)
         if use_section_link:
             child = '<a href="%s">%s</a>' % (section.get_absolute_url(), s_name)
