@@ -808,20 +808,6 @@
     };
   </script>
   <script src="{% static 'js/article.js' %}"></script>
-  {# Revela la foto principal recién cuando carga, para no mostrar el placeholder/glyph nativo. Ver html.js .ld-article__main-photo en _article.scss #}
-  <script>
-    (function () {
-      function reveal(img) { img.classList.add('is-loaded'); }
-      document.querySelectorAll('.ld-article__main-photo').forEach(function (img) {
-        if (img.complete && img.naturalWidth > 0) {
-          reveal(img);
-        } else {
-          img.addEventListener('load', function () { reveal(img); });
-          img.addEventListener('error', function () { reveal(img); });
-        }
-      });
-    })();
-  </script>
 {% endblock %}
 
 {% block footer_scripts %}
