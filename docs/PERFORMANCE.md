@@ -136,3 +136,86 @@ the user auth token. A thin Django proxy endpoint was added instead:
   updates the comments button and section header with the real count. The page renders
   immediately with "Comentar" as fallback; the count appears asynchronously once the fetch
   resolves.
+
+---
+
+## `/masleidos/` — N+1 queries on every authenticated request
+
+**Date:** 2026-05-28
+**Branch:** `perf/masleidos-select-related`
+
+### Root cause identified
+
+`get_articles_by_ids()` (`core/views/masleidos.py`) fetched articles with a plain
+`Article.objects.filter(id__in=ids)` — no `select_related`, no `prefetch_related`.
+The template `media-list.html` then accessed two relationships per article that Django
+resolved with individual lazy queries:
+
+- **`article.publication_section()`** walks `main_section → edition → publication` (two FK
+  hops). Without `select_related`, each hop is a separate query.
+- **`article.get_authors()`** calls `self.byline.all()` — a M2M relation that fires one query
+  per article without `prefetch_related`.
+
+`/masleidos/` renders three tabs (daily, weekly, monthly) of 10 articles each — 30 articles
+total. At 3 lazy queries per article that is **~90 extra queries per request**.
+
+The `@cache_page` decorator on `index` does not cache requests from authenticated users
+(Django skips page caching when session cookies are present). Since most `/masleidos/` visitors
+are logged-in subscribers, the N+1 hit affected the vast majority of real traffic. The problem
+was identified via uwsgi log analysis: `/masleidos/` appeared consistently at **avg 1.9s, max
+5.5s** across the 7 peak-hour log files from 2026-05-28 (07:00–10:00 AM), despite the cache
+fix applied on 2026-05-26 which only eliminated the SQL aggregation stampede.
+
+### Fix applied
+
+#### `core/views/masleidos.py` — `get_articles_by_ids()`
+
+```python
+# Before
+articles_by_id = {a.id: a for a in Article.objects.filter(id__in=ids)}
+
+# After
+qs = Article.objects.filter(id__in=ids).select_related(
+    'main_section__edition__publication',
+    'main_section__section__category',
+).prefetch_related('byline')
+articles_by_id = {a.id: a for a in qs}
+```
+
+- `select_related('main_section__edition__publication', 'main_section__section__category')`:
+  fetches the full FK chain used by `publication_section()` in a single JOIN, covering both
+  the publication lookup and the category lookup needed by `render_hierarchy`.
+- `prefetch_related('byline')`: resolves the author M2M in one batched query for all articles,
+  instead of one query per article.
+
+`get_articles_by_ids()` is only called from two places, both in the same file: `index` (the
+three-tab page) and `content` (the sidebar widget on the homepage). Both benefit from the fix.
+
+### Expected impact
+
+- Query count per request: ~90 lazy queries → **3 fixed queries** (1 filtered SELECT with JOINs
+  + 1 prefetch for byline + the raw SQL aggregation from `_get_full_content_ids()`), regardless
+  of how many articles are displayed.
+- The improvement is only visible for **authenticated users** — anonymous requests were already
+  served by `@cache_page`.
+
+### How to verify locally
+
+The easiest way is Django's built-in query logging. Add this to `local_settings.py` temporarily:
+
+```python
+LOGGING = {
+    'version': 1,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'django.db.backends': {'handlers': ['console'], 'level': 'DEBUG'},
+    },
+}
+```
+
+Start the dev server, log in as a subscriber, and open `/masleidos/`. Count the queries in the
+terminal output. Before this fix: ~90+ queries. After: 3.
+
+Alternatively, set `DEBUG_TOOLBAR_ENABLE = True` in `local_settings.py` (requires
+`pip install django-debug-toolbar`) and use the SQL panel — the project already has the
+configuration wired up.
