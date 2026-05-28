@@ -108,11 +108,11 @@ def rawpic_cover(request):
     edition = get_current_edition()
     if not edition:
         raise Http404
-    else:
-        try:
-            return HttpResponse(open(edition.cover.path, "rb").read(), content_type="image/jpeg")
-        except IOError:
-            raise Http404
+    try:
+        with open(edition.cover.path, "rb") as f:
+            return HttpResponse(f.read(), content_type="image/jpeg")
+    except IOError:
+        raise Http404
 
 
 def rawpic_papel_cover(request):
@@ -121,6 +121,7 @@ def rawpic_papel_cover(request):
     if not edition:
         raise Http404
     try:
-        return HttpResponse(open(edition.cover.path, "rb").read(), content_type="image/jpeg")
+        with open(edition.cover.path, "rb") as f:
+            return HttpResponse(f.read(), content_type="image/jpeg")
     except (IOError, ValueError):
         raise Http404
