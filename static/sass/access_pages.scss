@@ -211,17 +211,9 @@ p {
     margin-top: -25px;
   }
 
-  .ld-title-big {
-    margin-bottom: 10px;
-    font-family: AntennaCond, sans-serif;
-    font-weight: bold;
-    font-size: 24px;
-  }
-
   .price {
-    font-size: 26px;
     font-weight: bold;
-    font-family: AntennaCond, sans-serif;
+    font-family: $sans-title;
     color: $primary-color-accent;
   }
   small.exp {
