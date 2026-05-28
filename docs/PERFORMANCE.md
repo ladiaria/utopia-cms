@@ -282,6 +282,18 @@ Any `render_to_string(..., request=request)` call inside a template loop is a po
 source if any context processor does database work. The pattern to watch for: a template tag
 that renders a sub-template in a loop and passes `request`.
 
+### Bonus fix: `object_id` type mismatch in follows list
+
+`actstream` stores `object_id` as a `CharField`. `values_list('object_id', flat=True)` returns
+strings, so `{% if a.id in follows %}` in the template silently failed — `109648 in ['109648']`
+is `False` in Python. Fixed by casting to `int` when building the list in `index()`:
+
+```python
+follows = [
+    int(oid) for oid in user.follow_set.filter(...).values_list('object_id', flat=True)
+]
+```
+
 ### If this pattern reappears elsewhere
 
 Do **not** add per-request caching (`request._ctx_*`) to context processors as a workaround —
