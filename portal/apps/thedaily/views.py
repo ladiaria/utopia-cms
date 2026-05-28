@@ -27,6 +27,7 @@ from django_amp_readerid.decorators import readerid_assoc
 from django_amp_readerid.utils import amp_login_param, get_related_user
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import IntegrityError
 from django.db.models import Count
@@ -1438,10 +1439,22 @@ def lista_lectura_leer_despues(request):
         followings = paginator_leer_despues.page(paginator_leer_despues.num_pages)
     # end paginator for leer_despues
 
+    # Re-fetch the page's articles with select_related/prefetch_related to avoid N+1 in template.
+    page_ids = [a.id for a in followings.object_list]
+    prefetched = {
+        a.id: a for a in Article.objects.filter(id__in=page_ids).select_related(
+            'main_section__edition__publication',
+            'main_section__section__category',
+        ).prefetch_related('byline')
+    }
+    followings.object_list = [prefetched[aid] for aid in page_ids if aid in prefetched]
+    # All articles on this page are already followed by the user — no extra query needed.
+    follows = page_ids
     return render(
         request,
         get_app_template("lista-lectura.html"),
-        {'leer_despues': followings, 'leer_despues_count': followings_count},
+        {'leer_despues': followings, 'leer_despues_count': followings_count,
+         'follows': follows, 'prefetched_article_data': True},
     )
 
 
@@ -1489,8 +1502,25 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
+    # Re-fetch the page's articles with select_related/prefetch_related to avoid N+1 in template.
+    page_ids = [a.id for a in historial.object_list]
+    prefetched = {
+        a.id: a for a in Article.objects.filter(id__in=page_ids).select_related(
+            'main_section__edition__publication',
+            'main_section__section__category',
+        ).prefetch_related('byline')
+    }
+    historial.object_list = [prefetched[aid] for aid in page_ids if aid in prefetched]
+    follows = [
+        int(oid) for oid in request.user.follow_set.filter(
+            content_type=ContentType.objects.get_for_model(Article),
+            object_id__in=page_ids,
+        ).values_list('object_id', flat=True)
+    ]
     return render(
-        request, get_app_template("lista-lectura.html"), {'historial': historial, 'historial_count': historial_count}
+        request, get_app_template("lista-lectura.html"),
+        {'historial': historial, 'historial_count': historial_count,
+         'follows': follows, 'prefetched_article_data': True},
     )
 
 
