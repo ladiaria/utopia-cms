@@ -219,3 +219,72 @@ terminal output. Before this fix: ~90+ queries. After: 3.
 Alternatively, set `DEBUG_TOOLBAR_ENABLE = True` in `local_settings.py` (requires
 `pip install django-debug-toolbar`) and use the SQL panel — the project already has the
 configuration wired up.
+
+---
+
+## `/masleidos/` — context processors re-executing per article (464 → 30 queries)
+
+**Date:** 2026-05-28
+**Branch:** `perf/masleidos-select-related`
+
+### Root cause identified
+
+`RenderArticleMediaNode.render()` (`core/templatetags/core_tags.py`) called
+`loader.render_to_string('media-list.html', context=context.flatten(), request=context.request)`.
+
+Passing `request` to `render_to_string` tells Django to run the full context processor pipeline
+for that render. With 31 articles across the three tabs, every registered context processor ran
+31 times — including ones that hit the database:
+
+- `context_processors.site` — 2 queries for robots rules (`robots_rule` + `robots_url`)
+- `context_processors.publications` — 1 query (`Publication.objects.get`)
+- `context_processors.main_menus` — 1 query (`Category.objects.filter`)
+- `utopia_cms_ladiaria.context_processors.ladiaria` — 2 queries (tag lookup + article by tag)
+- `utopia_cms_liveblog.context_processors.liveblog` — 1 query (`LiveBlog.objects.filter`)
+
+That is ~7 queries × 31 articles = **~217 extra queries per request**, on top of the N+1 from
+`get_articles_by_ids()`.
+
+### Fix applied
+
+#### `core/templatetags/core_tags.py` — `RenderArticleMediaNode.render()`
+
+Removed `request=context.request` from the `render_to_string` call. `context.flatten()` already
+contains all context processor output from the parent request — there is no need to re-run them
+for each sub-template render. The `user` variable (needed by `media-list.html` for the read-later
+button) comes through `context.flatten()` and remains available.
+
+```python
+# Before
+return loader.render_to_string(
+    'core/templates/article/media-list.html', context=context.flatten(), request=context.request
+)
+
+# After
+return loader.render_to_string(
+    'core/templates/article/media-list.html', context=context.flatten()
+)
+```
+
+### Expected impact
+
+- Context processor queries eliminated: ~217 queries (7 per article × 31 articles) → 0.
+- Combined with the `select_related`/`prefetch_related` fix and the `follows` precomputation,
+  total query count for `/masleidos/` dropped from **464 to ~30** for authenticated users.
+
+### Why context processors run on `render_to_string`
+
+Django only runs context processors when a `RequestContext` is active. Passing `request` to
+`render_to_string` implicitly creates a `RequestContext`, which triggers the full processor list.
+Passing only a plain dict (or a pre-flattened context) skips them entirely.
+
+Any `render_to_string(..., request=request)` call inside a template loop is a potential N+1
+source if any context processor does database work. The pattern to watch for: a template tag
+that renders a sub-template in a loop and passes `request`.
+
+### If this pattern reappears elsewhere
+
+Do **not** add per-request caching (`request._ctx_*`) to context processors as a workaround —
+it couples unrelated code and is easy to get wrong if a context processor result depends on the
+specific view. The correct fix is always to avoid passing `request` to sub-template renders
+inside loops, since the parent context already contains the processor output.

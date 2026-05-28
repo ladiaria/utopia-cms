@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import connection
 from django.http import JsonResponse
@@ -101,6 +102,19 @@ def index(request):
         full_content = {k: get_articles_by_ids(v) for k, v in _get_full_content_ids().items()}
     except Exception:
         full_content = {}
+
+    user = request.user
+    if user.is_authenticated:
+        all_ids = [a.id for articles in full_content.values() for a in articles]
+        follows = [
+            int(oid) for oid in user.follow_set.filter(
+                content_type=ContentType.objects.get_for_model(Article),
+                object_id__in=all_ids,
+            ).values_list('object_id', flat=True)
+        ]
+        full_content['follows'] = follows
+        full_content['prefetched_article_data'] = True
+
     return 'masleidos_view.html', full_content
 
 
