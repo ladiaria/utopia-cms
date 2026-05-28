@@ -300,3 +300,53 @@ Do **not** add per-request caching (`request._ctx_*`) to context processors as a
 it couples unrelated code and is easy to get wrong if a context processor result depends on the
 specific view. The correct fix is always to avoid passing `request` to sub-template renders
 inside loops, since the parent context already contains the processor output.
+
+---
+
+## `usuarios/lista-lectura-leer-despues/` and `usuarios/lista-lectura-historial/` — N+1 queries
+
+**Date:** 2026-05-28
+**Branch:** `perf/lista-lectura-queries`
+
+### Root causes identified
+
+Both views had two problems:
+
+#### 1. `follows` not passed to template context
+Both views rendered `lista-lectura.html` which includes `article_card_read_later.html` with
+`prefetched_article_data=True` but without a `follows` list. This caused the template to fall
+through to the `{% elif not a.is_restricted or user|has_restricted_access:a %}` branch, which
+calls `{% if user|is_following:a %}` — one actstream query per article.
+
+#### 2. No `select_related`/`prefetch_related` on article objects
+Articles came from `recent_following()` and `user_read_history()` as plain objects with no
+prefetching, causing N+1 queries in the template for `article.get_authors()` and
+`article.main_section`.
+
+### Fixes applied
+
+#### `thedaily/views.py` — `lista_lectura_leer_despues()`
+- After pagination, re-fetches the page's articles via `Article.objects.filter(id__in=page_ids)`
+  with `select_related` and `prefetch_related('byline')` to eliminate template N+1.
+- Passes `follows=page_ids` (all articles on this page are already followed by the user by
+  definition) and `prefetched_article_data=True` to skip the per-article `is_following` call.
+
+#### `thedaily/views.py` — `lista_lectura_historial()`
+- Same re-fetch pattern after pagination.
+- Passes `follows` computed with a single scoped `follow_set` query over the page's article IDs,
+  cast to `int` (actstream `object_id` is a `CharField`).
+- Passes `prefetched_article_data=True`.
+
+### Remaining known N+1 (not fixed in this branch)
+
+Both utility functions that build the full article list before pagination still have an
+unavoidable N+1:
+
+- **`recent_following()`** (`thedaily/utils.py:155`): `fetch_generic_relations` from actstream
+  calls `get_object_for_this_type(pk=pk_val)` per follow — one `Article.objects.get` per item.
+- **`user_read_history()`** (`thedaily/utils.py:278`): calls `Article.objects.get(id=article_id)`
+  inside a loop over MongoDB results.
+
+These fire before pagination, so they scale with the user's total follow/history count, not the
+page size. Fixing them requires refactoring both functions to fetch all article IDs first and
+resolve objects in a single batch query. That work is left for a future branch.
