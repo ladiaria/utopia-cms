@@ -1524,11 +1524,11 @@ def active_layout(request, publication_slug=None):
     _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
-    # TODO: remove once edicion_papel is managed via grid_data by the backend.
+    # TODO: remove once edicion_del_dia is managed via grid_data by the backend.
     home_data['componentes'].append({
-        'key': 'edicion_papel',
+        'key': 'edicion_del_dia',
         'no_articles': True,
-        'sidebar_component_template': 'homev4/sidebar_components/edicion_papel.html',
+        'sidebar_component_template': 'homev4/sidebar_components/edicion_del_dia.html',
     })
     # TODO: review allow_ads logic — wire up is_subscriber once available in context.
     if publication_slug:
