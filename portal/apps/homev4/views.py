@@ -107,6 +107,7 @@ COMPONENT_DEFINITIONS = [
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
+    {"key": "edicion_del_dia",      "label": "Edición del día",          "description": "",                "no_articles": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
     {"key": "lento",                "label": "Lento",                    "description": "",                "has_picker": True},
@@ -166,7 +167,27 @@ def get_default_publication():
 
 
 _PAPEL_CACHE_KEY = "homev4:papel_url"
+
 _PAPEL_DAY_NAMES = {0: "lunes", 1: "martes", 2: "miercoles", 3: "jueves", 4: "viernes", 5: "sabado", 6: "domingo"}
+
+
+def _get_papel_edition():
+    """Return the Edition to use for papel URL and cover: today's or most recent with PDF."""
+    today = timezone.localdate()
+    publication = get_default_publication()
+    if today.weekday() >= 5:
+        # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
+        fds_pub = Publication.objects.filter(slug="findesemana").first()
+        return (
+            Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
+            if fds_pub else None
+        ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+    else:
+        # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
+        return (
+            Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
+            or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
+        )
 
 
 def get_papel_url():
@@ -180,22 +201,7 @@ def get_papel_url():
         return cached
 
     try:
-        today = timezone.localdate()
-        publication = get_default_publication()
-        weekday = today.weekday()
-        if weekday >= 5:
-            # On weekends ladiaria does not publish — use the most recent findesemana edition with PDF.
-            fds_pub = Publication.objects.filter(slug="findesemana").first()
-            edition = (
-                Edition.objects.filter(publication=fds_pub).exclude(pdf="").order_by("-date_published").first()
-                if fds_pub else None
-            ) or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-        else:
-            # On weekdays prefer today's ladiaria edition; fall back to the most recent one with PDF.
-            edition = (
-                Edition.objects.filter(publication=publication, date_published=today).exclude(pdf="").first()
-                or Edition.objects.filter(publication=publication).exclude(pdf="").order_by("-date_published").first()
-            )
+        edition = _get_papel_edition()
         if not edition:
             return settings.PAPEL_FALLBACK_URL
         url = (
@@ -210,6 +216,7 @@ def get_papel_url():
         return url
     except Exception:
         return settings.PAPEL_FALLBACK_URL
+
 
 
 def _propagate_article_ids(source_layout, source_grid):
@@ -739,7 +746,7 @@ def _resolve_newsletter_refs(refs):
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
     "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
-    "crucigrama",
+    "crucigrama", "edicion_del_dia",
 })
 
 
@@ -895,6 +902,13 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
                 a_ids = [i for i in a_ids if i not in seen_ids]
                 area["article_ids"] = a_ids
         seen_ids.update(a_ids)
+
+    # Merge component definitions not yet present in the saved list (e.g. new components added
+    # after the layout was last saved). Appended at the end so the saved order is preserved.
+    _existing_comp_keys = {c.get("key") for c in resolved.get("componentes", [])}
+    for _defn in COMPONENT_DEFINITIONS:
+        if _defn["key"] not in _existing_comp_keys:
+            resolved.setdefault("componentes", []).append({"key": _defn["key"], "active": True})
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
     for comp in resolved.get("componentes", []):
