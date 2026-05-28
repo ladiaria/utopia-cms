@@ -107,6 +107,7 @@ COMPONENT_DEFINITIONS = [
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
+    {"key": "edicion_del_dia",      "label": "Edición del día",          "description": "",                "no_articles": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
     {"key": "lento",                "label": "Lento",                    "description": "",                "has_picker": True},
@@ -745,7 +746,7 @@ def _resolve_newsletter_refs(refs):
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
     "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
-    "crucigrama",
+    "crucigrama", "edicion_del_dia",
 })
 
 
@@ -901,6 +902,13 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
                 a_ids = [i for i in a_ids if i not in seen_ids]
                 area["article_ids"] = a_ids
         seen_ids.update(a_ids)
+
+    # Merge component definitions not yet present in the saved list (e.g. new components added
+    # after the layout was last saved). Appended at the end so the saved order is preserved.
+    _existing_comp_keys = {c.get("key") for c in resolved.get("componentes", [])}
+    for _defn in COMPONENT_DEFINITIONS:
+        if _defn["key"] not in _existing_comp_keys:
+            resolved.setdefault("componentes", []).append({"key": _defn["key"], "active": True})
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
     for comp in resolved.get("componentes", []):
@@ -1524,12 +1532,6 @@ def active_layout(request, publication_slug=None):
     _t0 = time.perf_counter()
     home_data = build_home_data(grid_data, publication=publication, layout=layout)
     logger.warning("active_layout build_home_data: %.1f ms", (time.perf_counter() - _t0) * 1000)
-    # TODO: remove once edicion_del_dia is managed via grid_data by the backend.
-    home_data['componentes'].append({
-        'key': 'edicion_del_dia',
-        'no_articles': True,
-        'sidebar_component_template': 'homev4/sidebar_components/edicion_del_dia.html',
-    })
     # TODO: review allow_ads logic — wire up is_subscriber once available in context.
     if publication_slug:
         allow_ads = getattr(settings, "HOMEV4_NON_DEFAULT_PUB_ALLOW_ADS", True)
