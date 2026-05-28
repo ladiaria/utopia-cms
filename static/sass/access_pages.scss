@@ -265,7 +265,7 @@ body.modal-open {
 // Styles previously in hard_paywall.scss
 
 body.hard-paywall {
-  background-color: #edf6f5;
+  padding-bottom: 0;
   h1,
   p {
     line-height: normal;
@@ -699,6 +699,9 @@ body.hard-paywall {
         font-family: Roboto;
       }
     }
+  }
+  .ld-footer-simple {
+    margin-top: 0;
   }
 }
 
