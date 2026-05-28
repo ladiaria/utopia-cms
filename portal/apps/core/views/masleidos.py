@@ -62,7 +62,14 @@ def mas_leidos(days=1, cover=False, limit=10):
 
 
 def get_articles_by_ids(ids):
-    articles_by_id = {a.id: a for a in Article.objects.filter(id__in=ids)}
+    # select_related covers the lazy hits in publication_section (main_section->edition->publication)
+    # and prefetch_related covers get_authors (byline M2M) — without these the template triggers
+    # 4-6 extra queries per article (N+1) across 3 tabs × 10 articles each.
+    qs = Article.objects.filter(id__in=ids).select_related(
+        'main_section__edition__publication',
+        'main_section__section__category',
+    ).prefetch_related('byline')
+    articles_by_id = {a.id: a for a in qs}
     return [articles_by_id[aid] for aid in ids if aid in articles_by_id]
 
 
