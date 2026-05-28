@@ -75,7 +75,12 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
             edition = get_object_or_404(Edition, date_published=date_published, publication=publication)
             articles = edition.get_articles_in_section(section)
         else:
-            articles = list(Article.objects.raw(get_section_articles_sql([section.id])))
+            article_ids = [a.id for a in Article.objects.raw(get_section_articles_sql([section.id]))]
+            articles = Article.objects.filter(id__in=article_ids).select_related(
+                'main_section__section__category',
+                'main_section__edition__publication',
+                'photo__extended__photographer',
+            ).order_by('-date_published')
 
         context['publication_use_headline'] = \
             publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ())
