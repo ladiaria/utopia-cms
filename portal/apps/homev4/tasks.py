@@ -101,7 +101,21 @@ def resolve_daily_layouts_task():
         if pending_layout and isinstance(pending_layout.pending_grid_data, dict):
             pending = pending_layout.pending_grid_data
             if pending.get("date") == today.isoformat():
-                grid_to_apply = pending["grid"]
+                # Shallow copy so we can inject resolved blocks without mutating pending.
+                grid_to_apply = dict(pending["grid"])
+
+                # Inject the same automatically-resolved blocks the non-pending path writes.
+                # The editor cannot include these in pending_grid_data (e.g. FSNewsletter
+                # may not exist yet when the layout is prepared on Friday).
+                suplemento_block = grid_to_apply.get("suplemento") if isinstance(grid_to_apply.get("suplemento"), dict) else {}
+                suplemento_block["article_ids"] = suplemento_ids
+                grid_to_apply["suplemento"] = suplemento_block
+
+                if is_saturday:
+                    extra_block = grid_to_apply.get("extra_articles") if isinstance(grid_to_apply.get("extra_articles"), dict) else {}
+                    extra_block["article_ids"] = extra_ids
+                    grid_to_apply["extra_articles"] = extra_block
+
                 layout = HomeLayout.get_active_layout(publication) or pending_layout
                 # Capture before overwriting so audit log can diff what changed.
                 old_grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
