@@ -590,6 +590,118 @@ class BuildHomeDataLoUltimoTest(SimpleTestCase):
         self.assertNotIn(6, exclude)
 
 
+class BuildHomeDataSectionsCapTest(SimpleTestCase):
+    """
+    Tests for the sections cap (always show 12) and the content-based suplemento exclusion.
+
+    Rules:
+    - The block shows at most 12 sections, in the order from resolved["sections"].
+    - The suplemento source is excluded only when suplemento actually has articles.
+    - If suplemento is active but empty, all 13 candidates compete and the 13th is dropped.
+    """
+
+    _MONDAY = datetime.date(2026, 4, 20)  # weekday()=0, suplemento source = ("publication", "deporte")
+
+    def _make_sections(self, slugs):
+        """Build a sections list with one article each, ordered as given."""
+        return [
+            {"type": "publication", "slug": s, "name": s.title(), "active": True, "article_ids": [i + 100]}
+            for i, s in enumerate(slugs)
+        ]
+
+    def _run(self, sections, suplemento_ids=None, weekday_map=None):
+        """
+        Run build_home_data with the given sections and suplemento content.
+        Returns result["sections"] (list of slug strings for easy assertion).
+        """
+        if weekday_map is None:
+            weekday_map = {0: ("publication", "deporte")}
+        resolved = {
+            "principal":   {"active": True, "article_ids": []},
+            "suplemento":  {"active": True, "article_ids": suplemento_ids or []},
+            "especial":    {"active": True, "article_ids": []},
+            "sections":    sections,
+            "componentes": [],
+        }
+        result_container = {}
+
+        def article_filter_mock(*args, **kwargs):
+            ids = list(kwargs.get("id__in", []))
+            articles = [_art(i) for i in ids]
+            qs = MagicMock()
+            qs.__iter__ = lambda self: iter(articles)
+            qs.select_related.return_value = qs
+            qs.prefetch_related.return_value = qs
+            return qs
+
+        mock_art = MagicMock()
+        mock_art.published.filter.side_effect = article_filter_mock
+
+        with patch("homev4.views.resolve_layout_grid_data", return_value=resolved), \
+             patch("homev4.views.Article", mock_art), \
+             patch("homev4.views._fetch_component_articles", return_value=[]), \
+             patch("homev4.views._block_active", side_effect=lambda _key, val: bool(val)), \
+             patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", weekday_map), \
+             patch("homev4.views.timezone") as mock_tz:
+            mock_tz.localdate.return_value = self._MONDAY
+            mock_tz.now.return_value = MagicMock()
+            result_container = build_home_data(resolved, publication=None, layout=None)
+
+        return [s["slug"] for s in result_container.get("sections", [])]
+
+    def test_13_sections_with_suplemento_content_shows_12(self):
+        """With 13 candidate sections and suplemento having content, the suplemento source
+        is excluded and the remaining 12 are shown — no gap, no 13th entry."""
+        slugs = ["deporte", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"]
+        sections = self._make_sections(slugs)
+        # suplemento has articles → deporte (Monday source) is excluded from sections
+        shown = self._run(sections, suplemento_ids=[99])
+        self.assertNotIn("deporte", shown)
+        self.assertEqual(len(shown), 12)
+        self.assertEqual(shown, ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"])
+
+    def test_13_sections_without_suplemento_content_shows_12_drops_last(self):
+        """With 13 candidate sections and suplemento empty, all 13 compete and the last
+        one (least recently updated) is dropped to keep the count at 12."""
+        slugs = ["deporte", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"]
+        sections = self._make_sections(slugs)
+        # suplemento has no articles → deporte stays in sections, s12 (13th) is dropped
+        shown = self._run(sections, suplemento_ids=[])
+        self.assertIn("deporte", shown)
+        self.assertNotIn("s12", shown)
+        self.assertEqual(len(shown), 12)
+
+    def test_suplemento_source_shown_when_suplemento_is_empty(self):
+        """The suplemento source vertical must appear in sections when suplemento has no content."""
+        slugs = ["deporte", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"]
+        sections = self._make_sections(slugs)
+        shown = self._run(sections, suplemento_ids=[])
+        self.assertIn("deporte", shown)
+
+    def test_suplemento_source_excluded_when_suplemento_has_content(self):
+        """The suplemento source vertical must NOT appear in sections when suplemento has articles."""
+        slugs = ["deporte", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"]
+        sections = self._make_sections(slugs)
+        shown = self._run(sections, suplemento_ids=[99])
+        self.assertNotIn("deporte", shown)
+
+    def test_fewer_than_12_sections_shows_all(self):
+        """When fewer than 12 active sections exist, all of them are shown."""
+        slugs = ["s1", "s2", "s3"]
+        sections = self._make_sections(slugs)
+        shown = self._run(sections, suplemento_ids=[], weekday_map={})
+        self.assertEqual(len(shown), 3)
+        self.assertEqual(shown, ["s1", "s2", "s3"])
+
+    def test_order_preserved_from_resolved(self):
+        """Sections are shown in the order they appear in resolved['sections'] (recency
+        sort is handled upstream by _sort_sections_by_recency, not at render time)."""
+        slugs = ["s3", "s1", "s2", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13"]
+        sections = self._make_sections(slugs)
+        shown = self._run(sections, suplemento_ids=[], weekday_map={})
+        self.assertEqual(shown, ["s3", "s1", "s2", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"])
+
+
 class SortSectionsByRecencyTest(SimpleTestCase):
     """
     Tests that _sort_sections_by_recency orders sections by the date_published
