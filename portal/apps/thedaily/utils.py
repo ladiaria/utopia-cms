@@ -152,7 +152,13 @@ def recent_following(user, *models):
     for model in models:
         check(model)
         qs = qs.filter(content_type=ContentType.objects.get_for_model(model))
-    return [follow.follow_object for follow in qs.fetch_generic_relations('follow_object').order_by('-started')]
+    # follow_object resolves to None when the followed object was deleted; drop those so callers can rely on
+    # every item being a real object (counting and pagination included).
+    return [
+        follow.follow_object
+        for follow in qs.fetch_generic_relations('follow_object').order_by('-started')
+        if follow.follow_object is not None
+    ]
 
 
 def add_default_mailtrain_lists(subscriber):
