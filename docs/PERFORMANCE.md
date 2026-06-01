@@ -350,3 +350,77 @@ unavoidable N+1:
 These fire before pagination, so they scale with the user's total follow/history count, not the
 page size. Fixing them requires refactoring both functions to fetch all article IDs first and
 resolve objects in a single batch query. That work is left for a future branch.
+
+---
+
+## `usuarios/lista-lectura-historial/` — unbounded N+1 before pagination (avg 6s, max 20s)
+
+**Date:** 2026-06-01
+**Branch:** `perf/lista-lectura-historial-n1`
+
+### Root cause identified
+
+The 2026-05-28 branch added `select_related`/`prefetch_related` for the **displayed page** of
+`lista_lectura_historial()`, but the line above it still called `user_read_history(request.user)`
+with **no `limit`**. That builds the user's *entire* read history before paginating, and
+`user_read_history()` (`thedaily/utils.py`) resolves every item with an individual
+`Article.objects.get(id=article_id)` inside the MongoDB loop plus an unprefetched walk over the
+relational `articleviewedby_set`. A user with thousands of viewed articles triggers thousands of
+queries just to `len()` the list and show 10 rows.
+
+This was the worst endpoint in the 2026-06-01 (06:13–10:13) peak log analysis: **avg 5973ms, max
+19676ms**, scaling directly with history size (53ms for a small history → ~20s for a large one).
+It was the top source of the 181 HTTP 499 (client-aborted) responses that morning. The
+2026-05-28 branch had documented this exact case as "left for a future branch" (see section
+above).
+
+### Data model context (Mongo ↔ Postgres)
+
+Read history lives in two places. Authenticated article views are upserted into MongoDB
+(`core_articleviewedby`, in `core/views/article.py`) as a hot write buffer. The
+`sync_articleviewedby` management command drains Mongo with `find_one_and_delete` and consolidates
+each doc into the relational `ArticleViewedBy` model. So **Mongo = recently viewed / not yet
+synced; Postgres = consolidated history**. `user_read_history()` unions the two (Mongo first,
+newest, then Postgres excluding ids already seen in Mongo).
+
+### Fix applied
+
+#### `thedaily/utils.py` — `user_read_history(..., ids_only=False)`
+
+Added an `ids_only` fast path that returns ordered `(article_id, viewed_at)` tuples **without
+instantiating any `Article`**: the Mongo cursor contributes its ids directly, and the relational
+union uses `values_list('article_id', 'viewed_at')` instead of touching `avb.article`. Removed
+articles are no longer filtered here — a stale id is dropped naturally by the caller's batched
+`Article.objects.filter(id__in=...)`. The original (object-returning) behaviour is untouched, so
+the other two callers (`last_read` with `limit=5`, `read_articles_percentage` with
+`mongo_db_only=True`) are unaffected.
+
+#### `thedaily/views.py` — `lista_lectura_historial()`
+
+Now calls `user_read_history(request.user, ids_only=True)`, paginates over the id tuples, and
+materializes **only the page's 10 articles** with the existing `select_related`/`prefetch_related`
+query. `historial_count` comes from `len()` of the cheap id list.
+
+### Expected impact
+
+- Query count per request: **~N (history size)** → **fixed (~20 for a 10-item page)**, independent
+  of history size.
+- The 17–20s outliers should disappear; the 499s caused by users abandoning the slow page should
+  go with them.
+
+### Measured locally (debug toolbar, user with 501-item history)
+
+| | main (before) | branch (after) |
+|---|---|---|
+| SQL queries | **521** | **20** |
+| SQL time | 920 ms | 19.5 ms |
+| CPU time | 4049 ms | 232 ms |
+
+The 521 → 20 drop is exactly one `Article.objects.get()` per history item eliminated. The query
+count on the branch is fixed by page size (10), not by total history size.
+
+### `recent_following()` still pending
+
+`recent_following()` (`thedaily/utils.py`) has the same actstream-driven N+1, but
+`/lista-lectura-leer-despues/` measured fast in the 2026-06-01 peak (avg 112ms) because users
+follow few articles. Same `ids_only`-style refactor applies if it ever shows up in the logs.

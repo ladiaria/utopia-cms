@@ -251,7 +251,9 @@ def get_profile_newsletters_ordered():
     return [nl_obj for nl_obj in nl_custom_ordered if nl_obj] + nl_alpha
 
 
-def user_read_history(user, include_viewed_at=False, limit=None, date_from=None, mongo_db_only=False):
+def user_read_history(
+    user, include_viewed_at=False, limit=None, date_from=None, mongo_db_only=False, ids_only=False
+):
     """
     Returns a list of articles or a list tuples (article and viewed_at if requested by arg) ordered by viewed_at.
     They are the ones in mongodb that have not been synced yet, union the ones already sinced saved in the model used
@@ -261,9 +263,42 @@ def user_read_history(user, include_viewed_at=False, limit=None, date_from=None,
     - A limit parameter (None by default)
     - A date_from filter parameter (None by default)
     - A boolean parameter to indicate if the history should be only from the mongo db (False by default)
+    - A boolean parameter to return only ``(article_id, viewed_at)`` tuples instead of fetching Article objects
+      (False by default). This avoids the N+1 query of resolving every article in the history just to paginate it:
+      the caller is expected to materialize only the page it needs with a single batched query. When this mode is
+      used, articles that no longer exist are NOT filtered out here (a removed id is dropped naturally by the
+      caller's ``Article.objects.filter(id__in=...)``). ``include_viewed_at`` is ignored: tuples always carry
+      the (timezone-aware) viewed_at as second element.
     """
+    ctz = get_current_timezone()
+
+    # ids_only fast path: collect ordered (id, viewed_at) tuples without instantiating Article objects.
+    if ids_only:
+        result, seen = [], set()
+        if mongo_db is not None:
+            mquery_kwargs = {'user': user.id}
+            if date_from:
+                mquery_kwargs['viewed_at'] = {'$gt': date_from}
+            mquery = mongo_db.core_articleviewedby.find(mquery_kwargs).sort('viewed_at', pymongo.DESCENDING)
+            for a in mquery:
+                if limit and len(result) >= limit:
+                    break
+                article_id = a['article']
+                result.append((article_id, make_aware(a['viewed_at'], utc).astimezone(ctz)))
+                seen.add(article_id)
+        if not mongo_db_only and (not limit or limit > len(result)):
+            dbquery = user.articleviewedby_set
+            if date_from:
+                dbquery = dbquery.filter(viewed_at__gt=date_from)
+            dbquery = dbquery.exclude(article_id__in=seen).order_by('-viewed_at')
+            if limit:
+                dbquery = dbquery[:limit - len(result)]
+            for article_id, viewed_at in dbquery.values_list('article_id', 'viewed_at'):
+                result.append((article_id, viewed_at.astimezone(ctz)))
+        return result
+
     # start the result set with mongo because these are the most recent viewed.
-    historial, mids, ctz = [], [], get_current_timezone()
+    historial, mids = [], []
     if mongo_db is not None:
         mquery_kwargs = {'user': user.id}
         if date_from:

@@ -1487,13 +1487,15 @@ def lista_lectura_historial(request):
     """
     Returns a paginated view of all articles viewed by the user
     """
-    historial = user_read_history(request.user)
-    historial_count = len(historial)
+    # Build the ordered list of (article_id, viewed_at) without instantiating Article objects. This avoids the
+    # N+1 of resolving the user's whole history (one Article query per item) just to count and paginate it.
+    history_ids = user_read_history(request.user, ids_only=True)
+    historial_count = len(history_ids)
     if is_xhr(request):
         return HttpResponse(historial_count)
 
     page = request.GET.get('pagina', 1)
-    paginator_historial = Paginator(historial, 10)
+    paginator_historial = Paginator(history_ids, 10)
     try:
         historial = paginator_historial.page(page)
     except PageNotAnInteger:
@@ -1501,8 +1503,9 @@ def lista_lectura_historial(request):
     except EmptyPage:
         historial = paginator_historial.page(paginator_historial.num_pages)
 
-    # Re-fetch the page's articles with select_related/prefetch_related to avoid N+1 in template.
-    page_ids = [a.id for a in historial.object_list]
+    # Materialize only this page's articles with select_related/prefetch_related (single batched query).
+    # A removed article id is dropped naturally by the filter, matching the previous behaviour.
+    page_ids = [aid for aid, _ in historial.object_list]
     prefetched = {
         a.id: a for a in Article.objects.filter(id__in=page_ids).select_related(
             'main_section__edition__publication',
