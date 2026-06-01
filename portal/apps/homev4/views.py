@@ -877,10 +877,15 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
             seen_ids.update(comp.get("article_ids", []))
 
     # 5. ÁREAS — merge defaults not yet in sections, then resolve fallback with full seen_ids
-    today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
-    existing_keys = {(s.get("type"), s.get("slug")) for s in resolved.get("sections", [])}
+    # Skip the suplemento source only when suplemento actually has content, not just based on the day.
+    suplemento_has_content = bool(resolved.get("suplemento", {}).get("article_ids"))
+    today_source = (
+        _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+        if suplemento_has_content else None
+    )
+    existing_slugs = {s.get("slug") for s in resolved.get("sections", [])}
     for da in _DEFAULT_AREAS:
-        if (da["type"], da["slug"]) not in existing_keys:
+        if da["slug"] not in existing_slugs:
             resolved.setdefault("sections", []).append(
                 {"type": da["type"], "slug": da["slug"], "name": da["name"], "active": True, "article_ids": []}
             )
@@ -1048,9 +1053,18 @@ def build_home_data(grid_data, publication=None, layout=None):
         result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # ÁREAS Y PUBLICACIONES — resolved dict already has all default areas merged and article_ids populated
-    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+    # ÁREAS Y PUBLICACIONES — always show 12, in the order from resolved (already sorted by
+    # recency via _sort_sections_by_recency in tasks.py). Exclude the suplemento source only
+    # if suplemento actually has content (not just based on the day of the week).
+    _suplemento_has_content = bool(result.get("suplemento_articles"))
+    _today_suplemento_source = (
+        _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+        if _suplemento_has_content else None
+    )
+    _sections_shown = 0
     for area in resolved.get("sections", []):
+        if _sections_shown >= 12:
+            break
         if not area.get("active", True):
             continue
         area_type = area.get("type", "section")
@@ -1065,6 +1079,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "articles": [by_id[aid] for aid in a_ids if aid in by_id],
             "section_template": _resolve_section_template(slug),
         })
+        _sections_shown += 1
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # COMPONENTES — active ones only
@@ -1168,6 +1183,7 @@ _DEFAULT_AREAS = [
     {"type": "publication", "slug": "educacion",  "name": "Educación"},
     {"type": "publication", "slug": "feminismos", "name": "Feminismos"},
     {"type": "publication", "slug": "ciencia",    "name": "Ciencia"},
+    {"type": "category",    "slug": "futuro",     "name": "Futuro"},
 ]
 
 
