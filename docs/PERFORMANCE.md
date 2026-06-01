@@ -337,6 +337,16 @@ prefetching, causing N+1 queries in the template for `article.get_authors()` and
   cast to `int` (actstream `object_id` is a `CharField`).
 - Passes `prefetched_article_data=True`.
 
+### Regression introduced by this branch (fixed 2026-06-01)
+
+The `page_ids = [a.id for a in followings.object_list]` line added to `lista_lectura_leer_despues()`
+above raised `'NoneType' object has no attribute 'id'` for any user with a **deleted** followed
+article: `recent_following()` returned `follow.follow_object`, which actstream resolves to `None`
+when the object is gone. The previous code never dereferenced `.id`, so the bad data was latent and
+harmless until this refactor. Fixed by dropping the `None` entries in `recent_following()` itself
+(also corrects a slightly inflated read-later count). Regression test:
+`thedaily/tests/test_recent_following.py`.
+
 ### Remaining known N+1 (not fixed in this branch)
 
 Both utility functions that build the full article list before pagination still have an
