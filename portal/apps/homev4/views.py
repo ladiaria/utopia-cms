@@ -2082,7 +2082,66 @@ def save_preview_session(request):
         return JsonResponse({"error": str(e)}, status=400)
 
 
+@never_cache
+def nl_dia_status(request, publication_slug=None):
+    """Return the newsletter_dia to surface to the current user as JSON.
+
+    Called by the home page JS to hydrate the newsletter_dia sidebar component
+    after the page is served from cache.  Returns {"nl": null} when no newsletter
+    needs to be shown (user subscribed to all, or unauthenticated).
+    """
+    from django.urls import reverse
+    user = request.user
+    if not user.is_authenticated:
+        return JsonResponse({"nl": None})
+
+    if publication_slug:
+        publication = get_object_or_404(Publication, slug=publication_slug)
+    else:
+        publication = get_default_publication()
+
+    layout = HomeLayout.get_active_layout(publication)
+    grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
+
+    newsletters = []
+    for comp in grid_data.get("componentes", []):
+        if comp.get("key") == "newsletter_dia":
+            newsletters = _resolve_newsletter_refs(comp.get("newsletter_refs", []))
+            break
+
+    if not newsletters:
+        return JsonResponse({"nl": None})
+
+    newsletter_dia_nl = None
+    if hasattr(user, "subscriber"):
+        sub = user.subscriber
+        active_refs = (
+            {"publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)} |
+            {"category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True)}
+        )
+        for nl in newsletters:
+            if (nl["type"] + ":" + nl["slug"]) not in active_refs:
+                newsletter_dia_nl = nl
+                break
+    else:
+        newsletter_dia_nl = newsletters[0]
+
+    if newsletter_dia_nl is None:
+        return JsonResponse({"nl": None})
+
+    nltype = "c" if newsletter_dia_nl["type"] == "category" else "p"
+    preview_url_name = "c-nl-browser-authpreview" if nltype == "c" else "p-nl-browser-authpreview"
+    result = {
+        **newsletter_dia_nl,
+        "nltype": nltype,
+        "subscribe_url": reverse("nl-auth-subscribe", kwargs={"nltype": nltype, "nlslug": newsletter_dia_nl["slug"]}),
+        "preview_url": reverse(preview_url_name, kwargs={"slug": newsletter_dia_nl["slug"]}),
+    }
+    return JsonResponse({"nl": result})
+
+
 @staff_member_required
+@never_cache
 def save_pending_grid(request):
     """Save grid_data to pending_grid_data on the first layout of the default publication.
     Called by the Preview 5am editor. Does not propagate — the Celery task does that at 5am.
