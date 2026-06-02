@@ -12,6 +12,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.template import Engine, TemplateDoesNotExist
 from django.shortcuts import get_object_or_404, render
 from django.contrib.sites.models import Site
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse
 
@@ -80,7 +81,7 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
                 'main_section__section__category',
                 'main_section__edition__publication',
                 'photo__extended__photographer',
-            ).order_by('-date_published')
+            ).prefetch_related('byline').order_by('-date_published')
 
         context['publication_use_headline'] = \
             publication.slug in getattr(settings, 'CORE_PUBLICATIONS_SECTION_DETAIL_USE_HEADLINE', ())
@@ -95,6 +96,19 @@ def section_detail(request, section_slug, tag=None, year=None, month=None, day=N
         except EmptyPage:
             articles = paginator.page(paginator.num_pages)
         context["articles"] = articles
+
+        # Prefetch the "read later" follows for the articles on this page with a single query so the
+        # bookmark icon renders in its correct state and the card template avoids a per-article query
+        # (article_card_read_later.html passes prefetched_article_data=True).
+        if request.user.is_authenticated:
+            page_ids = [a.id for a in articles]
+            context["follows"] = [
+                int(oid) for oid in request.user.follow_set.filter(
+                    content_type=ContentType.objects.get_for_model(Article),
+                    object_id__in=page_ids,
+                ).values_list('object_id', flat=True)
+            ]
+            context["prefetched_article_data"] = True
 
     template = "core/templates/section/detail.html"
     # custom template support
