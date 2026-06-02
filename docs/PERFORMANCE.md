@@ -503,3 +503,103 @@ each one fired a separate `core_journalist` query — confirmed in the debug too
   (once for the paginator `COUNT(*)`, once for the `LIMIT 10` SELECT). Fast today but scales with
   section size; the proper fix is to paginate in SQL. Same smell as the pre-pagination N+1 fixed
   for `lista-lectura-historial`. Left for a future branch.
+
+---
+
+## `sitemap.xml` — crawlers hitting the origin on every page (slow, low cache hit rate)
+
+**Date:** 2026-06-02
+**Branch:** `perf/sitemap-cache-ttl`
+
+### Root causes identified
+
+The sitemap is generated on demand by `sitemaps/views.py` (mounted at the site root). Crawlers —
+all coming through Cloudflare — fetch it constantly, and uwsgi logs showed most sitemap requests
+taking ~1500ms+ (origin regeneration) rather than the ~5ms of a cache hit. Two structural causes:
+
+#### 1. Single 1h cache TTL for sitemaps with very different freshness needs
+Both views (`index`, `sitemap`) were decorated with a fixed `@cache_page(60 * 60)`. The same TTL
+covered the Google News sitemap (`news_48hs`, where a freshly published article must be crawlable
+fast) and the full historical `articles` sitemap (expensive to build, rarely changes). One hour was
+both too long for news and too short to protect the heavy one.
+
+#### 2. `ArticleSitemap` paginated by 1000 → ~140 pages, each a separate cache key
+`ArticleSitemap.limit` was `1000` (inherited from early versions; never a deliberate tuning — the
+Google News 1000 limit applied by copy-paste to the general web sitemap, which actually allows
+50000). With ~101k published articles that produced ~140 pages. The sitemap index advertised all
+~140 `?p=N` URLs, and crawlers walked them one by one. Each page is a distinct `cache_page` key, so
+the effective hit rate was low and most fetches regenerated the articles query on a worker. Log
+analysis: 39 slow (>1000ms) vs 24 fast (<50ms) sitemap requests.
+
+> Note: Cloudflare does **not** cache the sitemap at all (`cf-cache-status: DYNAMIC`) because the
+> response carries `Vary: Cookie` (added by Django's session/middleware stack). Letting Cloudflare
+> cache it at the edge would be the biggest win, but that touches a global header + a Cloudflare
+> Cache Rule + a security check (must confirm no `Set-Cookie` leaks across users), so it was
+> **deliberately left out of this branch** to discuss with SRE.
+
+### Fixes applied
+
+#### `sitemaps/views.py` — per-section cache TTLs
+- Added `SITEMAP_CACHE_TTL = {'news_48hs': 5*60, 'news_sitemap': 60*60, 'articles': 6*60*60}` and
+  `DEFAULT_SITEMAP_CACHE_TTL = 60*60`. `news_sitemap` is kept at the production 1h: it is the full
+  Google News catalog (~100 pages, capped at 1000 URLs/page), so its page count can't be reduced,
+  and a shorter TTL would only add regenerations as crawlers slowly walk the pages — with no
+  freshness gain, since new articles surface through `news_48hs`.
+- `sitemap()` now picks the TTL by `section` and applies `cache_page(ttl)` at call time (the body
+  moved to `_sitemap()`), since the TTL depends on the requested section.
+- `index()` delegates to `_index()` cached at the **shortest** of those TTLs (5 min), so a new news
+  page is advertised promptly without re-running the heavy index build on every hit.
+
+#### `sitemaps/sitemaps.py` — raise the general sitemap page size
+- `ArticleSitemap.limit` `1000 → 50000` (Google's web-sitemap limit). The Google News sitemaps
+  (`ArticleNewsSitemap`, `ArticleNews48hsSitemap`) **stay at 1000** as Google News requires.
+- Verified with production-scale data (101,741 articles): `articles` drops from ~102 pages to **3**;
+  `news_sitemap` stays at 102 (unchanged, correct); generating a full 50k-URL page runs **~20
+  queries** (no N+1 — articles use the stored `url_path`, so `build_url_path()` almost never fires).
+
+### Expected impact
+
+- Far fewer sitemap pages/cache keys for `articles` (~140 → 3), so crawlers walking the index hit
+  the cache instead of regenerating.
+- A new article appears in the Google News sitemap within ≤5 min (was up to 60).
+- The heavy `articles` sitemap regenerates at most every 6h instead of hourly.
+
+### How to verify
+
+The sitemap index lives at `/sitemap.xml`; per-section at `/sitemap-<section>.xml(?p=N)`. Page
+counts can be checked from a Django shell:
+
+```python
+from sitemaps.sitemaps import ArticleSitemap, ArticleNewsSitemap
+for cls in (ArticleSitemap, ArticleNewsSitemap):
+    s = cls(); print(cls.__name__, s.limit, s.paginator.num_pages)
+```
+
+In production, `curl -sI https://<domain>/sitemap-articles.xml` should show a long-lived cache and
+`/sitemap-news_48hs.xml` a short one (and `cf-cache-status` stays `DYNAMIC` until the Cloudflare
+work is done).
+
+### Google Search Console / crawler behaviour
+
+No action needed in Search Console. Only `/sitemap.xml` is registered there; the `?p=N` URLs live
+*inside* the index, and Google re-reads the index each crawl and follows whatever pages it lists
+now. Article URLs themselves don't change, so nothing is de-indexed. Transient effect: old high
+`?p=N` URLs (e.g. `?p=120`) now return **HTTP 404** (`EmptyPage → Http404`); Google retries a couple
+of times and drops them on its own — benign.
+
+### How to revert
+
+Both changes are independent and safe to revert in isolation.
+
+- **Revert the page-size change only** (if a 50k-URL sitemap is too large for any client, or to
+  restore the old pagination): in `sitemaps/sitemaps.py` set `ArticleSitemap.limit` back to `1000`
+  (or an intermediate value like `10000` for ~14 pages). No data migration involved — it only
+  changes how articles are grouped into pages. Purge the sitemap cache afterwards (below) so the
+  index re-advertises the new page set immediately.
+- **Revert the TTL change only** (restore the old uniform 1h cache): in `sitemaps/views.py` re-add
+  `@cache_page(60 * 60)` on `index` and `sitemap`, remove the `SITEMAP_CACHE_TTL` indirection and
+  the `_index`/`_sitemap` wrappers.
+- **Revert everything:** `git revert 485e4d625` (the `perf(sitemaps)` commit) on a branch.
+- **After any revert**, flush the cached sitemap so the change takes effect at once instead of
+  waiting for the old entries to expire: `cd portal && python -W ignore manage.py clear_cache`
+  (this clears the whole Redis cache; the `runserver` script does it on restart).
