@@ -434,3 +434,72 @@ count on the branch is fixed by page size (10), not by total history size.
 `recent_following()` (`thedaily/utils.py`) has the same actstream-driven N+1, but
 `/lista-lectura-leer-despues/` measured fast in the 2026-06-01 peak (avg 112ms) because users
 follow few articles. Same `ids_only`-style refactor applies if it ever shows up in the logs.
+
+---
+
+## `seccion/<slug>/` — bookmark always unsaved + author N+1
+
+**Date:** 2026-06-02
+**Branch:** `perf/section-detail-follows-n1`
+
+### Root causes identified
+
+#### 1. `follows` not passed to template context — read-later bookmark never shows as saved
+`section_detail()` (`core/views/section.py`) renders the article cards via
+`render_card variant="card_standard"`, and `card_standard.html` includes
+`article_card_read_later.html` with `prefetched_article_data=True` hardcoded. That flag makes the
+template take the `{% if a.id in follows %}` branch — but the view never put `follows` in the
+context, so `a.id in follows` was always `False` and **every bookmark rendered in the unsaved
+state**, even for articles the user had saved to read later. This is the same class of bug fixed
+for `/masleidos/` and `/lista-lectura/`.
+
+Note: the hardcoded flag also (accidentally) shielded the view from the alternative
+`{% elif ... user|is_following:a %}` branch, which would fire one actstream query per article. So
+the bug was masking a latent N+1 rather than causing one.
+
+#### 2. Author N+1 — `get_authors()` one query per article
+The main article queryset (the non-edition `get_section_articles_sql` branch) had
+`select_related` for sections/publication/photo but no `prefetch_related('byline')`. The card
+template calls `article.get_authors()` (`article.byline.all()`) for every article on the page, so
+each one fired a separate `core_journalist` query — confirmed in the debug toolbar as
+"10 consultas similares".
+
+### Fixes applied
+
+#### `core/views/section.py` — `section_detail()`
+- Added `prefetch_related('byline')` to the main queryset so authors resolve in one batched query
+  instead of one per article.
+- After pagination, when the user is authenticated, builds `context['follows']` with a **single**
+  scoped query (`follow_set.filter(content_type=Article, object_id__in=page_ids)` over the page's
+  ~10 ids), cast to `int` (actstream `object_id` is a `CharField`), and sets
+  `context['prefetched_article_data'] = True`. This fixes the bookmark state and keeps the
+  per-article `is_following` branch disabled.
+
+### Expected impact
+
+- Read-later bookmark renders in its correct saved/unsaved state for authenticated users.
+- Author queries: one per article (~8–10 on a full page) → **1 batched prefetch**.
+- The `follows` lookup adds exactly **one** query (scoped to the page's ids), not an N+1.
+
+### Regression tests
+
+`core/tests/test_section.py`:
+- `test03_section_detail_marks_followed_articles_as_saved` — a followed article renders the
+  `added` bookmark, a non-followed one does not. Fails without the `follows` fix.
+- `test04_section_detail_batches_author_queries` — author queries (`core_article_byline`) stay at
+  ≤1 per request. Fails (8 queries) without `prefetch_related('byline')`.
+
+### Remaining known issues (not fixed in this branch)
+
+- **`publication_section()` N+1** (`core/models.py:2009`): for each article whose publication does
+  not match its `main_section`'s, `render_hierarchy` calls `article.publication_section(pub)`, which
+  runs `articlerel_set.filter(edition__publication=pub).order_by('position')[:1]` — one
+  `core_articlerel` query per article (debug toolbar: "8 consultas similares, repetidas 2 veces").
+  Left for a future branch: prefetching it correctly needs a filtered `Prefetch` plus careful
+  testing of the many section-selection branches so the rendered section does not change.
+- **`get_section_articles_sql` materializes all ids before paginating**
+  (`core/views/section.py:79`): the view pulls *every* article id of the section into Python via
+  `.raw()`, then `filter(id__in=[...])`, so the full id list is sent to MySQL twice per request
+  (once for the paginator `COUNT(*)`, once for the `LIMIT 10` SELECT). Fast today but scales with
+  section size; the proper fix is to paginate in SQL. Same smell as the pre-pagination N+1 fixed
+  for `lista-lectura-historial`. Left for a future branch.
