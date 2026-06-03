@@ -18,7 +18,12 @@ class ArticleSitemap(Sitemap):
     changefreq = 'never'
     priority = 1.0
     protocol = 'https'
-    limit = 1000
+    # This is the general (web) sitemap, so Google's per-sitemap limit is 50000
+    # URLs (not the 1000 of Google News). Paginating by 1000 produced ~140
+    # pages, each a separate cache key that crawlers hit one by one, defeating
+    # the cache. A high limit keeps it to a handful of pages. The Google News
+    # sitemaps (ArticleNewsSitemap, ArticleNews48hsSitemap) keep limit=1000.
+    limit = 50000
 
     def items(self):
         return published_non_satirical_articles
