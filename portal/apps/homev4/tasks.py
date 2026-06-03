@@ -58,18 +58,6 @@ def resolve_daily_layouts_task():
     layout's grid_data, then propagates to all sibling layouts via _propagate_article_ids.
     This ensures build_home_data() has a single source of truth — the layout itself.
     """
-    # Guard against django_celery_beat firing this task early due to beat restarts.
-    # Only proceed if we are within the 4:30–6:00 window around the scheduled 5am run.
-    now_local = timezone.localtime()
-    hour, minute = now_local.hour, now_local.minute
-    in_window = (hour == 4 and minute >= 30) or hour == 5 or (hour == 6 and minute == 0)
-    if not in_window:
-        logger.warning(
-            "resolve_daily_layouts_task: fired outside 5am window (local=%02d:%02d) — skipping to avoid early publish",
-            hour, minute,
-        )
-        return
-
     suplemento_ids = _resolve_suplemento_ids()
     is_saturday = timezone.localdate().weekday() == 5
     extra_ids = _resolve_extra_article_ids() if is_saturday else []

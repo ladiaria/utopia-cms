@@ -877,8 +877,10 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
             seen_ids.update(comp.get("article_ids", []))
 
     # 5. ÁREAS — merge defaults not yet in sections, then resolve fallback with full seen_ids
-    # Skip the suplemento source only when suplemento actually has content, not just based on the day.
-    suplemento_has_content = bool(resolved.get("suplemento", {}).get("article_ids"))
+    # Skip the suplemento source only when suplemento is active. Using article_ids would
+    # incorrectly trigger the skip on sibling layouts that inherited propagated IDs but have
+    # their suplemento off (e.g. Tuesday after Monday's 5am propagation sets deporte IDs).
+    suplemento_has_content = resolved.get("suplemento", {}).get("active", True)
     today_source = (
         _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if suplemento_has_content else None
@@ -2014,6 +2016,12 @@ def preview_5am(request):
     has_pending = pending_layout is not None and isinstance(pending_layout.pending_grid_data, dict) and pending_layout.pending_grid_data.get("date") == today.isoformat()
 
     any_layout = HomeLayout.objects.filter(publication=publication).first()
+    # Compute target_weekday (next publishing day) to pass the correct suplemento source
+    # slug to the editor JS for dimming — same logic used by the 5am Celery task.
+    _publishing_h, _publishing_m = [int(x) for x in settings.PUBLISHING_TIME.split(":")]
+    _now_time = timezone.localtime().time()
+    _target_weekday = today.weekday() if _now_time < datetime.time(_publishing_h, _publishing_m) else (today.weekday() + 1) % 7
+    _target_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(_target_weekday)
     context = {
         "editor_data": editor_data,
         "save_grid_url": "/homev4/save-pending/",
@@ -2024,6 +2032,7 @@ def preview_5am(request):
         "layout_editor_css_version": _static_hash("homev4/layout_editor.css"),
         "is_preview_5am": True,
         "has_pending": has_pending,
+        "today_suplemento_source_slug": _target_source[1] if _target_source else "",
     }
     return render(request, "homev4/preview_5am.html", context)
 

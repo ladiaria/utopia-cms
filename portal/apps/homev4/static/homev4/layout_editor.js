@@ -142,6 +142,46 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     initActiveToggles();
 
+    /*
+     * Visual dimming of the suplemento source section in áreas y publicaciones.
+     *
+     * When suplemento is active, the home hides the matching vertical from the áreas
+     * block at render time (build_home_data in views.py). The editor reflects this
+     * by dimming the section card visually.
+     *
+     * IMPORTANT: the section's `active` flag in grid_data is NOT changed here — it stays
+     * true. Reason: if the editor set it to false, turning off the suplemento later would
+     * leave the vertical permanently hidden until the editor manually re-enables it. By
+     * keeping active=true in the JSON, the section reappears automatically on the home
+     * the moment suplemento is turned off, with no extra editor action needed.
+     *
+     * The dimming class (is-suplemento-source) is therefore purely cosmetic and intentionally
+     * diverges from the checkbox state — the checkbox stays checked while the card is dimmed.
+     */
+    function applySuplementoSourceDimming(isSuplementoActive) {
+        var slug = DATA.todaySuplementoSourceSlug;
+        if (!slug) return;
+        var sectionCard = document.querySelector(".block-area[data-section-slug='" + slug + "']");
+        if (!sectionCard) return;
+        sectionCard.classList.toggle("is-suplemento-source", isSuplementoActive);
+        // Tooltip explains why the card is dimmed. Removed when suplemento is off so the
+        // title doesn't linger after the vertical is restored to áreas.
+        if (isSuplementoActive) {
+            sectionCard.title = "Este vertical no se muestra en áreas porque es la fuente del suplemento activo. Se restaura automáticamente si el suplemento se apaga.";
+        } else {
+            sectionCard.removeAttribute("title");
+        }
+    }
+
+    // Init: apply dimming based on current suplemento state on page load.
+    var suplementoCb = document.querySelector(".block-active[data-block='suplemento']");
+    if (suplementoCb) {
+        applySuplementoSourceDimming(suplementoCb.checked);
+        suplementoCb.addEventListener("change", function () {
+            applySuplementoSourceDimming(this.checked);
+        });
+    }
+
     // Init: article sorting within PRINCIPAL
     makeSortable(document.getElementById("principal-articles"), ".article-row[data-article-id]");
 
