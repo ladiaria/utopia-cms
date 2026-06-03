@@ -337,6 +337,16 @@ prefetching, causing N+1 queries in the template for `article.get_authors()` and
   cast to `int` (actstream `object_id` is a `CharField`).
 - Passes `prefetched_article_data=True`.
 
+### Regression introduced by this branch (fixed 2026-06-01)
+
+The `page_ids = [a.id for a in followings.object_list]` line added to `lista_lectura_leer_despues()`
+above raised `'NoneType' object has no attribute 'id'` for any user with a **deleted** followed
+article: `recent_following()` returned `follow.follow_object`, which actstream resolves to `None`
+when the object is gone. The previous code never dereferenced `.id`, so the bad data was latent and
+harmless until this refactor. Fixed by dropping the `None` entries in `recent_following()` itself
+(also corrects a slightly inflated read-later count). Regression test:
+`thedaily/tests/test_recent_following.py`.
+
 ### Remaining known N+1 (not fixed in this branch)
 
 Both utility functions that build the full article list before pagination still have an
@@ -350,3 +360,146 @@ unavoidable N+1:
 These fire before pagination, so they scale with the user's total follow/history count, not the
 page size. Fixing them requires refactoring both functions to fetch all article IDs first and
 resolve objects in a single batch query. That work is left for a future branch.
+
+---
+
+## `usuarios/lista-lectura-historial/` — unbounded N+1 before pagination (avg 6s, max 20s)
+
+**Date:** 2026-06-01
+**Branch:** `perf/lista-lectura-historial-n1`
+
+### Root cause identified
+
+The 2026-05-28 branch added `select_related`/`prefetch_related` for the **displayed page** of
+`lista_lectura_historial()`, but the line above it still called `user_read_history(request.user)`
+with **no `limit`**. That builds the user's *entire* read history before paginating, and
+`user_read_history()` (`thedaily/utils.py`) resolves every item with an individual
+`Article.objects.get(id=article_id)` inside the MongoDB loop plus an unprefetched walk over the
+relational `articleviewedby_set`. A user with thousands of viewed articles triggers thousands of
+queries just to `len()` the list and show 10 rows.
+
+This was the worst endpoint in the 2026-06-01 (06:13–10:13) peak log analysis: **avg 5973ms, max
+19676ms**, scaling directly with history size (53ms for a small history → ~20s for a large one).
+It was the top source of the 181 HTTP 499 (client-aborted) responses that morning. The
+2026-05-28 branch had documented this exact case as "left for a future branch" (see section
+above).
+
+### Data model context (Mongo ↔ Postgres)
+
+Read history lives in two places. Authenticated article views are upserted into MongoDB
+(`core_articleviewedby`, in `core/views/article.py`) as a hot write buffer. The
+`sync_articleviewedby` management command drains Mongo with `find_one_and_delete` and consolidates
+each doc into the relational `ArticleViewedBy` model. So **Mongo = recently viewed / not yet
+synced; Postgres = consolidated history**. `user_read_history()` unions the two (Mongo first,
+newest, then Postgres excluding ids already seen in Mongo).
+
+### Fix applied
+
+#### `thedaily/utils.py` — `user_read_history(..., ids_only=False)`
+
+Added an `ids_only` fast path that returns ordered `(article_id, viewed_at)` tuples **without
+instantiating any `Article`**: the Mongo cursor contributes its ids directly, and the relational
+union uses `values_list('article_id', 'viewed_at')` instead of touching `avb.article`. Removed
+articles are no longer filtered here — a stale id is dropped naturally by the caller's batched
+`Article.objects.filter(id__in=...)`. The original (object-returning) behaviour is untouched, so
+the other two callers (`last_read` with `limit=5`, `read_articles_percentage` with
+`mongo_db_only=True`) are unaffected.
+
+#### `thedaily/views.py` — `lista_lectura_historial()`
+
+Now calls `user_read_history(request.user, ids_only=True)`, paginates over the id tuples, and
+materializes **only the page's 10 articles** with the existing `select_related`/`prefetch_related`
+query. `historial_count` comes from `len()` of the cheap id list.
+
+### Expected impact
+
+- Query count per request: **~N (history size)** → **fixed (~20 for a 10-item page)**, independent
+  of history size.
+- The 17–20s outliers should disappear; the 499s caused by users abandoning the slow page should
+  go with them.
+
+### Measured locally (debug toolbar, user with 501-item history)
+
+| | main (before) | branch (after) |
+|---|---|---|
+| SQL queries | **521** | **20** |
+| SQL time | 920 ms | 19.5 ms |
+| CPU time | 4049 ms | 232 ms |
+
+The 521 → 20 drop is exactly one `Article.objects.get()` per history item eliminated. The query
+count on the branch is fixed by page size (10), not by total history size.
+
+### `recent_following()` still pending
+
+`recent_following()` (`thedaily/utils.py`) has the same actstream-driven N+1, but
+`/lista-lectura-leer-despues/` measured fast in the 2026-06-01 peak (avg 112ms) because users
+follow few articles. Same `ids_only`-style refactor applies if it ever shows up in the logs.
+
+---
+
+## `seccion/<slug>/` — bookmark always unsaved + author N+1
+
+**Date:** 2026-06-02
+**Branch:** `perf/section-detail-follows-n1`
+
+### Root causes identified
+
+#### 1. `follows` not passed to template context — read-later bookmark never shows as saved
+`section_detail()` (`core/views/section.py`) renders the article cards via
+`render_card variant="card_standard"`, and `card_standard.html` includes
+`article_card_read_later.html` with `prefetched_article_data=True` hardcoded. That flag makes the
+template take the `{% if a.id in follows %}` branch — but the view never put `follows` in the
+context, so `a.id in follows` was always `False` and **every bookmark rendered in the unsaved
+state**, even for articles the user had saved to read later. This is the same class of bug fixed
+for `/masleidos/` and `/lista-lectura/`.
+
+Note: the hardcoded flag also (accidentally) shielded the view from the alternative
+`{% elif ... user|is_following:a %}` branch, which would fire one actstream query per article. So
+the bug was masking a latent N+1 rather than causing one.
+
+#### 2. Author N+1 — `get_authors()` one query per article
+The main article queryset (the non-edition `get_section_articles_sql` branch) had
+`select_related` for sections/publication/photo but no `prefetch_related('byline')`. The card
+template calls `article.get_authors()` (`article.byline.all()`) for every article on the page, so
+each one fired a separate `core_journalist` query — confirmed in the debug toolbar as
+"10 consultas similares".
+
+### Fixes applied
+
+#### `core/views/section.py` — `section_detail()`
+- Added `prefetch_related('byline')` to the main queryset so authors resolve in one batched query
+  instead of one per article.
+- After pagination, when the user is authenticated, builds `context['follows']` with a **single**
+  scoped query (`follow_set.filter(content_type=Article, object_id__in=page_ids)` over the page's
+  ~10 ids), cast to `int` (actstream `object_id` is a `CharField`), and sets
+  `context['prefetched_article_data'] = True`. This fixes the bookmark state and keeps the
+  per-article `is_following` branch disabled.
+
+### Expected impact
+
+- Read-later bookmark renders in its correct saved/unsaved state for authenticated users.
+- Author queries: one per article (~8–10 on a full page) → **1 batched prefetch**.
+- The `follows` lookup adds exactly **one** query (scoped to the page's ids), not an N+1.
+
+### Regression tests
+
+`core/tests/test_section.py`:
+- `test03_section_detail_marks_followed_articles_as_saved` — a followed article renders the
+  `added` bookmark, a non-followed one does not. Fails without the `follows` fix.
+- `test04_section_detail_batches_author_queries` — author queries (`core_article_byline`) stay at
+  ≤1 per request. Fails (8 queries) without `prefetch_related('byline')`.
+
+### Remaining known issues (not fixed in this branch)
+
+- **`publication_section()` N+1** (`core/models.py:2009`): for each article whose publication does
+  not match its `main_section`'s, `render_hierarchy` calls `article.publication_section(pub)`, which
+  runs `articlerel_set.filter(edition__publication=pub).order_by('position')[:1]` — one
+  `core_articlerel` query per article (debug toolbar: "8 consultas similares, repetidas 2 veces").
+  Left for a future branch: prefetching it correctly needs a filtered `Prefetch` plus careful
+  testing of the many section-selection branches so the rendered section does not change.
+- **`get_section_articles_sql` materializes all ids before paginating**
+  (`core/views/section.py:79`): the view pulls *every* article id of the section into Python via
+  `.raw()`, then `filter(id__in=[...])`, so the full id list is sent to MySQL twice per request
+  (once for the paginator `COUNT(*)`, once for the `LIMIT 10` SELECT). Fast today but scales with
+  section size; the proper fix is to paginate in SQL. Same smell as the pre-pagination N+1 fixed
+  for `lista-lectura-historial`. Left for a future branch.

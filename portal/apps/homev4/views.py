@@ -13,6 +13,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import get_template
 from django.core.cache import cache
@@ -738,6 +739,26 @@ def _resolve_newsletter_refs(refs):
         except (Publication.DoesNotExist, Category.DoesNotExist):
             pass
     return result
+
+
+def _pick_newsletter_dia(newsletters, user):
+    """Return the first newsletter in the list that user is not yet subscribed to.
+
+    Falls back to newsletters[0] for unauthenticated users or those without a
+    subscriber profile (rules 1 and 2).  Returns None when all newsletters are
+    active (rule 4).
+    """
+    if user.is_authenticated and hasattr(user, "subscriber"):
+        sub = user.subscriber
+        active_refs = (
+            {"publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)} |
+            {"category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True)}
+        )
+        for nl in newsletters:
+            if (nl["type"] + ":" + nl["slug"]) not in active_refs:
+                return nl
+        return None
+    return newsletters[0]
 
 
 # Keys whose article_ids are never auto-resolved by resolve_layout_grid_data.
@@ -1622,24 +1643,7 @@ def active_layout(request, publication_slug=None):
         if comp.get("key") == "newsletter_dia":
             newsletters = comp.get("newsletters", [])
             if newsletters:
-                if user.is_authenticated and hasattr(user, "subscriber"):
-                    sub = user.subscriber
-                    # Build a set of "type:slug" strings for all newsletters the user has active.
-                    # sub.newsletters      → ManyToMany to Publication (type="publication")
-                    # sub.category_newsletters → ManyToMany to Category (type="category")
-                    # Both values_list queries are batched in a single round-trip each; union avoids a third query.
-                    active_refs = (
-                        {"publication:" + slug for slug in sub.newsletters.values_list("slug", flat=True)} |
-                        {"category:" + slug for slug in sub.category_newsletters.values_list("slug", flat=True)}
-                    )
-                    for nl in newsletters:
-                        if (nl["type"] + ":" + nl["slug"]) not in active_refs:
-                            newsletter_dia_nl = nl
-                            break
-                    # If all newsletters are active, newsletter_dia_nl stays None (rule 4).
-                else:
-                    # Unauthenticated or no subscriber record: show the first in the list (rule 1).
-                    newsletter_dia_nl = newsletters[0]
+                newsletter_dia_nl = _pick_newsletter_dia(newsletters, user)
             break
     logger.warning("active_layout newsletter_dia: %.1f ms", (time.perf_counter() - _t_nl) * 1000)
     context["newsletter_dia_nl"] = newsletter_dia_nl
@@ -2107,7 +2111,53 @@ def save_preview_session(request):
         return JsonResponse({"error": str(e)}, status=400)
 
 
+@never_cache
+def nl_dia_status(request, publication_slug=None):
+    """Return the newsletter_dia to surface to the current user as JSON.
+
+    Called by the home page JS to hydrate the newsletter_dia sidebar component
+    after the page is served from cache.  Returns {"nl": null} when no newsletter
+    needs to be shown (user subscribed to all, or unauthenticated).
+    """
+    user = request.user
+    if not user.is_authenticated:
+        return JsonResponse({"nl": None})
+
+    if publication_slug:
+        publication = get_object_or_404(Publication, slug=publication_slug)
+    else:
+        publication = get_default_publication()
+
+    layout = HomeLayout.get_active_layout(publication)
+    grid_data = layout.grid_data if (layout and isinstance(layout.grid_data, dict)) else {}
+
+    newsletters = []
+    for comp in grid_data.get("componentes", []):
+        if comp.get("key") == "newsletter_dia":
+            newsletters = _resolve_newsletter_refs(comp.get("newsletter_refs", []))
+            break
+
+    if not newsletters:
+        return JsonResponse({"nl": None})
+
+    newsletter_dia_nl = _pick_newsletter_dia(newsletters, user)
+
+    if newsletter_dia_nl is None:
+        return JsonResponse({"nl": None})
+
+    nltype = "c" if newsletter_dia_nl["type"] == "category" else "p"
+    preview_url_name = "c-nl-browser-authpreview" if nltype == "c" else "p-nl-browser-authpreview"
+    result = {
+        **newsletter_dia_nl,
+        "nltype": nltype,
+        "subscribe_url": reverse("nl-auth-subscribe", kwargs={"nltype": nltype, "nlslug": newsletter_dia_nl["slug"]}),
+        "preview_url": reverse(preview_url_name, kwargs={"slug": newsletter_dia_nl["slug"]}),
+    }
+    return JsonResponse({"nl": result})
+
+
 @staff_member_required
+@never_cache
 def save_pending_grid(request):
     """Save grid_data to pending_grid_data on the first layout of the default publication.
     Called by the Preview 5am editor. Does not propagate — the Celery task does that at 5am.
