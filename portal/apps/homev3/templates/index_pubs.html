@@ -22,7 +22,9 @@
 
 {% block content %}
 
-  {% include cover_grid_template|default:'category/cover_grid.html' %}
+  {% block cover_grid %}
+    {% include cover_grid_template|default:'category/cover_grid.html' %}
+  {% endblock %}
 
   {% block cover_ads %}
     {% if allow_ads and not is_subscriber %}
