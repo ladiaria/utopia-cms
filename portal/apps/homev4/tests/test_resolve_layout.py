@@ -702,6 +702,94 @@ class BuildHomeDataSectionsCapTest(SimpleTestCase):
         self.assertEqual(shown, ["s3", "s1", "s2", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12"])
 
 
+class SupplementoActiveExclusionTest(SimpleTestCase):
+    """
+    Tests that the suplemento's `active` flag — not its `article_ids` — determines
+    whether the suplemento source vertical is excluded from the areas block.
+
+    Condition (QA): "si el suplemento está prendido → apago ese vertical en áreas;
+    si está apagado → muestro el vertical abajo con sus dos artículos."
+
+    Root cause of the bug: suplemento_has_content (line 881 of views.py) used
+    bool(article_ids), so propagated IDs on an INACTIVE sibling layout triggered
+    today_source and skipped the vertical — leaving it empty even though suplemento
+    was off for that day.
+
+    Fix: use suplemento.active (not article_ids) to set suplemento_has_content.
+    """
+
+    # Wednesday: weekday()=2 → _SUPLEMENTO_SOURCE_BY_WEEKDAY maps to ("category", "mundo")
+    _WEDNESDAY = datetime.date(2026, 4, 22)
+    _WEEKDAY_MAP = {2: ("category", "mundo")}
+
+    def _run(self, grid_data, *, area_ids=(10, 11)):
+        with patch("homev4.views.get_current_edition") as mock_edition, \
+             patch("homev4.views._fetch_source_articles", return_value=[]), \
+             patch("homev4.views._fetch_area_articles",
+                   side_effect=lambda area_type, slug, saved_ids, exclude_ids=None: (
+                       [_art(i) for i in saved_ids] if saved_ids
+                       else [_art(i) for i in area_ids if i not in (exclude_ids or set())]
+                   )), \
+             patch("homev4.views._fetch_component_articles", return_value=[]), \
+             patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", self._WEEKDAY_MAP), \
+             patch("homev4.views.timezone") as mock_tz:
+            mock_edition.return_value.top_articles = []
+            mock_tz.localdate.return_value = self._WEDNESDAY
+            mock_tz.now.return_value = MagicMock()
+            return resolve_layout_grid_data(grid_data)
+
+    def _mundo_section(self, article_ids=None):
+        return {"type": "category", "slug": "mundo", "name": "Mundo", "active": True, "article_ids": article_ids or []}
+
+    def test_suplemento_inactive_with_propagated_ids_shows_mundo_in_areas(self):
+        """Suplemento OFF (active=False) but has propagated article_ids (from sibling
+        layout) → mundo must appear in areas with fresh articles.
+
+        This is the exact bug the QA reported: the Tuesday layout had deporte IDs
+        propagated into its suplemento by Monday's 5am task, but Tuesday's suplemento
+        was inactive. The old code used bool(article_ids) which triggered today_source
+        and skipped the vertical, leaving it empty.
+        """
+        grid = {
+            "suplemento": {"active": False, "article_ids": [99, 98]},
+            "sections": [self._mundo_section(article_ids=[])],
+        }
+        result = self._run(grid)
+        mundo = next((s for s in result["sections"] if s["slug"] == "mundo"), None)
+        self.assertIsNotNone(mundo, "mundo must be present in sections")
+        self.assertGreater(len(mundo["article_ids"]), 0,
+                           "mundo must have articles — suplemento is OFF so vertical belongs in areas")
+
+    def test_suplemento_active_with_content_skips_mundo_in_areas(self):
+        """Suplemento ON (active=True) with mundo articles → mundo must NOT get
+        fresh articles in areas (it already appears in suplemento).
+
+        This is the existing correct behavior and must not regress after the fix.
+        """
+        grid = {
+            "suplemento": {"active": True, "article_ids": [99, 98]},
+            "sections": [self._mundo_section(article_ids=[])],
+        }
+        result = self._run(grid)
+        mundo = next((s for s in result["sections"] if s["slug"] == "mundo"), None)
+        articles_in_mundo = len(mundo["article_ids"]) if mundo else 0
+        self.assertEqual(articles_in_mundo, 0,
+                         "mundo must have no articles in areas — suplemento is ON")
+
+    def test_suplemento_inactive_empty_ids_shows_mundo_in_areas(self):
+        """Suplemento OFF (active=False) with no article_ids → mundo shown normally.
+        Baseline: this already works before the fix."""
+        grid = {
+            "suplemento": {"active": False, "article_ids": []},
+            "sections": [self._mundo_section(article_ids=[])],
+        }
+        result = self._run(grid)
+        mundo = next((s for s in result["sections"] if s["slug"] == "mundo"), None)
+        self.assertIsNotNone(mundo)
+        self.assertGreater(len(mundo["article_ids"]), 0,
+                           "mundo must have articles — suplemento is OFF")
+
+
 class SortSectionsByRecencyTest(SimpleTestCase):
     """
     Tests that _sort_sections_by_recency orders sections by the date_published
@@ -782,6 +870,25 @@ class SortSectionsByRecencyTest(SimpleTestCase):
             {"slug": "cultura", "article_ids": []},
         ]
         result = self._run(sections, {})
+        self.assertEqual(result, ["mundo", "cultura"])
+
+    def test_none_date_does_not_crash(self):
+        """Article with date_published=None must not crash the sort.
+
+        dates.get(key, default) does NOT fall back when the key exists but maps
+        to None — the old code raised TypeError on comparison. The fix uses
+        (dates.get(key) or min_date) to handle both absent and None cases.
+        """
+        sections = [
+            {"slug": "mundo",   "article_ids": [1]},
+            {"slug": "cultura", "article_ids": [2]},
+        ]
+        dates = {
+            1: self._dt(2026, 4, 20),
+            2: None,  # key present but value is None — the crash scenario
+        }
+        result = self._run(sections, dates)
+        # mundo has a real date so it sorts first; cultura (None) goes last
         self.assertEqual(result, ["mundo", "cultura"])
 
 
