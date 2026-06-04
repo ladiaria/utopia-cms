@@ -1,5 +1,5 @@
 {% extends "newsletter/base.html" %}
-{% load bleach_tags ldml core_tags %}
+{% load bleach_tags ldml core_tags static %}
 
 {% block extra_style %}
   <style>
@@ -16,6 +16,41 @@
       font-weight: 700;
       mso-font-alt: 'Arial';
       src: url(https://fonts.gstatic.com/s/roboto/v27/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2) format('woff2');
+    }
+    @font-face {
+      font-family: 'Dialect Gothic A';
+      font-style: normal;
+      font-weight: 400;
+      mso-font-alt: 'Arial';
+      src: url('{{ site_url }}{% static "fonts/dialect/DialectGothicA-Regular.otf" %}') format('opentype');
+    }
+    @font-face {
+      font-family: 'Dialect Gothic A';
+      font-style: normal;
+      font-weight: 500;
+      mso-font-alt: 'Arial';
+      src: url('{{ site_url }}{% static "fonts/dialect/DialectGothicA-Medium.otf" %}') format('opentype');
+    }
+    @font-face {
+      font-family: 'Dialect Gothic A';
+      font-style: normal;
+      font-weight: 700;
+      mso-font-alt: 'Arial';
+      src: url('{{ site_url }}{% static "fonts/dialect/DialectGothicA-Bold.otf" %}') format('opentype');
+    }
+    @font-face {
+      font-family: 'Review Condensed';
+      font-style: normal;
+      font-weight: 400;
+      mso-font-alt: 'Georgia';
+      src: url('{{ site_url }}{% static "fonts/ReviewCondensed/ReviewCondensed-Regular.otf" %}') format('opentype');
+    }
+    @font-face {
+      font-family: 'Review Condensed';
+      font-style: normal;
+      font-weight: 700;
+      mso-font-alt: 'Georgia';
+      src: url('{{ site_url }}{% static "fonts/ReviewCondensed/ReviewCondensed-Bold.otf" %}') format('opentype');
     }
   </style>
 {% endblock %}

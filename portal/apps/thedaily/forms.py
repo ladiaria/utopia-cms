@@ -206,7 +206,7 @@ class PreLoginForm(CrispyForm):
 
 
 class LoginForm(CrispyForm):
-    name_or_mail = CharField(label='Email', widget=TextInput(attrs={'class': CSS_CLASS}))
+    name_or_mail = CharField(label='Email', widget=EmailInput(attrs={'class': CSS_CLASS}))
     password = CharField(
         label='Contraseña',
         widget=PasswordInput(attrs={'class': CSS_CLASS, 'autocomplete': 'current-password', 'autocapitalize': 'none'}),
