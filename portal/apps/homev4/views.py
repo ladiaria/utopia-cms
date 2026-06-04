@@ -239,6 +239,11 @@ def _propagate_article_ids(source_layout, source_grid):
         for block in ("principal", "suplemento", "especial", "extra_articles")
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
+    # Preserve the source layout's section order in siblings. refresh_home_layouts_task sorts
+    # the active layout by recency before calling here, so propagating the order keeps siblings
+    # in sync without extra DB queries (all siblings share the same article_ids after propagation,
+    # so re-running the sort on each would be N identical queries producing the same result).
+    src_section_order = [s["slug"] for s in source_grid.get("sections", [])]
     # Exclude no_articles components (e.g. crucigrama) — they have no article_ids to propagate.
     src_componentes = {
         c["key"]: c.get("article_ids", [])
@@ -261,9 +266,13 @@ def _propagate_article_ids(source_layout, source_grid):
             block_data["article_ids"] = ids
             gd[block] = block_data
 
-        for sec in gd.get("sections", []):
-            if sec.get("slug") in src_sections:
-                sec["article_ids"] = src_sections[sec["slug"]]
+        by_slug = {s["slug"]: s for s in gd.get("sections", [])}
+        for slug, ids in src_sections.items():
+            if slug in by_slug:
+                by_slug[slug]["article_ids"] = ids
+        src_order_set = set(src_section_order)
+        extra_sections = [s for s in by_slug.values() if s.get("slug") not in src_order_set]
+        gd["sections"] = [by_slug[slug] for slug in src_section_order if slug in by_slug] + extra_sections
 
         existing_comp_keys = {c.get("key") for c in gd.get("componentes", [])}
         for comp in gd.get("componentes", []):
