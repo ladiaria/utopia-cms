@@ -66,7 +66,13 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Fechas", {"fields": ("created", "modified")}),
     )
-    actions = []
+    actions = ["force_resolve_daily_layouts"]
+
+    @admin.action(description="Forzar ejecución de la tarea 5am ahora (ignora ventana horaria)")
+    def force_resolve_daily_layouts(self, request, queryset):
+        from .tasks import resolve_daily_layouts_task
+        resolve_daily_layouts_task.delay(force=True)
+        self.message_user(request, "Tarea 5am encolada con force=True.", level=messages.SUCCESS)
 
     def get_list_editable(self, request):
         if request.user.is_superuser:
