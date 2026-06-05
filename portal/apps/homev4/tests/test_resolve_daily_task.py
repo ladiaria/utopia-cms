@@ -22,6 +22,8 @@ from django.test import SimpleTestCase
 
 _SATURDAY = datetime.date(2026, 4, 25)   # weekday() == 5
 _SATURDAY_5AM = datetime.datetime(2026, 4, 25, 5, 0, 0, tzinfo=datetime.timezone.utc)
+_SUNDAY = datetime.date(2026, 4, 26)    # weekday() == 6
+_SUNDAY_5AM = datetime.datetime(2026, 4, 26, 5, 0, 0, tzinfo=datetime.timezone.utc)
 
 
 def _make_pub_cls(mock_instance):
@@ -38,7 +40,8 @@ class ResolveDailyTaskPendingPathTest(SimpleTestCase):
     pending grid before saving — the same blocks the non-pending path resolves.
     """
 
-    def _run_task_pending(self, today, localtime_dt, suplemento_ids, extra_ids, pending_grid):
+    def _run_task_pending(self, today, localtime_dt, suplemento_ids, extra_ids, pending_grid,
+                          pending_date=None):
         """
         Run resolve_daily_layouts_task with one publication that has pending_grid_data.
         Returns the mock active layout so callers can inspect grid_data after the task.
@@ -47,7 +50,8 @@ class ResolveDailyTaskPendingPathTest(SimpleTestCase):
         mock_pub_cls = _make_pub_cls(mock_pub)
 
         mock_pending_layout = MagicMock()
-        mock_pending_layout.pending_grid_data = {"date": today.isoformat(), "grid": pending_grid}
+        stored_date = pending_date if pending_date is not None else today
+        mock_pending_layout.pending_grid_data = {"date": stored_date.isoformat(), "grid": pending_grid}
 
         mock_active_layout = MagicMock()
         mock_active_layout.grid_data = {}
@@ -58,6 +62,7 @@ class ResolveDailyTaskPendingPathTest(SimpleTestCase):
              patch("homev4.tasks._resolve_extra_article_ids", return_value=extra_ids), \
              patch("homev4.tasks._propagate_article_ids"), \
              patch("homev4.tasks._write_audit_log"), \
+             patch("homev4.tasks._sync_principal_to_edition"), \
              patch("homev4.tasks.get_papel_url"), \
              patch("homev4.tasks.transaction"), \
              patch("homev4.tasks.logger"), \
@@ -140,3 +145,68 @@ class ResolveDailyTaskPendingPathTest(SimpleTestCase):
             [],
             "Friday's suplemento IDs must be cleared when applying Saturday's pending grid",
         )
+
+    def test_pending_prepared_yesterday_is_applied(self):
+        """
+        Editors preparing Sunday's home do so on Saturday night, so pending_grid_data is
+        saved with date=Saturday. The task runs on Sunday and must apply it — not discard
+        it as stale. Bug: previously only today's date was accepted.
+        """
+        layout = self._run_task_pending(
+            today=_SUNDAY,
+            localtime_dt=_SUNDAY_5AM,
+            suplemento_ids=[],
+            extra_ids=[],
+            pending_grid={
+                "principal": {"article_ids": [1, 2]},
+                "especial": {"active": True, "article_ids": [99]},
+                "suplemento": {"article_ids": []},
+            },
+            pending_date=_SATURDAY,  # prepared Saturday night, task runs Sunday 5am
+        )
+        saved = layout.grid_data
+        self.assertIn("especial", saved, "especial block from yesterday's pending must be present")
+        self.assertEqual(saved["especial"]["article_ids"], [99])
+
+    def test_pending_two_days_old_is_discarded(self):
+        """
+        Pending older than yesterday must be discarded — the one-day window only covers
+        the Saturday-night/Sunday-5am scenario. Older pending indicates a forgotten or
+        failed save that should not be applied days later.
+        """
+        two_days_ago = _SUNDAY - datetime.timedelta(days=2)  # Friday
+
+        mock_pub = MagicMock()
+        mock_pub_cls = _make_pub_cls(mock_pub)
+
+        mock_pending_layout = MagicMock()
+        mock_pending_layout.pending_grid_data = {
+            "date": two_days_ago.isoformat(),
+            "grid": {"especial": {"article_ids": [99]}},
+        }
+
+        with patch("homev4.tasks.timezone.localtime", return_value=_SUNDAY_5AM), \
+             patch("homev4.tasks.timezone.localdate", return_value=_SUNDAY), \
+             patch("homev4.tasks._resolve_suplemento_ids", return_value=[]), \
+             patch("homev4.tasks._resolve_extra_article_ids", return_value=[]), \
+             patch("homev4.tasks._propagate_article_ids"), \
+             patch("homev4.tasks._write_audit_log"), \
+             patch("homev4.tasks.get_papel_url"), \
+             patch("homev4.tasks.transaction"), \
+             patch("homev4.tasks.logger"), \
+             patch("django.core.cache.cache"), \
+             patch("homev4.tasks.HomeLayout") as mock_hl, \
+             patch("core.models.Publication", new=mock_pub_cls):
+
+            mock_active_layout = MagicMock()
+            mock_active_layout.grid_data = {}
+            mock_hl.objects.order_by.return_value.values_list.return_value.distinct.return_value = [1]
+            mock_hl.objects.filter.return_value.first.return_value = mock_pending_layout
+            mock_hl.get_active_layout.return_value = mock_active_layout
+
+            from homev4.tasks import resolve_daily_layouts_task
+            resolve_daily_layouts_task()
+
+        # pending must be cleared (set to None) without being applied to the active layout
+        mock_pending_layout.save.assert_called()
+        self.assertIsNone(mock_pending_layout.pending_grid_data)
