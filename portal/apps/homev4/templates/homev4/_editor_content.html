@@ -425,6 +425,9 @@ window.HOMEV4_DATA = {
     articleSearchUrl: "{{ article_search_url }}",
     newsletterSearchUrl: "{{ newsletter_search_url }}",
     {% if lo_ultimo_latest_url %}loUltimoLatestUrl: "{{ lo_ultimo_latest_url }}",{% endif %}
+    // Slug of today's suplemento source (e.g. "deporte", "mundo"). Empty string when no
+    // suplemento today. Used by applySuplemento­SourceDimming in layout_editor.js.
+    todaySuplementoSourceSlug: "{{ today_suplemento_source_slug|default:'' }}",
     componentLabels: {
         {% for comp in editor_data.componentes %}"{{ comp.key }}": "{{ comp.label }}"{% if not forloop.last %},{% endif %}
         {% endfor %}

@@ -6,7 +6,7 @@
  */
 
 var staticCacheNamePrefix = "{{ site.name }}-v";
-var staticCacheName = staticCacheNamePrefix + new Date().getTime();
+var staticCacheName = staticCacheNamePrefix + "{{ version }}";
 var filesToCache = [{% block files_to_cache %}
   '/static/meta/utopia-1024x1024.png',
   '/static/meta/utopia-512x512.png',
@@ -23,6 +23,9 @@ self.addEventListener('install', function(e) {
 });
 
 self.addEventListener('fetch', e => {
+  // Don't intercept navigation requests — let browser handle page loads natively.
+  // Prevents blank pages on iOS Safari when resuming from background (TCP not re-established).
+  if (e.request.mode === 'navigate') return;
   {% block fetch_begin %}{% endblock %}
   {% block fetch_body %}
     e.respondWith(

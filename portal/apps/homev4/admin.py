@@ -9,8 +9,10 @@ from django.db.models import Case, IntegerField, Value, When
 from django.urls import reverse
 from django.utils.html import format_html
 
+from django.utils import timezone
+
 from .models import HomeLayout, HomeLayoutAuditLog, _DAY_CODE_TO_WEEKDAYS
-from .views import get_default_grid_data, LAYOUT_BLOCKS_CONFIG, build_editor_data, _static_hash
+from .views import get_default_grid_data, LAYOUT_BLOCKS_CONFIG, build_editor_data, _static_hash, _SUPLEMENTO_SOURCE_BY_WEEKDAY
 
 # Conditional import: when ADMIN_PAGE_LOCK_ENABLED=True in local_settings.py,
 # use AdminLockingMixin to show a warning banner if another user already has the
@@ -66,13 +68,29 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
         ("Override", {"fields": ("is_manual_override", "manual_override_by")}),
         ("Fechas", {"fields": ("created", "modified")}),
     )
-    actions = ["force_resolve_daily_layouts"]
+    actions = []
 
-    @admin.action(description="Forzar ejecución de la tarea 5am ahora (ignora ventana horaria)")
-    def force_resolve_daily_layouts(self, request, queryset):
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom = [
+            path("force-5am/", self.admin_site.admin_view(self.force_resolve_daily_layouts_view), name="homev4_force_5am"),
+        ]
+        return custom + urls
+
+    def force_resolve_daily_layouts_view(self, request):
+        from django.http import HttpResponseForbidden, HttpResponseRedirect
         from .tasks import resolve_daily_layouts_task
+        if not request.user.is_superuser:
+            return HttpResponseForbidden()
         resolve_daily_layouts_task.delay(force=True)
         self.message_user(request, "Tarea 5am encolada con force=True.", level=messages.SUCCESS)
+        return HttpResponseRedirect("../")
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["force_5am_url"] = "force-5am/"
+        return super().changelist_view(request, extra_context)
 
     def get_list_editable(self, request):
         if request.user.is_superuser:
@@ -95,6 +113,12 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
             grid_data = obj.grid_data if isinstance(obj.grid_data, dict) else get_default_grid_data()
             extra_context["editor_data"] = build_editor_data(grid_data, publication=obj.publication)
             extra_context["save_grid_url"] = f"/homev4/save/{obj.pk}/"
+            # Slug of today's suplemento source (e.g. "deporte" on Monday, "mundo" on Wednesday).
+            # Passed to the editor JS so it can visually dim the matching section in áreas when
+            # suplemento is active — purely cosmetic, the section's active flag in grid_data is
+            # NOT changed (see layout_editor.js applySuplementoSourceDimming).
+            _today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+            extra_context["today_suplemento_source_slug"] = _today_source[1] if _today_source else ""
             extra_context["reset_grid_url"] = f"/homev4/reset/{obj.pk}/"
             extra_context["sync_sections_url"] = f"/homev4/sync/{obj.pk}/"
             extra_context["preview_session_url"] = "/homev4/save-preview-session/"

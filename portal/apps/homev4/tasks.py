@@ -75,6 +75,7 @@ def resolve_daily_layouts_task(force=False):
             )
             return
 
+
     suplemento_ids = _resolve_suplemento_ids()
     is_saturday = timezone.localdate().weekday() == 5
     extra_ids = _resolve_extra_article_ids() if is_saturday else []
