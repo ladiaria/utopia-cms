@@ -5,6 +5,11 @@
     <a href="/homev4/preview-5am/" target="_blank" class="button">
         Preparar Edición ↗
     </a>
+    {% if request.user.is_superuser %}
+    <a href="{{ force_5am_url }}" class="button" style="margin-left:8px;" onclick="return confirm('¿Forzar ejecución de la tarea 5am ahora?')">
+        Forzar tarea 5am ⚡
+    </a>
+    {% endif %}
 </div>
 {{ block.super }}
 <style>

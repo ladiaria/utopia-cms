@@ -1,5 +1,6 @@
 import copy
 import logging
+from datetime import timedelta
 
 from kombu.exceptions import OperationalError
 
@@ -51,13 +52,30 @@ def _resolve_extra_article_ids():
 
 
 @celery_app.task(name="resolve-daily-layouts")
-def resolve_daily_layouts_task():
+def resolve_daily_layouts_task(force=False):
     """
     Runs daily at 5am. For each publication with active layouts, resolves automatic
     content (suplemento, extra_articles) and writes the article IDs into the active
     layout's grid_data, then propagates to all sibling layouts via _propagate_article_ids.
     This ensures build_home_data() has a single source of truth — the layout itself.
+
+    force=True bypasses the 4:30–6:00 time window gate — use only from the Django admin
+    action to recover from a failed scheduled run.
     """
+    # Guard against django_celery_beat firing this task early due to beat restarts.
+    # Only proceed if we are within the 4:30–6:00 window around the scheduled 5am run.
+    if not force:
+        now_local = timezone.localtime()
+        hour, minute = now_local.hour, now_local.minute
+        in_window = (hour == 4 and minute >= 30) or hour == 5 or (hour == 6 and minute == 0)
+        if not in_window:
+            logger.warning(
+                "resolve_daily_layouts_task: fired outside 5am window (local=%02d:%02d) — skipping to avoid early publish",
+                hour, minute,
+            )
+            return
+
+
     suplemento_ids = _resolve_suplemento_ids()
     is_saturday = timezone.localdate().weekday() == 5
     extra_ids = _resolve_extra_article_ids() if is_saturday else []
@@ -88,7 +106,9 @@ def resolve_daily_layouts_task():
 
         if pending_layout and isinstance(pending_layout.pending_grid_data, dict):
             pending = pending_layout.pending_grid_data
-            if pending.get("date") == today.isoformat():
+            # Accept pending prepared today OR yesterday — editors preparing Sunday's home
+            # do so on Saturday night, so the stored date is yesterday relative to 5am Sunday.
+            if pending.get("date") in (today.isoformat(), (today - timedelta(days=1)).isoformat()):
                 # Shallow copy so we can inject resolved blocks without mutating pending.
                 grid_to_apply = dict(pending["grid"])
 
