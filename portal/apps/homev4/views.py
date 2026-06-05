@@ -239,6 +239,11 @@ def _propagate_article_ids(source_layout, source_grid):
         for block in ("principal", "suplemento", "especial", "extra_articles")
     }
     src_sections = {s["slug"]: s.get("article_ids", []) for s in source_grid.get("sections", [])}
+    # Preserve the source layout's section order in siblings. refresh_home_layouts_task sorts
+    # the active layout by recency before calling here, so propagating the order keeps siblings
+    # in sync without extra DB queries (all siblings share the same article_ids after propagation,
+    # so re-running the sort on each would be N identical queries producing the same result).
+    src_section_order = [s["slug"] for s in source_grid.get("sections", [])]
     # Exclude no_articles components (e.g. crucigrama) — they have no article_ids to propagate.
     src_componentes = {
         c["key"]: c.get("article_ids", [])
@@ -261,9 +266,13 @@ def _propagate_article_ids(source_layout, source_grid):
             block_data["article_ids"] = ids
             gd[block] = block_data
 
-        for sec in gd.get("sections", []):
-            if sec.get("slug") in src_sections:
-                sec["article_ids"] = src_sections[sec["slug"]]
+        by_slug = {s["slug"]: s for s in gd.get("sections", [])}
+        for slug, ids in src_sections.items():
+            if slug in by_slug:
+                by_slug[slug]["article_ids"] = ids
+        src_order_set = set(src_section_order)
+        extra_sections = [s for s in by_slug.values() if s.get("slug") not in src_order_set]
+        gd["sections"] = [by_slug[slug] for slug in src_section_order if slug in by_slug] + extra_sections
 
         existing_comp_keys = {c.get("key") for c in gd.get("componentes", [])}
         for comp in gd.get("componentes", []):
@@ -898,10 +907,17 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
             seen_ids.update(comp.get("article_ids", []))
 
     # 5. ÁREAS — merge defaults not yet in sections, then resolve fallback with full seen_ids
-    today_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
-    existing_keys = {(s.get("type"), s.get("slug")) for s in resolved.get("sections", [])}
+    # Skip the suplemento source only when suplemento is active. Using article_ids would
+    # incorrectly trigger the skip on sibling layouts that inherited propagated IDs but have
+    # their suplemento off (e.g. Tuesday after Monday's 5am propagation sets deporte IDs).
+    suplemento_has_content = resolved.get("suplemento", {}).get("active", True)
+    today_source = (
+        _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+        if suplemento_has_content else None
+    )
+    existing_slugs = {s.get("slug") for s in resolved.get("sections", [])}
     for da in _DEFAULT_AREAS:
-        if (da["type"], da["slug"]) not in existing_keys:
+        if da["slug"] not in existing_slugs:
             resolved.setdefault("sections", []).append(
                 {"type": da["type"], "slug": da["slug"], "name": da["name"], "active": True, "article_ids": []}
             )
@@ -1069,9 +1085,18 @@ def build_home_data(grid_data, publication=None, layout=None):
         result["especial_articles"] = [by_id[aid] for aid in e_ids if aid in by_id]
     logger.warning("  build: especial=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
-    # ÁREAS Y PUBLICACIONES — resolved dict already has all default areas merged and article_ids populated
-    _today_suplemento_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+    # ÁREAS Y PUBLICACIONES — always show 12, in the order from resolved (already sorted by
+    # recency via _sort_sections_by_recency in tasks.py). Exclude the suplemento source only
+    # if suplemento actually has content (not just based on the day of the week).
+    _suplemento_has_content = bool(result.get("suplemento_articles"))
+    _today_suplemento_source = (
+        _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
+        if _suplemento_has_content else None
+    )
+    _sections_shown = 0
     for area in resolved.get("sections", []):
+        if _sections_shown >= 12:
+            break
         if not area.get("active", True):
             continue
         area_type = area.get("type", "section")
@@ -1086,6 +1111,7 @@ def build_home_data(grid_data, publication=None, layout=None):
             "articles": [by_id[aid] for aid in a_ids if aid in by_id],
             "section_template": _resolve_section_template(slug),
         })
+        _sections_shown += 1
     logger.warning("  build: sections=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # COMPONENTES — active ones only
@@ -1189,6 +1215,7 @@ _DEFAULT_AREAS = [
     {"type": "publication", "slug": "educacion",  "name": "Educación"},
     {"type": "publication", "slug": "feminismos", "name": "Feminismos"},
     {"type": "publication", "slug": "ciencia",    "name": "Ciencia"},
+    {"type": "category",    "slug": "futuro",     "name": "Futuro"},
 ]
 
 
@@ -2002,6 +2029,12 @@ def preview_5am(request):
     has_pending = pending_layout is not None and isinstance(pending_layout.pending_grid_data, dict) and pending_layout.pending_grid_data.get("date") == today.isoformat()
 
     any_layout = HomeLayout.objects.filter(publication=publication).first()
+    # Compute target_weekday (next publishing day) to pass the correct suplemento source
+    # slug to the editor JS for dimming — same logic used by the 5am Celery task.
+    _publishing_h, _publishing_m = [int(x) for x in settings.PUBLISHING_TIME.split(":")]
+    _now_time = timezone.localtime().time()
+    _target_weekday = today.weekday() if _now_time < datetime.time(_publishing_h, _publishing_m) else (today.weekday() + 1) % 7
+    _target_source = _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(_target_weekday)
     context = {
         "editor_data": editor_data,
         "save_grid_url": "/homev4/save-pending/",
@@ -2012,6 +2045,7 @@ def preview_5am(request):
         "layout_editor_css_version": _static_hash("homev4/layout_editor.css"),
         "is_preview_5am": True,
         "has_pending": has_pending,
+        "today_suplemento_source_slug": _target_source[1] if _target_source else "",
     }
     return render(request, "homev4/preview_5am.html", context)
 
