@@ -87,11 +87,6 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
         self.message_user(request, "Tarea 5am encolada con force=True.", level=messages.SUCCESS)
         return HttpResponseRedirect("../")
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context["force_5am_url"] = "force-5am/"
-        return super().changelist_view(request, extra_context)
-
     def get_list_editable(self, request):
         if request.user.is_superuser:
             return ("is_manual_override",)
@@ -146,8 +141,7 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        # Compute the currently active layout pk per publication so the template
-        # can highlight the active row without extra queries per row.
+        extra_context["force_5am_url"] = "force-5am/"
         active_pks = []
         pub_ids = HomeLayout.objects.values_list("publication_id", flat=True).distinct()
         from core.models import Publication
