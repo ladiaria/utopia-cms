@@ -49,7 +49,8 @@
       {% for nl_item in unsubscribed_newsletters %}
         <div class="edit_profile_card__inner-section edit_profile_card__inner-section--secondary">
           <div class="edit_profile_card__inner-section_header">
-            <label class="title" for="id_newsletters_1">{{ nl_item.profile_newsletter_name|default:nl_item.name }}</label>
+            {# TODO Mundial 2026: caso especial temporal, quitar al terminar el Mundial y dejar solo profile_newsletter_name #}
+            <label class="title" for="id_newsletters_1">{% if nl_item.slug == 'deporte' %}Mundial{% else %}{{ nl_item.profile_newsletter_name|default:nl_item.name }}{% endif %}</label>
             <div class="switch-container">
               <span class="label-text on" style="display: none;">Activada</span>
               <span class="label-text off" style="display: inline-block;">Activar</span>
