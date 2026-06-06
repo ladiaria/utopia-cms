@@ -70,6 +70,23 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
     )
     actions = []
 
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom = [
+            path("force-5am/", self.admin_site.admin_view(self.force_resolve_daily_layouts_view), name="homev4_force_5am"),
+        ]
+        return custom + urls
+
+    def force_resolve_daily_layouts_view(self, request):
+        from django.http import HttpResponseForbidden, HttpResponseRedirect
+        from .tasks import resolve_daily_layouts_task
+        if not request.user.is_superuser:
+            return HttpResponseForbidden()
+        resolve_daily_layouts_task.delay(force=True)
+        self.message_user(request, "Tarea 5am encolada con force=True.", level=messages.SUCCESS)
+        return HttpResponseRedirect("../")
+
     def get_list_editable(self, request):
         if request.user.is_superuser:
             return ("is_manual_override",)
@@ -124,8 +141,7 @@ class HomeLayoutAdmin(AdminLockingBase, admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        # Compute the currently active layout pk per publication so the template
-        # can highlight the active row without extra queries per row.
+        extra_context["force_5am_url"] = "force-5am/"
         active_pks = []
         pub_ids = HomeLayout.objects.values_list("publication_id", flat=True).distinct()
         from core.models import Publication

@@ -1056,6 +1056,10 @@ def build_home_data(grid_data, publication=None, layout=None):
         if _today_source:
             result["suplemento_title"] = _area_name_by_source.get((_today_source[0], _today_source[1]), "")
             result["suplemento_slug"] = _today_source[1]
+            # TEMPORARY: rename "Deporte" to "Mundial" in the suplemento block title for the FE.
+            # To revert: remove this if block.
+            if result["suplemento_title"] == "Deporte":
+                result["suplemento_title"] = "Mundial"
         if layout is not None and getattr(layout, "day", None) == "sa":
             extra_ids = resolved.get("extra_articles", {}).get("article_ids", [])
             if extra_ids:
@@ -1107,7 +1111,9 @@ def build_home_data(grid_data, publication=None, layout=None):
         result["sections"].append({
             "type": area_type,
             "slug": slug,
-            "name": area.get("name", slug),
+            # TEMPORARY: rename "Deporte" to "Mundial" in the áreas block for the FE.
+            # To revert: remove this ternary and restore `area.get("name", slug)`.
+            "name": "Mundial" if slug == "deporte" else area.get("name", slug),
             "articles": [by_id[aid] for aid in a_ids if aid in by_id],
             "section_template": _resolve_section_template(slug),
         })
