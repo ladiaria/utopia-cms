@@ -38,9 +38,11 @@
     {% render_section section %}
   {% endfor %}
 
-  {% if news_wall_enabled %}
-    {% include 'news_wall.html' %}
-  {% endif %}
+  {% block news_walls %}
+    {% if news_wall_enabled %}
+      {% include 'news_wall.html' %}
+    {% endif %}
+  {% endblock %}
 
   {% block after_cover %}{% endblock %}
 
@@ -54,8 +56,6 @@
   {% compress js %}
     <script src="{% static 'js/switch_change_events.js' %}"></script>
   {% endcompress %}
-  <script>
-  </script>
 
   <script>
     // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
