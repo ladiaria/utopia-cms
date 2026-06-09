@@ -27,9 +27,9 @@
   <article class="article">
     {% render_toolbar_for featured %}
     <div class="article__section-label">{% autoescape off %}{% render_hierarchy featured %}{% endautoescape %}</div>
-    <h3 class="article__title">
+    <h2 class="article__title">
       <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
-    </h3>
+    </h2>
     {% if featured.home_lead %}<p class="article__lead">{{ featured.home_lead|ldmarkup|bleach }}</p>{% endif %}
     {% if article_card_read_later_enabled and user.is_authenticated %}
       <div class="article__footer">
