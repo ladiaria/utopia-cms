@@ -1372,7 +1372,7 @@ aside {
     border-top: 2px solid #000;
   }
 
-  h2 {
+  h2:not(.article__title) {
     font-family: $sans-title;
     font-size: px-to-rem(32px);
     margin: 0;
