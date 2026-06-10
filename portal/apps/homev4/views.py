@@ -1079,6 +1079,10 @@ def build_home_data(grid_data, publication=None, layout=None):
         result["suplemento_extra_title"] = _area_name_by_source.get(
             (se_data.get("source_type", ""), se_data.get("source_slug", "")), ""
         )
+        # TEMPORARY: rename "Deporte" to "Mundial" in the suplemento_extra block title for the FE.
+        # To revert: remove this if block.
+        if result["suplemento_extra_title"] == "Deporte":
+            result["suplemento_extra_title"] = "Mundial"
     logger.warning("  build: suplemento=%.1f ms", (time.perf_counter() - _tb) * 1000); _tb = time.perf_counter()
 
     # ESPECIAL
