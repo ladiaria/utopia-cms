@@ -1382,7 +1382,7 @@ aside {
   @media #{$medium-and-down} {
     margin: 32px 0 0;
     padding: 24px 20px;
-    h2 {
+    h2:not(.article__title) {
       font-size: px-to-rem(28px);
       padding-bottom: 16px;
     }
