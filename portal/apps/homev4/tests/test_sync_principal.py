@@ -1,280 +1,131 @@
 """
-Unit tests for _sync_principal_to_edition().
+Outcome-based tests for _sync_principal_to_edition().
 
-This function is called by save_grid() whenever the editor saves changes to the
-principal block. It syncs ArticleRel.home_top / top_position so that the
-celery:refresh task (which reads Edition.top_articles ordered by top_position)
-does not reinsert articles the editor intentionally removed or reordered.
+This function runs when the editor saves the principal block. It writes the cover flag
+(home_top) and order (top_position) onto the CURRENT edition's ArticleRel rows so that
+celery:refresh — which reads Edition.top_articles (home_top=True, ordered by top_position)
+— preserves the editor's order instead of reverting it.
 
-Contract under test:
-- No change (old_ids == new_ids)  → no DB writes, no audit log.
-- No edition found                → no DB writes, no audit log.
-- Removed articles                → ArticleRel updated: home_top=False, top_position=None.
-- Articles in new_ids             → ArticleRel updated: home_top=True, top_position=1-based index.
-- Reorder only (same set)         → top_position updated, no removal update.
-- Audit log                       → written with triggered_by="editor:edition_sync",
-                                    ids_before=old_ids, ids_after=new_ids.
+Contract under test (what the function must GUARANTEE, regardless of how):
+- old_ids == new_ids, or no current edition          → no DB writes, no audit log.
+- Article removed from principal                      → its row: home_top=False, top_position=None.
+- Article kept/reordered/added that IS in the edition → its (primary) row: home_top=True,
+                                                         top_position = 1-based index in new_ids.
+- Article in principal but NOT in the edition         → a new ArticleRel is created with
+                                                         home_top=True + that position.
+- Multi-section article                               → only the primary (lowest-position) row
+                                                         becomes the cover; secondary rows untouched.
+- Weekend                                             → edition resolved via the "findesemana" pub.
+- Audit log                                           → one entry, triggered_by="editor:edition_sync",
+                                                         ids_before/after = old/new, user forwarded.
 
-All tests use SimpleTestCase — no database required.
+These tests assert the resulting ArticleRel state via a minimal fake ORM (no DB, no call-pattern
+coupling) so they survive internal refactors of the function.
 """
-from unittest.mock import MagicMock, patch, call
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
 from homev4.views import _sync_principal_to_edition
 
 
-def _run(old_ids, new_ids, edition, layout=None, user=None):
-    """Run _sync_principal_to_edition under full mock isolation.
-
-    Returns (mock_article_rel, mock_audit_log) for assertions.
-    """
-    if layout is None:
-        layout = MagicMock()
-    if user is None:
-        user = MagicMock()
-    mock_ar = MagicMock()
-    mock_pub = MagicMock()
-    with patch("homev4.views.get_current_edition", return_value=edition), \
-         patch("homev4.views.ArticleRel", mock_ar), \
-         patch("homev4.views.Publication", mock_pub), \
-         patch("homev4.views._write_audit_log") as mock_audit:
-        _sync_principal_to_edition(old_ids, new_ids, layout, user)
-    return mock_ar, mock_audit
-
-
-# ---------------------------------------------------------------------------
-# No-op cases
-# ---------------------------------------------------------------------------
-
-class SyncNoOpTest(SimpleTestCase):
-    """_sync_principal_to_edition must be a pure no-op when nothing changed."""
-
-    def test_identical_lists_no_articlerel_calls(self):
-        """old_ids == new_ids → ArticleRel is never touched."""
-        mock_ar, _ = _run([1, 2, 3], [1, 2, 3], MagicMock())
-        mock_ar.objects.filter.assert_not_called()
-
-    def test_identical_lists_no_audit_log(self):
-        """old_ids == new_ids → no audit log is written."""
-        _, mock_audit = _run([1, 2, 3], [1, 2, 3], MagicMock())
-        mock_audit.assert_not_called()
-
-    def test_both_empty_no_articlerel_calls(self):
-        """Both old and new are empty → nothing to do."""
-        mock_ar, _ = _run([], [], MagicMock())
-        mock_ar.objects.filter.assert_not_called()
-
-    def test_no_edition_no_articlerel_calls(self):
-        """If get_current_edition returns None, ArticleRel is never touched."""
-        mock_ar, _ = _run([1, 2], [2, 1], edition=None)
-        mock_ar.objects.filter.assert_not_called()
-
-    def test_no_edition_no_audit_log(self):
-        """If get_current_edition returns None, no audit log is written."""
-        _, mock_audit = _run([1, 2], [2, 1], edition=None)
-        mock_audit.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# Removal: articles present in old_ids but absent from new_ids
-# ---------------------------------------------------------------------------
-
-class SyncRemovalTest(SimpleTestCase):
-    """When articles are removed from principal, their home_top must be cleared."""
-
-    def test_removed_article_in_filter_call(self):
-        """The removed article ID appears in the article_id__in filter."""
-        mock_ar, _ = _run([1, 2, 3], [2, 3], MagicMock())
-        removal_call = next(
-            (c for c in mock_ar.objects.filter.call_args_list if "article_id__in" in c.kwargs),
-            None,
-        )
-        self.assertIsNotNone(removal_call, "Expected a filter call with article_id__in for removal")
-        self.assertIn(1, removal_call.kwargs["article_id__in"])
-
-    def test_kept_articles_not_in_removal_filter(self):
-        """Articles that remain in principal are NOT included in the removal update."""
-        mock_ar, _ = _run([1, 2, 3], [2, 3], MagicMock())
-        removal_call = next(
-            (c for c in mock_ar.objects.filter.call_args_list if "article_id__in" in c.kwargs),
-            None,
-        )
-        self.assertIsNotNone(removal_call)
-        removed_ids = removal_call.kwargs["article_id__in"]
-        self.assertNotIn(2, removed_ids)
-        self.assertNotIn(3, removed_ids)
-
-    def test_removal_update_sets_home_top_false(self):
-        """The update for removed articles sets home_top=False and top_position=None."""
-        mock_ar, _ = _run([10, 20], [10], MagicMock())
-        mock_ar.objects.filter.return_value.update.assert_any_call(home_top=False, top_position=None)
-
-    def test_multiple_removed_articles_all_in_one_filter(self):
-        """All removed articles are passed together in a single article_id__in filter."""
-        mock_ar, _ = _run([1, 2, 3, 4], [1], MagicMock())
-        removal_call = next(
-            (c for c in mock_ar.objects.filter.call_args_list if "article_id__in" in c.kwargs),
-            None,
-        )
-        self.assertIsNotNone(removal_call)
-        self.assertEqual(set(removal_call.kwargs["article_id__in"]), {2, 3, 4})
-
-    def test_reorder_only_no_removal_filter(self):
-        """When only the order changes (no article removed), the home_top=False update is skipped."""
-        mock_ar, _ = _run([1, 2, 3], [3, 1, 2], MagicMock())
-        removal_call = next(
-            (c for c in mock_ar.objects.filter.call_args_list if "article_id__in" in c.kwargs),
-            None,
-        )
-        self.assertIsNone(removal_call, "No removal filter expected for a pure reorder")
-
-    def test_all_articles_removed_gives_empty_new_principal(self):
-        """Editor clears the whole principal block → all get home_top=False."""
-        mock_ar, _ = _run([1, 2, 3], [], MagicMock())
-        removal_call = next(
-            (c for c in mock_ar.objects.filter.call_args_list if "article_id__in" in c.kwargs),
-            None,
-        )
-        self.assertIsNotNone(removal_call)
-        self.assertEqual(set(removal_call.kwargs["article_id__in"]), {1, 2, 3})
-
-
-# ---------------------------------------------------------------------------
-# top_position alignment: new_ids order → 1-based top_position
-# ---------------------------------------------------------------------------
-
-class SyncTopPositionTest(SimpleTestCase):
-    """ArticleRel.top_position must reflect the 1-based index in new_ids.
-
-    The filter for these updates includes home_top=True so that articles appearing
-    in multiple sections of the same edition only have their cover row updated —
-    secondary-section rows (home_top=False) are left untouched.
-    """
-
-    def test_each_article_gets_individual_filter_call(self):
-        """One filter(article_id=X, home_top=True) call is made per article in new_ids."""
-        mock_ar, _ = _run([1, 2, 3], [3, 1, 2], MagicMock())
-        individual_calls = [
-            c for c in mock_ar.objects.filter.call_args_list if "article_id" in c.kwargs
-        ]
-        article_ids_filtered = [c.kwargs["article_id"] for c in individual_calls]
-        self.assertCountEqual(article_ids_filtered, [3, 1, 2])
-
-    def test_filter_for_top_position_update_includes_home_top_true(self):
-        """The per-article filter includes home_top=True to protect secondary-section rows."""
-        mock_ar, _ = _run([1, 2, 3], [3, 1, 2], MagicMock())
-        individual_calls = [
-            c for c in mock_ar.objects.filter.call_args_list if "article_id" in c.kwargs
-        ]
-        for c in individual_calls:
-            self.assertTrue(
-                c.kwargs.get("home_top"),
-                "filter call for top_position update must include home_top=True",
-            )
-
-    def test_first_article_gets_top_position_1(self):
-        """The first article in new_ids receives top_position=1."""
-        mock_ar, _ = _run([5, 6, 7], [7, 5, 6], MagicMock())
-        mock_ar.objects.filter.return_value.update.assert_any_call(top_position=1)
-
-    def test_all_positions_assigned_correctly(self):
-        """top_position=idx+1 for each article's position in new_ids."""
-        mock_ar, _ = _run([1, 2, 3], [3, 1, 2], MagicMock())
-        update_calls = mock_ar.objects.filter.return_value.update.call_args_list
-        # Collect all top_position values from calls that only set top_position (not the removal call)
-        actual_positions = {
-            c.kwargs["top_position"]
-            for c in update_calls
-            if "top_position" in c.kwargs and "home_top" not in c.kwargs
-        }
-        self.assertEqual(actual_positions, {1, 2, 3})
-
-    def test_secondary_section_row_not_set_to_home_top_true(self):
-        """update() for position alignment must NOT set home_top=True.
-        This prevents inadvertently enabling the cover flag on secondary-section rows
-        of articles that appear in multiple sections of the same edition.
-        """
-        mock_ar, _ = _run([1, 2], [1, 2], MagicMock())
-        # identical lists → early return, no calls at all; use a real change
-        mock_ar2, _ = _run([1, 2], [2, 1], MagicMock())
-        position_updates = [
-            c for c in mock_ar2.objects.filter.return_value.update.call_args_list
-            if "top_position" in c.kwargs
-        ]
-        for c in position_updates:
-            self.assertNotIn(
-                "home_top", c.kwargs,
-                "top_position update must not include home_top — would corrupt multi-section articles",
-            )
-
-
-# ---------------------------------------------------------------------------
-# Audit log
-# ---------------------------------------------------------------------------
-
-class SyncAuditLogTest(SimpleTestCase):
-    """_sync_principal_to_edition must write an audit log entry for every real change."""
-
-    def test_audit_log_written_on_removal(self):
-        """An audit log entry is written when an article is removed."""
-        _, mock_audit = _run([1, 2, 3], [2, 3], MagicMock())
-        mock_audit.assert_called_once()
-
-    def test_audit_log_written_on_reorder(self):
-        """An audit log entry is written when articles are reordered."""
-        _, mock_audit = _run([1, 2, 3], [3, 1, 2], MagicMock())
-        mock_audit.assert_called_once()
-
-    def test_audit_log_triggered_by_edition_sync(self):
-        """The audit log entry uses triggered_by='editor:edition_sync'."""
-        _, mock_audit = _run([1, 2], [2, 1], MagicMock())
-        args = mock_audit.call_args[0]
-        self.assertEqual(args[3], "editor:edition_sync")
-
-    def test_audit_log_ids_before_matches_old_principal(self):
-        """The ids_before in the audit log reflects the old principal article_ids."""
-        _, mock_audit = _run([10, 20, 30], [20, 30], MagicMock())
-        old_grid_arg = mock_audit.call_args[0][1]
-        self.assertEqual(old_grid_arg["principal"]["article_ids"], [10, 20, 30])
-
-    def test_audit_log_ids_after_matches_new_principal(self):
-        """The ids_after in the audit log reflects the new principal article_ids."""
-        _, mock_audit = _run([10, 20, 30], [20, 30], MagicMock())
-        new_grid_arg = mock_audit.call_args[0][2]
-        self.assertEqual(new_grid_arg["principal"]["article_ids"], [20, 30])
-
-    def test_no_audit_log_on_no_change(self):
-        """No audit log when old_ids == new_ids."""
-        _, mock_audit = _run([1, 2, 3], [1, 2, 3], MagicMock())
-        mock_audit.assert_not_called()
-
-    def test_no_audit_log_when_no_edition(self):
-        """No audit log when there is no current edition."""
-        _, mock_audit = _run([1, 2], [2], edition=None)
-        mock_audit.assert_not_called()
-
-    def test_audit_log_user_passed_as_kwarg(self):
-        """The user performing the action is forwarded to the audit log."""
-        user = MagicMock()
-        _, mock_audit = _run([1, 2], [2, 1], MagicMock(), user=user)
-        self.assertEqual(mock_audit.call_args[1].get("user"), user)
-
-
-# ---------------------------------------------------------------------------
-# Helpers for weekend-edition and picker-create tests
-# ---------------------------------------------------------------------------
-
 class _FakeArticleDoesNotExist(Exception):
-    """Substitute for Article.DoesNotExist when Article itself is mocked."""
+    """Substitute for Article.DoesNotExist when Article is mocked."""
 
 
-def _make_article(has_main_section=True):
-    """Return a mock Article with or without a valid main_section link."""
+# ---------------------------------------------------------------------------
+# Minimal fake ORM — implements only what _sync_principal_to_edition uses.
+# ---------------------------------------------------------------------------
+
+class _Row:
+    """Stand-in for an ArticleRel row in one edition."""
+    def __init__(self, article_id, *, home_top=False, top_position=None, position=1, section=None):
+        self.article_id = article_id
+        self.home_top = home_top
+        self.top_position = top_position
+        self.position = position
+        self.section = section
+
+    def save(self, **kwargs):
+        # Attributes are mutated in place on the shared store object; nothing to persist.
+        pass
+
+
+class _QuerySet:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def update(self, **changes):
+        for r in self._rows:
+            for field, value in changes.items():
+                setattr(r, field, value)
+        return len(self._rows)
+
+    def order_by(self, field):
+        key = field.lstrip("-")
+        return _QuerySet(sorted(self._rows, key=lambda r: getattr(r, key), reverse=field.startswith("-")))
+
+    def first(self):
+        return self._rows[0] if self._rows else None
+
+
+class _ArticleRelManager:
+    def __init__(self, store):
+        self.store = store
+        self.create_calls = []
+
+    def filter(self, **kw):
+        rows = list(self.store)  # single edition in the store; edition kwarg is a no-op
+        if "article_id" in kw:
+            rows = [r for r in rows if r.article_id == kw["article_id"]]
+        if "article_id__in" in kw:
+            ids = set(kw["article_id__in"])
+            rows = [r for r in rows if r.article_id in ids]
+        if "home_top" in kw:
+            rows = [r for r in rows if r.home_top == kw["home_top"]]
+        return _QuerySet(rows)
+
+    def create(self, **kw):
+        self.create_calls.append(kw)
+        row = _Row(
+            kw.get("article_id") or kw["article"].id,
+            home_top=kw.get("home_top", False),
+            top_position=kw.get("top_position"),
+            position=kw.get("position", 1),
+            section=kw.get("section"),
+        )
+        self.store.append(row)
+        return row
+
+
+class _FakeArticleRel:
+    def __init__(self, store):
+        self.objects = _ArticleRelManager(store)
+
+
+class _FakeEdition:
+    def __init__(self, store, edition_id=1):
+        self._store = store
+        self.id = edition_id
+
+    @property
+    def articlerel_set(self):
+        store = self._store
+
+        class _Rel:
+            def values_list(self, *args, **kwargs):
+                return [r.article_id for r in store]
+
+        return _Rel()
+
+
+def _make_article(article_id=None, has_main_section=True):
+    """Mock Article for the create branch (article not yet in the edition)."""
     article = MagicMock()
+    article.id = article_id
     if has_main_section:
         article.main_section_id = 1
-        article.main_section = MagicMock()
         article.main_section.section = MagicMock()
     else:
         article.main_section_id = None
@@ -282,59 +133,236 @@ def _make_article(has_main_section=True):
     return article
 
 
-def _edition_without(article_ids=()):
-    """Return a mock Edition whose articlerel_set reports the given article IDs."""
-    edition = MagicMock()
-    edition.articlerel_set.values_list.return_value = list(article_ids)
-    return edition
+def _run(old_ids, new_ids, *, rows=None, edition_present=True, weekday=2,
+         fds_pub="__make__", article=None, article_raises=False, user=None, layout=None):
+    """Run _sync_principal_to_edition against the fake ORM.
 
-
-def _run_full(old_ids, new_ids, edition, layout=None, user=None,
-              weekday=1, mock_article=None, fds_pub="default", article_raises=False):
-    """Run _sync_principal_to_edition with extended mock isolation.
-
-    In addition to the patches in _run(), this helper also patches:
-    - timezone.localdate      — controlled by weekday (int 0–6)
-    - Publication             — .objects.filter().first() returns fds_pub
-    - Article                 — .objects.get() returns mock_article or raises DoesNotExist
-
-    fds_pub="default" creates a fresh MagicMock so callers can verify it was used.
-    Pass fds_pub=None to simulate "no findesemana publication exists".
-
-    Returns (mock_ar, mock_article_cls, mock_pub, mock_get_edition, mock_audit).
+    rows: initial _Row objects in the current edition (defaults to empty).
+    Returns a namespace with store, manager (for create_calls), and the patched mocks.
     """
-    if layout is None:
-        layout = MagicMock()
-    if user is None:
-        user = MagicMock()
-    if fds_pub == "default":
+    store = list(rows) if rows else []
+    edition = _FakeEdition(store) if edition_present else None
+    fake_ar = _FakeArticleRel(store)
+    layout = layout or MagicMock()
+    user = user or MagicMock()
+    if fds_pub == "__make__":
         fds_pub = MagicMock()
 
-    mock_ar = MagicMock()
-
-    mock_article_cls = MagicMock()
-    mock_article_cls.DoesNotExist = _FakeArticleDoesNotExist
-    if article_raises or mock_article is None:
-        mock_article_cls.objects.get.side_effect = _FakeArticleDoesNotExist
+    article_cls = MagicMock()
+    article_cls.DoesNotExist = _FakeArticleDoesNotExist
+    if article_raises:
+        article_cls.objects.get.side_effect = _FakeArticleDoesNotExist
     else:
-        mock_article_cls.objects.get.return_value = mock_article
-        mock_article_cls.objects.get.side_effect = None
+        article_cls.objects.get.return_value = article if article is not None else _make_article()
 
-    mock_pub = MagicMock()
-    mock_pub.objects.filter.return_value.first.return_value = fds_pub
+    pub_cls = MagicMock()
+    pub_cls.objects.filter.return_value.first.return_value = fds_pub
 
-    mock_date = MagicMock()
-    mock_date.weekday.return_value = weekday
+    tz = MagicMock()
+    tz.localdate.return_value.weekday.return_value = weekday
 
-    with patch("homev4.views.timezone.localdate", return_value=mock_date), \
-         patch("homev4.views.get_current_edition", return_value=edition) as mock_get_edition, \
-         patch("homev4.views.ArticleRel", mock_ar), \
-         patch("homev4.views.Publication", mock_pub), \
-         patch("homev4.views.Article", mock_article_cls), \
-         patch("homev4.views._write_audit_log") as mock_audit:
+    with patch("homev4.views.timezone", tz), \
+         patch("homev4.views.get_current_edition", return_value=edition) as get_ed, \
+         patch("homev4.views.ArticleRel", fake_ar), \
+         patch("homev4.views.Publication", pub_cls), \
+         patch("homev4.views.Article", article_cls), \
+         patch("homev4.views._write_audit_log") as audit:
         _sync_principal_to_edition(old_ids, new_ids, layout, user)
 
-    return mock_ar, mock_article_cls, mock_pub, mock_get_edition, mock_audit
+    return SimpleNamespace(
+        store=store, edition=edition, manager=fake_ar.objects,
+        audit=audit, get_edition=get_ed, pub=pub_cls, layout=layout, user=user,
+    )
+
+
+def _by_id(store, article_id):
+    """Return the single row for article_id (fails the lookup if absent/duplicated unexpectedly)."""
+    matches = [r for r in store if r.article_id == article_id]
+    return matches[0] if matches else None
+
+
+# ---------------------------------------------------------------------------
+# No-op cases
+# ---------------------------------------------------------------------------
+
+class SyncNoOpTest(SimpleTestCase):
+    def test_identical_lists_no_writes(self):
+        rows = [_Row(1, home_top=True, top_position=1)]
+        ctx = _run([1], [1], rows=rows)
+        self.assertEqual(ctx.manager.create_calls, [])
+        self.assertTrue(_by_id(ctx.store, 1).home_top)
+        self.assertEqual(_by_id(ctx.store, 1).top_position, 1)
+        ctx.audit.assert_not_called()
+
+    def test_both_empty_no_audit(self):
+        ctx = _run([], [])
+        ctx.audit.assert_not_called()
+
+    def test_no_edition_no_writes(self):
+        rows = [_Row(1, home_top=True, top_position=1)]
+        ctx = _run([1, 2], [2, 1], rows=rows, edition_present=False)
+        # nothing changed and no audit when there is no current edition
+        self.assertEqual(_by_id(ctx.store, 1).top_position, 1)
+        ctx.audit.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Removal
+# ---------------------------------------------------------------------------
+
+class SyncRemovalTest(SimpleTestCase):
+    def test_removed_article_cover_cleared(self):
+        rows = [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2)]
+        ctx = _run([1, 2], [1], rows=rows)
+        removed = _by_id(ctx.store, 2)
+        self.assertFalse(removed.home_top)
+        self.assertIsNone(removed.top_position)
+
+    def test_kept_article_stays_cover(self):
+        rows = [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2)]
+        ctx = _run([1, 2], [1], rows=rows)
+        kept = _by_id(ctx.store, 1)
+        self.assertTrue(kept.home_top)
+        self.assertEqual(kept.top_position, 1)
+
+    def test_all_removed_clears_all(self):
+        rows = [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2)]
+        ctx = _run([1, 2], [], rows=rows)
+        self.assertFalse(_by_id(ctx.store, 1).home_top)
+        self.assertFalse(_by_id(ctx.store, 2).home_top)
+
+    def test_reorder_does_not_clear_any_cover(self):
+        rows = [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2)]
+        ctx = _run([1, 2], [2, 1], rows=rows)
+        self.assertTrue(_by_id(ctx.store, 1).home_top)
+        self.assertTrue(_by_id(ctx.store, 2).home_top)
+
+
+# ---------------------------------------------------------------------------
+# top_position alignment (reorder)
+# ---------------------------------------------------------------------------
+
+class SyncTopPositionTest(SimpleTestCase):
+    def test_reorder_assigns_1_based_positions(self):
+        rows = [
+            _Row(1, home_top=True, top_position=1),
+            _Row(2, home_top=True, top_position=2),
+            _Row(3, home_top=True, top_position=3),
+        ]
+        ctx = _run([1, 2, 3], [3, 1, 2], rows=rows)
+        self.assertEqual(_by_id(ctx.store, 3).top_position, 1)
+        self.assertEqual(_by_id(ctx.store, 1).top_position, 2)
+        self.assertEqual(_by_id(ctx.store, 2).top_position, 3)
+
+    def test_first_article_gets_position_1(self):
+        rows = [_Row(5, home_top=True, top_position=2), _Row(6, home_top=True, top_position=1)]
+        ctx = _run([6, 5], [5, 6], rows=rows)  # reorder so 5 moves to the front
+        self.assertEqual(_by_id(ctx.store, 5).top_position, 1)
+
+
+# ---------------------------------------------------------------------------
+# The fix: carried-over articles must be reconciled on the current edition
+# ---------------------------------------------------------------------------
+
+class SyncCarriedOverReconcileTest(SimpleTestCase):
+    """Regression for the "fantasma" bug: a carried-over principal article whose cover flag
+    is NOT set on the current edition must be reconciled (home_top=True + position), not skipped.
+    """
+
+    def test_carried_article_with_home_top_false_in_edition_is_reconciled(self):
+        # A is in the edition but not featured (its cover flag lived on another edition).
+        rows = [_Row(2, home_top=True, top_position=1), _Row(1, home_top=False, top_position=None)]
+        ctx = _run([2, 1], [1, 2], rows=rows)
+        a = _by_id(ctx.store, 1)
+        self.assertTrue(a.home_top, "carried article must be set home_top=True on the current edition")
+        self.assertEqual(a.top_position, 1)
+
+    def test_carried_article_not_in_edition_is_created(self):
+        # B is in the edition; A is in the principal but has NO row in the current edition.
+        rows = [_Row(2, home_top=True, top_position=1)]
+        article = _make_article(article_id=1)
+        ctx = _run([2, 1], [1, 2], rows=rows, article=article)
+        self.assertEqual(len(ctx.manager.create_calls), 1, "missing-from-edition article must be created")
+        created = _by_id(ctx.store, 1)
+        self.assertIsNotNone(created)
+        self.assertTrue(created.home_top)
+        self.assertEqual(created.top_position, 1)
+
+
+# ---------------------------------------------------------------------------
+# Added articles
+# ---------------------------------------------------------------------------
+
+class SyncAddedTest(SimpleTestCase):
+    def test_added_article_in_edition_becomes_cover(self):
+        rows = [_Row(7, home_top=False, top_position=None)]
+        ctx = _run([], [7], rows=rows)
+        row = _by_id(ctx.store, 7)
+        self.assertTrue(row.home_top)
+        self.assertEqual(row.top_position, 1)
+        self.assertEqual(ctx.manager.create_calls, [])
+
+    def test_added_article_not_in_edition_is_created(self):
+        article = _make_article(article_id=99)
+        ctx = _run([], [99], rows=[], article=article)
+        self.assertEqual(len(ctx.manager.create_calls), 1)
+
+
+# ---------------------------------------------------------------------------
+# Picker create details
+# ---------------------------------------------------------------------------
+
+class SyncPickerCreateTest(SimpleTestCase):
+    def test_create_receives_correct_fields(self):
+        article = _make_article(article_id=99)
+        ctx = _run([1, 2], [1, 2, 99], rows=[_Row(1, home_top=True, top_position=1),
+                                             _Row(2, home_top=True, top_position=2)],
+                   article=article)
+        self.assertEqual(len(ctx.manager.create_calls), 1)
+        call = ctx.manager.create_calls[0]
+        self.assertEqual(call["edition"], ctx.edition)
+        self.assertEqual(call["article"], article)
+        self.assertEqual(call["section"], article.main_section.section)
+        self.assertEqual(call["position"], 1)
+        self.assertTrue(call["home_top"])
+        self.assertEqual(call["top_position"], 3)  # idx 2 → 1-based 3
+
+    def test_no_create_when_article_already_in_edition(self):
+        rows = [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2),
+                _Row(99, home_top=False, top_position=None)]
+        ctx = _run([1, 2], [1, 2, 99], rows=rows)
+        self.assertEqual(ctx.manager.create_calls, [])
+        self.assertTrue(_by_id(ctx.store, 99).home_top)
+
+    def test_no_create_when_article_has_no_main_section(self):
+        article = _make_article(article_id=99, has_main_section=False)
+        ctx = _run([1], [1, 99], rows=[_Row(1, home_top=True, top_position=1)], article=article)
+        self.assertEqual(ctx.manager.create_calls, [])
+
+    def test_no_create_when_article_does_not_exist(self):
+        ctx = _run([1], [1, 99], rows=[_Row(1, home_top=True, top_position=1)], article_raises=True)
+        self.assertEqual(ctx.manager.create_calls, [])
+
+    def test_multiple_picker_articles_each_created(self):
+        ctx = _run([1], [1, 88, 99], rows=[_Row(1, home_top=True, top_position=1)])
+        self.assertEqual(len(ctx.manager.create_calls), 2)
+
+
+# ---------------------------------------------------------------------------
+# Multi-section: cover lands on the primary (lowest-position) row only
+# ---------------------------------------------------------------------------
+
+class SyncMultiSectionTest(SimpleTestCase):
+    def test_only_primary_row_becomes_cover(self):
+        # Article 1 appears in two sections of the edition: primary (position 1) and
+        # secondary (position 2). Only the primary row must become the cover.
+        primary = _Row(1, home_top=False, top_position=None, position=1)
+        secondary = _Row(1, home_top=False, top_position=None, position=2)
+        ctx = _run([2], [1, 2], rows=[_Row(2, home_top=True, top_position=2), primary, secondary])
+        self.assertTrue(primary.home_top, "primary (lowest-position) row must become the cover")
+        self.assertEqual(primary.top_position, 1)
+        self.assertFalse(secondary.home_top, "secondary-section row must NOT be enabled as cover")
+        self.assertIsNone(secondary.top_position)
 
 
 # ---------------------------------------------------------------------------
@@ -342,159 +370,72 @@ def _run_full(old_ids, new_ids, edition, layout=None, user=None,
 # ---------------------------------------------------------------------------
 
 class SyncWeekendEditionTest(SimpleTestCase):
-    """_sync_principal_to_edition must resolve the edition via findesemana on weekends."""
+    def _rows(self):
+        return [_Row(1, home_top=True, top_position=1), _Row(2, home_top=True, top_position=2)]
 
     def test_saturday_uses_findesemana_publication(self):
-        """On Saturday (weekday=5) get_current_edition is called with the findesemana pub."""
         fds_pub = MagicMock()
-        layout = MagicMock()
-        _, _, _, mock_get_edition, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]),
-            layout=layout, weekday=5, fds_pub=fds_pub,
-        )
-        mock_get_edition.assert_called_once_with(publication=fds_pub)
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=5, fds_pub=fds_pub)
+        ctx.get_edition.assert_called_once_with(publication=fds_pub)
 
     def test_sunday_uses_findesemana_publication(self):
-        """On Sunday (weekday=6) get_current_edition is called with the findesemana pub."""
         fds_pub = MagicMock()
-        layout = MagicMock()
-        _, _, _, mock_get_edition, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]),
-            layout=layout, weekday=6, fds_pub=fds_pub,
-        )
-        mock_get_edition.assert_called_once_with(publication=fds_pub)
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=6, fds_pub=fds_pub)
+        ctx.get_edition.assert_called_once_with(publication=fds_pub)
 
     def test_weekday_uses_layout_publication(self):
-        """On a weekday (weekday=2) get_current_edition is called with layout.publication."""
-        layout = MagicMock()
-        _, _, _, mock_get_edition, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]),
-            layout=layout, weekday=2,
-        )
-        mock_get_edition.assert_called_once_with(publication=layout.publication)
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=2)
+        ctx.get_edition.assert_called_once_with(publication=ctx.layout.publication)
 
     def test_weekend_no_fds_pub_falls_back_to_layout_publication(self):
-        """Weekend with no findesemana publication → falls back to layout.publication."""
-        layout = MagicMock()
-        _, _, _, mock_get_edition, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]),
-            layout=layout, weekday=6, fds_pub=None,
-        )
-        mock_get_edition.assert_called_once_with(publication=layout.publication)
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=6, fds_pub=None)
+        ctx.get_edition.assert_called_once_with(publication=ctx.layout.publication)
 
     def test_weekend_publication_lookup_uses_findesemana_slug(self):
-        """The Publication query on weekends filters by slug='findesemana'."""
-        _, _, mock_pub, _, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]), weekday=5,
-        )
-        mock_pub.objects.filter.assert_called_once_with(slug="findesemana")
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=5)
+        ctx.pub.objects.filter.assert_called_once_with(slug="findesemana")
 
     def test_weekday_skips_publication_lookup(self):
-        """On a weekday Publication is never queried (no findesemana lookup)."""
-        _, _, mock_pub, _, _ = _run_full(
-            [1, 2], [2, 1], _edition_without([1, 2]), weekday=3,
-        )
-        mock_pub.objects.filter.assert_not_called()
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), weekday=3)
+        ctx.pub.objects.filter.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# Picker ArticleRel creation
+# Audit log
 # ---------------------------------------------------------------------------
 
-class SyncPickerCreateTest(SimpleTestCase):
-    """When a picker-added article is absent from the current edition, an ArticleRel must be
-    created so celery:refresh can include it in Edition.top_articles."""
+class SyncAuditLogTest(SimpleTestCase):
+    def _rows(self):
+        return [_Row(1, home_top=True, top_position=1),
+                _Row(2, home_top=True, top_position=2),
+                _Row(3, home_top=True, top_position=3)]
 
-    def test_create_called_for_picker_article_not_in_edition(self):
-        """ArticleRel.objects.create is called when the picker article is not in the edition."""
-        article = _make_article()
-        edition = _edition_without()  # article 99 not present
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
-        )
-        mock_ar.objects.create.assert_called_once()
+    def test_audit_written_on_removal(self):
+        ctx = _run([1, 2, 3], [2, 3], rows=self._rows())
+        ctx.audit.assert_called_once()
 
-    def test_create_receives_correct_fields(self):
-        """The new ArticleRel has home_top=True, position=1, and the article's main section."""
-        article = _make_article()
-        edition = _edition_without()
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
-        )
-        mock_ar.objects.create.assert_called_once_with(
-            edition=edition,
-            article=article,
-            section=article.main_section.section,
-            position=1,
-            home_top=True,
-            top_position=3,  # idx=2 → 1-based position 3
-        )
+    def test_audit_written_on_reorder(self):
+        ctx = _run([1, 2, 3], [3, 1, 2], rows=self._rows())
+        ctx.audit.assert_called_once()
 
-    def test_create_top_position_reflects_order_in_new_ids(self):
-        """top_position equals the 1-based index of the article in new_ids."""
-        article = _make_article()
-        edition = _edition_without()
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [99, 1, 2], edition, weekday=1, mock_article=article,
-        )
-        mock_ar.objects.create.assert_called_once_with(
-            edition=edition,
-            article=article,
-            section=article.main_section.section,
-            position=1,
-            home_top=True,
-            top_position=1,  # idx=0 → 1-based position 1
-        )
+    def test_audit_triggered_by_edition_sync(self):
+        ctx = _run([1, 2], [2, 1], rows=self._rows())
+        self.assertEqual(ctx.audit.call_args[0][3], "editor:edition_sync")
 
-    def test_no_create_when_article_has_no_main_section(self):
-        """If the article has no main_section, create is skipped (section would be None)."""
-        article = _make_article(has_main_section=False)
-        edition = _edition_without()
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
-        )
-        mock_ar.objects.create.assert_not_called()
+    def test_audit_ids_before_and_after(self):
+        ctx = _run([1, 2, 3], [2, 3], rows=self._rows())
+        self.assertEqual(ctx.audit.call_args[0][1]["principal"]["article_ids"], [1, 2, 3])
+        self.assertEqual(ctx.audit.call_args[0][2]["principal"]["article_ids"], [2, 3])
 
-    def test_no_create_when_article_does_not_exist(self):
-        """If Article.objects.get raises DoesNotExist, no ArticleRel is created."""
-        edition = _edition_without()
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [1, 2, 99], edition, weekday=1, article_raises=True,
-        )
-        mock_ar.objects.create.assert_not_called()
+    def test_audit_user_forwarded(self):
+        user = MagicMock()
+        ctx = _run([1, 2], [2, 1], rows=self._rows(), user=user)
+        self.assertEqual(ctx.audit.call_args[1].get("user"), user)
 
-    def test_no_create_when_article_already_in_edition(self):
-        """If the picker article already belongs to the edition, the existing row is used
-        (home_top set via update, not a new create)."""
-        article = _make_article()
-        edition = _edition_without(article_ids=[99])  # 99 IS in the edition
-        mock_ar, _, _, _, _ = _run_full(
-            [1, 2], [1, 2, 99], edition, weekday=1, mock_article=article,
-        )
-        mock_ar.objects.create.assert_not_called()
+    def test_no_audit_on_no_change(self):
+        ctx = _run([1, 2, 3], [1, 2, 3], rows=self._rows())
+        ctx.audit.assert_not_called()
 
-    def test_multiple_picker_articles_each_get_their_own_create(self):
-        """Two picker articles both absent from the edition → two separate create calls."""
-        article_a = _make_article()
-        article_b = _make_article()
-        edition = _edition_without()
-
-        mock_article_cls = MagicMock()
-        mock_article_cls.DoesNotExist = _FakeArticleDoesNotExist
-        mock_article_cls.objects.get.side_effect = lambda pk: article_a if pk == 88 else article_b
-
-        mock_ar = MagicMock()
-        layout = MagicMock()
-        mock_date = MagicMock()
-        mock_date.weekday.return_value = 1
-        mock_pub = MagicMock()
-
-        with patch("homev4.views.timezone.localdate", return_value=mock_date), \
-             patch("homev4.views.get_current_edition", return_value=edition), \
-             patch("homev4.views.ArticleRel", mock_ar), \
-             patch("homev4.views.Publication", mock_pub), \
-             patch("homev4.views.Article", mock_article_cls), \
-             patch("homev4.views._write_audit_log"):
-            _sync_principal_to_edition([1], [1, 88, 99], layout, MagicMock())
-
-        self.assertEqual(mock_ar.objects.create.call_count, 2)
+    def test_no_audit_when_no_edition(self):
+        ctx = _run([1, 2], [2], rows=self._rows(), edition_present=False)
+        ctx.audit.assert_not_called()
