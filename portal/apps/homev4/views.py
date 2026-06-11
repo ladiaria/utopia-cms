@@ -366,6 +366,11 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
     """Sync ArticleRel home_top/top_position to match the editor's changes to the principal block.
     Prevents celery:refresh from reinserting articles the editor removed or reordered, since refresh
     uses Edition.top_articles (filtered by home_top=True, ordered by top_position) as its source.
+
+    For every article in the new principal, the cover flag (home_top) + order (top_position) are
+    written on the CURRENT edition — creating the relation if needed — so the editor's order always
+    survives a refresh. This includes carried-over articles whose cover flag lived on a different
+    edition (the "fantasma" inconsistency).
     """
     if old_ids == new_ids:
         return
@@ -388,13 +393,19 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
             edition=edition, article_id__in=removed_ids, home_top=True
         ).update(home_top=False, top_position=None)
 
-    added_ids = set(new_ids) - set(old_ids)
+    # For EVERY article in the principal, guarantee a home_top cover relation on THIS
+    # edition with the editor's order. The previous logic only set the cover flag for
+    # newly-added articles and merely re-numbered top_position for carried-over ones
+    # *that already had home_top=True here* — so a carried-over article whose cover flag
+    # lived on a different/older edition (the "fantasma" bug) was skipped and never
+    # reconciled. refresh reads Edition.top_articles of the CURRENT edition, so the cover
+    # flag + position must be on this edition for the principal order to survive a refresh.
     edition_article_ids = set(edition.articlerel_set.values_list("article_id", flat=True))
     for idx, article_id in enumerate(new_ids):
-        if article_id in added_ids and article_id in edition_article_ids:
-            # Article newly added to principal and belongs to today's edition:
-            # enable cover flag on the row that belongs to this edition (one row per section,
-            # pick the one with the lowest position to avoid enabling a secondary-section row).
+        if article_id in edition_article_ids:
+            # Article belongs to this edition: set cover flag + position on its row.
+            # Pick the lowest-position row (primary section) so we never enable a
+            # secondary-section row of an article that appears in several sections.
             first_rel = ArticleRel.objects.filter(
                 edition=edition, article_id=article_id,
             ).order_by("position").first()
@@ -402,9 +413,9 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
                 first_rel.home_top = True
                 first_rel.top_position = idx + 1
                 first_rel.save(update_fields=["home_top", "top_position"])
-        elif article_id in added_ids:
-            # Article added via picker but not yet in this edition — create an ArticleRel so
-            # celery:refresh can see it in Edition.top_articles and the principal order is preserved.
+        else:
+            # Article not in this edition yet (e.g. pinned from another edition) — create
+            # an ArticleRel so refresh can see it in Edition.top_articles and the order holds.
             try:
                 article = Article.objects.get(pk=article_id)
                 section = article.main_section.section if article.main_section_id else None
@@ -419,13 +430,6 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
                     )
             except Article.DoesNotExist:
                 pass
-        elif article_id not in added_ids:
-            # Align top_position with the new principal order.
-            # Filter by home_top=True to avoid accidentally setting top_position on
-            # secondary-section rows of articles that appear in multiple sections.
-            ArticleRel.objects.filter(
-                edition=edition, article_id=article_id, home_top=True
-            ).update(top_position=idx + 1)
 
     _write_audit_log(
         layout,
