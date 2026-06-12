@@ -27,6 +27,17 @@
 {% block content %}
 <div class="home">
 
+  {# ── Blog en vivo (Mundial) ─ solo cuando hay un LiveBlog in_home activo ──── #}
+  {% if liveblog %}
+    {% comment %}
+      `liveblog` lo provee el context processor utopia_cms_liveblog.
+      `destacados` es el fallback de la columna derecha mientras el backend no
+      pase `liveblog_articles`; en V4 no existe la var `destacados` de homev3,
+      así que la alimentamos con artículos del home_data.
+    {% endcomment %}
+    {% include liveblog_cover_template with destacados=home_data.principal_articles|slice:"1:3" %}
+  {% endif %}
+
   <!-- ── Sección principal ─────────────────────────────────────────────────── -->
   {% if home_data.principal_active %}
   <section class="main-section{% if tarde_mode %} main-section--tarde{% endif %}">
@@ -181,7 +192,13 @@
   <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
   <aside class="home__sidebar sidebar">
     {% for comp in home_data.componentes %}
-      {% if comp.no_articles or comp.newsletters or comp.articles %}
+      {% if comp.key == "blog_en_vivo" %}
+      {% comment %}
+        El componente blog_en_vivo no se renderiza en el sidebar: sus artículos se
+        muestran en la columna derecha de la sección del blog en vivo
+        (card_big_new_liveblog_70.html).
+      {% endcomment %}
+      {% elif comp.no_articles or comp.newsletters or comp.articles %}
         {% if tarde_mode and comp.key == "lo_ultimo" %}
           <div class="lo-ultimo-sidebar">
             {% include comp.sidebar_component_template %}

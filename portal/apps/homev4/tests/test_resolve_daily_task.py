@@ -210,3 +210,62 @@ class ResolveDailyTaskPendingPathTest(SimpleTestCase):
         # pending must be cleared (set to None) without being applied to the active layout
         mock_pending_layout.save.assert_called()
         self.assertIsNone(mock_pending_layout.pending_grid_data)
+
+
+class ResolveDailyTaskEditionSyncWiringTest(SimpleTestCase):
+    """The real prep workflow happens via pending (Editor Preview 5am), so the only
+    write to the edition occurs at 5am — when get_current_edition already returns the
+    correct edition. The pending path must hand the editor's principal to
+    _sync_principal_to_edition so the cover flags (home_top/top_position) land on the
+    current edition with no "fantasmas".
+
+    Here we lock in the WIRING (pending principal → _sync). The per-article
+    reconciliation itself (carried-over / missing-from-edition articles) is covered by
+    test_principal_edition_sync_phantom.PrincipalEditionSyncPhantomTest.
+    """
+
+    def test_pending_principal_is_handed_to_edition_sync_at_5am(self):
+        mock_pub = MagicMock()
+        mock_pub_cls = _make_pub_cls(mock_pub)
+
+        mock_pending_layout = MagicMock()
+        mock_pending_layout.pending_grid_data = {
+            "date": _SATURDAY.isoformat(),
+            "grid": {
+                "principal": {"article_ids": [1, 2, 3]},  # editor's curated order
+                "suplemento": {"article_ids": []},
+            },
+        }
+
+        mock_active_layout = MagicMock()
+        mock_active_layout.grid_data = {"principal": {"article_ids": [9]}}  # state before apply
+
+        with patch("homev4.tasks.timezone.localtime", return_value=_SATURDAY_5AM), \
+             patch("homev4.tasks.timezone.localdate", return_value=_SATURDAY), \
+             patch("homev4.tasks._resolve_suplemento_ids", return_value=[]), \
+             patch("homev4.tasks._resolve_extra_article_ids", return_value=[]), \
+             patch("homev4.tasks._propagate_article_ids"), \
+             patch("homev4.tasks._write_audit_log"), \
+             patch("homev4.tasks._sync_principal_to_edition") as mock_sync, \
+             patch("homev4.tasks.get_papel_url"), \
+             patch("homev4.tasks.transaction"), \
+             patch("homev4.tasks.logger"), \
+             patch("django.core.cache.cache"), \
+             patch("homev4.tasks.HomeLayout") as mock_hl, \
+             patch("core.models.Publication", new=mock_pub_cls):
+
+            mock_hl.objects.order_by.return_value.values_list.return_value.distinct.return_value = [1]
+            mock_hl.objects.filter.return_value.first.return_value = mock_pending_layout
+            mock_hl.get_active_layout.return_value = mock_active_layout
+
+            from homev4.tasks import resolve_daily_layouts_task
+            resolve_daily_layouts_task()
+
+        mock_sync.assert_called_once()
+        old_ids, new_ids = mock_sync.call_args[0][0], mock_sync.call_args[0][1]
+        self.assertEqual(
+            new_ids, [1, 2, 3],
+            "the pending principal must be handed to _sync_principal_to_edition so cover "
+            "flags land on the current edition (no fantasmas)",
+        )
+        self.assertEqual(old_ids, [9], "old principal must come from the layout state before apply")

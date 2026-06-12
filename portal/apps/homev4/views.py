@@ -101,10 +101,18 @@ def _resolve_section_template(slug):
         return _DEFAULT_SECTION_TEMPLATE
 
 COMPONENT_DEFINITIONS = [
+    # World Cup live blog teaser. Renders above the principal column on the home (not in the sidebar),
+    # so it is placed first here to appear at the top of the COMPONENTES list in the editor, mirroring
+    # its real position on the page. Editors pick up to 2 articles manually (see BLOCK_ARTICLE_LIMITS).
+    {"key": "blog_en_vivo",         "label": "Blog en vivo",             "description": "Coberturas especiales", "has_picker": True},
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": True},
     {"key": "radio",                "label": "Radio",                    "description": "",                "no_articles": True},
+    # World Cup radio widget. Same sidebar slot and behaviour as "radio", and mutually exclusive
+    # with it (enforced in save_grid + the editor JS). Starts off (default_active=False) so it does
+    # not collide with the regular radio, which is on by default, on layouts that predate it.
+    {"key": "radio_mundial",        "label": "Radio Mundial",            "description": "No coexiste con Radio", "no_articles": True, "default_active": False},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
@@ -118,7 +126,26 @@ COMPONENT_DEFINITIONS = [
 
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 
-DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
+# Position of each component in the canonical definitions order. Used to place a newly added
+# component at its natural slot instead of always at the end (see _insert_component_at_def_position).
+_COMP_DEF_INDEX = {d["key"]: i for i, d in enumerate(COMPONENT_DEFINITIONS)}
+
+
+def _insert_component_at_def_position(componentes, comp):
+    """Insert a brand-new component dict into an existing componentes list at the slot implied
+    by COMPONENT_DEFINITIONS order, preserving the relative order of components already present
+    (which an editor may have reordered by drag). Without this, new components are appended at
+    the end — e.g. blog_en_vivo would land at the bottom of the list on existing layouts even
+    though it is defined first. Falls back to append when no later-defined component is found."""
+    idx = _COMP_DEF_INDEX.get(comp.get("key"), len(COMPONENT_DEFINITIONS))
+    for i, existing in enumerate(componentes):
+        if _COMP_DEF_INDEX.get(existing.get("key"), len(COMPONENT_DEFINITIONS)) > idx:
+            componentes.insert(i, comp)
+            return
+    componentes.append(comp)
+
+
+DEFAULT_COMPONENTES = [{"key": d["key"], "active": d.get("default_active", True)} for d in COMPONENT_DEFINITIONS]
 
 # Maximum article_ids per block — enforced in save_grid (backend) and mirrored in the picker (frontend).
 # "area" applies to every section in the sections list.
@@ -134,6 +161,8 @@ BLOCK_ARTICLE_LIMITS = {
     "le_monde":             2,
     "lento":                2,
     "humor":                1,
+    # Live blog teaser shows at most two manually selected articles next to the live coverage link.
+    "blog_en_vivo":         2,
 }
 
 # Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
@@ -282,7 +311,9 @@ def _propagate_article_ids(source_layout, source_grid):
         # (e.g. layouts created before a new component was added to COMPONENT_DEFINITIONS).
         for key, ids in src_componentes.items():
             if key not in existing_comp_keys:
-                gd.setdefault("componentes", []).append({"key": key, "active": True, "article_ids": ids})
+                _insert_component_at_def_position(
+                    gd.setdefault("componentes", []), {"key": key, "active": True, "article_ids": ids}
+                )
 
         # SUPLEMENTO_EXTRA: propagate as a full block (create / update / delete)
         if src_se is not None:
@@ -366,6 +397,11 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
     """Sync ArticleRel home_top/top_position to match the editor's changes to the principal block.
     Prevents celery:refresh from reinserting articles the editor removed or reordered, since refresh
     uses Edition.top_articles (filtered by home_top=True, ordered by top_position) as its source.
+
+    For every article in the new principal, the cover flag (home_top) + order (top_position) are
+    written on the CURRENT edition — creating the relation if needed — so the editor's order always
+    survives a refresh. This includes carried-over articles whose cover flag lived on a different
+    edition (the "fantasma" inconsistency).
     """
     if old_ids == new_ids:
         return
@@ -388,13 +424,19 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
             edition=edition, article_id__in=removed_ids, home_top=True
         ).update(home_top=False, top_position=None)
 
-    added_ids = set(new_ids) - set(old_ids)
+    # For EVERY article in the principal, guarantee a home_top cover relation on THIS
+    # edition with the editor's order. The previous logic only set the cover flag for
+    # newly-added articles and merely re-numbered top_position for carried-over ones
+    # *that already had home_top=True here* — so a carried-over article whose cover flag
+    # lived on a different/older edition (the "fantasma" bug) was skipped and never
+    # reconciled. refresh reads Edition.top_articles of the CURRENT edition, so the cover
+    # flag + position must be on this edition for the principal order to survive a refresh.
     edition_article_ids = set(edition.articlerel_set.values_list("article_id", flat=True))
     for idx, article_id in enumerate(new_ids):
-        if article_id in added_ids and article_id in edition_article_ids:
-            # Article newly added to principal and belongs to today's edition:
-            # enable cover flag on the row that belongs to this edition (one row per section,
-            # pick the one with the lowest position to avoid enabling a secondary-section row).
+        if article_id in edition_article_ids:
+            # Article belongs to this edition: set cover flag + position on its row.
+            # Pick the lowest-position row (primary section) so we never enable a
+            # secondary-section row of an article that appears in several sections.
             first_rel = ArticleRel.objects.filter(
                 edition=edition, article_id=article_id,
             ).order_by("position").first()
@@ -402,9 +444,9 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
                 first_rel.home_top = True
                 first_rel.top_position = idx + 1
                 first_rel.save(update_fields=["home_top", "top_position"])
-        elif article_id in added_ids:
-            # Article added via picker but not yet in this edition — create an ArticleRel so
-            # celery:refresh can see it in Edition.top_articles and the principal order is preserved.
+        else:
+            # Article not in this edition yet (e.g. pinned from another edition) — create
+            # an ArticleRel so refresh can see it in Edition.top_articles and the order holds.
             try:
                 article = Article.objects.get(pk=article_id)
                 section = article.main_section.section if article.main_section_id else None
@@ -419,13 +461,6 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
                     )
             except Article.DoesNotExist:
                 pass
-        elif article_id not in added_ids:
-            # Align top_position with the new principal order.
-            # Filter by home_top=True to avoid accidentally setting top_position on
-            # secondary-section rows of articles that appear in multiple sections.
-            ArticleRel.objects.filter(
-                edition=edition, article_id=article_id, home_top=True
-            ).update(top_position=idx + 1)
 
     _write_audit_log(
         layout,
@@ -434,6 +469,45 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
         "editor:edition_sync",
         user=user,
     )
+
+
+def _validate_block_article_limits(grid_data):
+    """Return an error message if any block exceeds its BLOCK_ARTICLE_LIMITS cap, else None.
+
+    Shared by save_grid and save_pending_grid so the Preview 5am editor enforces the same
+    limits as the regular editor. The picker caps additions in the UI; this is the backend
+    safety net against a manipulated POST or a JS bug. Violating these breaks dedup logic.
+    """
+    for block in ("principal", "suplemento", "especial"):
+        ids = grid_data.get(block, {}).get("article_ids", [])
+        if len(ids) > BLOCK_ARTICLE_LIMITS[block]:
+            return f"{block} cannot have more than {BLOCK_ARTICLE_LIMITS[block]} articles"
+    area_limit = BLOCK_ARTICLE_LIMITS["area"]
+    for section in grid_data.get("sections", []):
+        if len(section.get("article_ids", [])) > area_limit:
+            return f"Area '{section.get('slug', '?')}' cannot have more than {area_limit} articles"
+    for comp in grid_data.get("componentes", []):
+        key = comp.get("key", "")
+        limit = BLOCK_ARTICLE_LIMITS.get(key)
+        if limit and len(comp.get("article_ids", [])) > limit:
+            return f"Component '{key}' cannot have more than {limit} articles"
+    return None
+
+
+def _validate_radio_exclusivity(grid_data):
+    """Return an error message if both 'radio' and 'radio_mundial' are active, else None.
+
+    They share the same sidebar slot and must never both show. The editor JS turns the other
+    off when one is enabled; this is the backend safety net for save_grid and save_pending_grid.
+    """
+    active_radios = {
+        c.get("key")
+        for c in grid_data.get("componentes", [])
+        if c.get("key") in ("radio", "radio_mundial") and c.get("active", True)
+    }
+    if "radio" in active_radios and "radio_mundial" in active_radios:
+        return "Radio and Radio Mundial cannot be active at the same time"
+    return None
 
 
 @staff_member_required
@@ -445,22 +519,13 @@ def save_grid(request, layout_id):
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
         # Enforce per-block article_ids limits — violating these breaks deduplication logic.
-        for block in ("principal", "suplemento", "especial"):
-            ids = grid_data.get(block, {}).get("article_ids", [])
-            limit = BLOCK_ARTICLE_LIMITS[block]
-            if len(ids) > limit:
-                return JsonResponse({"error": f"{block} cannot have more than {limit} articles"}, status=400)
-        area_limit = BLOCK_ARTICLE_LIMITS["area"]
-        for section in grid_data.get("sections", []):
-            ids = section.get("article_ids", [])
-            if len(ids) > area_limit:
-                slug = section.get("slug", "?")
-                return JsonResponse({"error": f"Area '{slug}' cannot have more than {area_limit} articles"}, status=400)
-        for comp in grid_data.get("componentes", []):
-            key = comp.get("key", "")
-            limit = BLOCK_ARTICLE_LIMITS.get(key)
-            if limit and len(comp.get("article_ids", [])) > limit:
-                return JsonResponse({"error": f"Component '{key}' cannot have more than {limit} articles"}, status=400)
+        _limit_error = _validate_block_article_limits(grid_data)
+        if _limit_error:
+            return JsonResponse({"error": _limit_error}, status=400)
+        # Radio and Radio Mundial share a sidebar slot — reject if both were left active.
+        _exclusivity_error = _validate_radio_exclusivity(grid_data)
+        if _exclusivity_error:
+            return JsonResponse({"error": _exclusivity_error}, status=400)
         # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
@@ -496,16 +561,18 @@ def save_grid(request, layout_id):
         request.session["preview_grid_data"] = layout.grid_data
         request.session["preview_grid_saved"] = True
 
-        # Sync RadioGeneralConfig.show_banner when the editor toggles the radio block.
+        # Sync RadioGeneralConfig banners when the editor toggles a radio block.
         # Uses .update() (no signals) to avoid triggering the post_save cycle.
-        old_radio = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == "radio"), None)
-        new_radio = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == "radio"), None)
-        if old_radio is not None and new_radio is not None and old_radio != new_radio:
-            try:
-                from utopia_cms_radio.models import RadioGeneralConfig
-                RadioGeneralConfig.objects.update(show_banner="Y" if new_radio else "N")
-            except ImportError:
-                pass
+        # radio → show_banner, radio_mundial → show_banner_mundial (mutually exclusive blocks).
+        for _comp_key, _banner_field in (("radio", "show_banner"), ("radio_mundial", "show_banner_mundial")):
+            _old = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == _comp_key), None)
+            _new = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == _comp_key), None)
+            if _old is not None and _new is not None and _old != _new:
+                try:
+                    from utopia_cms_radio.models import RadioGeneralConfig
+                    RadioGeneralConfig.objects.update(**{_banner_field: "Y" if _new else "N"})
+                except ImportError:
+                    pass
 
         return JsonResponse({"status": "ok", **stats})
     except Exception as e:
@@ -775,8 +842,10 @@ def _pick_newsletter_dia(newsletters, user):
 # Manual-only: no fallback exists (editor curation only).
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
-    "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
+    "radio", "radio_mundial", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
     "crucigrama", "edicion_del_dia",
+    # Live blog teaser: editor-curated only, no automatic fallback source.
+    "blog_en_vivo",
 })
 
 
@@ -941,11 +1010,15 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
         seen_ids.update(a_ids)
 
     # Merge component definitions not yet present in the saved list (e.g. new components added
-    # after the layout was last saved). Appended at the end so the saved order is preserved.
+    # after the layout was last saved). Inserted at their definition position so a newly defined
+    # component (e.g. blog_en_vivo, defined first) lands at its natural slot, not always the end.
     _existing_comp_keys = {c.get("key") for c in resolved.get("componentes", [])}
     for _defn in COMPONENT_DEFINITIONS:
         if _defn["key"] not in _existing_comp_keys:
-            resolved.setdefault("componentes", []).append({"key": _defn["key"], "active": True})
+            _insert_component_at_def_position(
+                resolved.setdefault("componentes", []),
+                {"key": _defn["key"], "active": _defn.get("default_active", True)},
+            )
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
     for comp in resolved.get("componentes", []):
@@ -1667,6 +1740,17 @@ def active_layout(request, publication_slug=None):
     logger.warning("active_layout newsletter_dia: %.1f ms", (time.perf_counter() - _t_nl) * 1000)
     context["newsletter_dia_nl"] = newsletter_dia_nl
 
+    # liveblog_articles — the curated right-column list for the home LiveBlog card
+    # (card_big_new_liveblog_70.html) lives in the blog_en_vivo component; the backend
+    # stores the picks there instead of in a dedicated var. Surface them so the card can
+    # iterate. Falls back to `destacados` in the template when there are none.
+    liveblog_articles = None
+    for comp in home_data.get("componentes", []):
+        if comp.get("key") == "blog_en_vivo":
+            liveblog_articles = comp.get("articles", [])
+            break
+    context["liveblog_articles"] = liveblog_articles
+
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
@@ -1944,7 +2028,7 @@ def build_editor_data(grid_data, publication=None):
                     "key": defn["key"],
                     "label": defn["label"],
                     "description": defn["description"],
-                    "active": True,
+                    "active": defn.get("default_active", True),
                     "has_picker": defn.get("has_picker", False),
                     "replace_mode": defn.get("replace_mode", False),
                     "pin_mode": defn.get("pin_mode", False),
@@ -1962,7 +2046,9 @@ def build_editor_data(grid_data, publication=None):
                     )
                 else:
                     comp_dict["articles"] = _fetch_component_articles(defn["key"])
-                result["componentes"].append(comp_dict)
+                # Insert at definition position (not at the end) so newly defined components
+                # show at their natural slot in the editor on layouts saved before they existed.
+                _insert_component_at_def_position(result["componentes"], comp_dict)
     else:
         for defn in COMPONENT_DEFINITIONS:
             saved = saved_comps_raw.get(defn["key"], {})
@@ -1970,7 +2056,7 @@ def build_editor_data(grid_data, publication=None):
                 "key": defn["key"],
                 "label": defn["label"],
                 "description": defn["description"],
-                "active": saved.get("active", True),
+                "active": saved.get("active", defn.get("default_active", True)),
                 "has_picker": defn.get("has_picker", False),
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
@@ -2187,6 +2273,15 @@ def save_pending_grid(request):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
+        # Same per-block limits as the regular editor (save_grid) — the Preview 5am grid moves
+        # to grid_data at 5am, so it must respect the caps before it is persisted.
+        _limit_error = _validate_block_article_limits(grid_data)
+        if _limit_error:
+            return JsonResponse({"error": _limit_error}, status=400)
+        # Radio and Radio Mundial cannot both be active (same rule as save_grid).
+        _exclusivity_error = _validate_radio_exclusivity(grid_data)
+        if _exclusivity_error:
+            return JsonResponse({"error": _exclusivity_error}, status=400)
         layout = HomeLayout.objects.filter(publication=publication).first()
         if not layout:
             return JsonResponse({"error": "No layout found"}, status=404)
