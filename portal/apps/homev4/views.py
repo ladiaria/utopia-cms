@@ -101,6 +101,10 @@ def _resolve_section_template(slug):
         return _DEFAULT_SECTION_TEMPLATE
 
 COMPONENT_DEFINITIONS = [
+    # World Cup live blog teaser. Renders above the principal column on the home (not in the sidebar),
+    # so it is placed first here to appear at the top of the COMPONENTES list in the editor, mirroring
+    # its real position on the page. Editors pick up to 2 articles manually (see BLOCK_ARTICLE_LIMITS).
+    {"key": "blog_en_vivo",         "label": "Blog en vivo",             "description": "Encima de principal", "has_picker": True},
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": True},
@@ -118,6 +122,25 @@ COMPONENT_DEFINITIONS = [
 
 _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 
+# Position of each component in the canonical definitions order. Used to place a newly added
+# component at its natural slot instead of always at the end (see _insert_component_at_def_position).
+_COMP_DEF_INDEX = {d["key"]: i for i, d in enumerate(COMPONENT_DEFINITIONS)}
+
+
+def _insert_component_at_def_position(componentes, comp):
+    """Insert a brand-new component dict into an existing componentes list at the slot implied
+    by COMPONENT_DEFINITIONS order, preserving the relative order of components already present
+    (which an editor may have reordered by drag). Without this, new components are appended at
+    the end — e.g. blog_en_vivo would land at the bottom of the list on existing layouts even
+    though it is defined first. Falls back to append when no later-defined component is found."""
+    idx = _COMP_DEF_INDEX.get(comp.get("key"), len(COMPONENT_DEFINITIONS))
+    for i, existing in enumerate(componentes):
+        if _COMP_DEF_INDEX.get(existing.get("key"), len(COMPONENT_DEFINITIONS)) > idx:
+            componentes.insert(i, comp)
+            return
+    componentes.append(comp)
+
+
 DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
 
 # Maximum article_ids per block — enforced in save_grid (backend) and mirrored in the picker (frontend).
@@ -134,6 +157,8 @@ BLOCK_ARTICLE_LIMITS = {
     "le_monde":             2,
     "lento":                2,
     "humor":                1,
+    # Live blog teaser shows at most two manually selected articles next to the live coverage link.
+    "blog_en_vivo":         2,
 }
 
 # Defines which top-level blocks have a fixed active state that cannot be toggled in the editor.
@@ -282,7 +307,9 @@ def _propagate_article_ids(source_layout, source_grid):
         # (e.g. layouts created before a new component was added to COMPONENT_DEFINITIONS).
         for key, ids in src_componentes.items():
             if key not in existing_comp_keys:
-                gd.setdefault("componentes", []).append({"key": key, "active": True, "article_ids": ids})
+                _insert_component_at_def_position(
+                    gd.setdefault("componentes", []), {"key": key, "active": True, "article_ids": ids}
+                )
 
         # SUPLEMENTO_EXTRA: propagate as a full block (create / update / delete)
         if src_se is not None:
@@ -781,6 +808,8 @@ _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
     "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
     "crucigrama", "edicion_del_dia",
+    # Live blog teaser: editor-curated only, no automatic fallback source.
+    "blog_en_vivo",
 })
 
 
@@ -945,11 +974,14 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
         seen_ids.update(a_ids)
 
     # Merge component definitions not yet present in the saved list (e.g. new components added
-    # after the layout was last saved). Appended at the end so the saved order is preserved.
+    # after the layout was last saved). Inserted at their definition position so a newly defined
+    # component (e.g. blog_en_vivo, defined first) lands at its natural slot, not always the end.
     _existing_comp_keys = {c.get("key") for c in resolved.get("componentes", [])}
     for _defn in COMPONENT_DEFINITIONS:
         if _defn["key"] not in _existing_comp_keys:
-            resolved.setdefault("componentes", []).append({"key": _defn["key"], "active": True})
+            _insert_component_at_def_position(
+                resolved.setdefault("componentes", []), {"key": _defn["key"], "active": True}
+            )
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
     for comp in resolved.get("componentes", []):
@@ -1966,7 +1998,9 @@ def build_editor_data(grid_data, publication=None):
                     )
                 else:
                     comp_dict["articles"] = _fetch_component_articles(defn["key"])
-                result["componentes"].append(comp_dict)
+                # Insert at definition position (not at the end) so newly defined components
+                # show at their natural slot in the editor on layouts saved before they existed.
+                _insert_component_at_def_position(result["componentes"], comp_dict)
     else:
         for defn in COMPONENT_DEFINITIONS:
             saved = saved_comps_raw.get(defn["key"], {})
