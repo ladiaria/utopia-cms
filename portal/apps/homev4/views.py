@@ -104,11 +104,15 @@ COMPONENT_DEFINITIONS = [
     # World Cup live blog teaser. Renders above the principal column on the home (not in the sidebar),
     # so it is placed first here to appear at the top of the COMPONENTES list in the editor, mirroring
     # its real position on the page. Editors pick up to 2 articles manually (see BLOCK_ARTICLE_LIMITS).
-    {"key": "blog_en_vivo",         "label": "Blog en vivo",             "description": "Encima de principal", "has_picker": True},
+    {"key": "blog_en_vivo",         "label": "Blog en vivo",             "description": "Coberturas especiales", "has_picker": True},
     {"key": "apuntes_del_dia",      "label": "Apuntes del día",          "description": "",                "sortable_articles": False},
     {"key": "opinion",              "label": "Opinión",                  "description": "Área",            "has_picker": True},
     {"key": "lo_ultimo",            "label": "Lo último",                "description": "3PM a 6AM",       "has_picker": True, "pin_mode": True, "sortable_articles": True},
     {"key": "radio",                "label": "Radio",                    "description": "",                "no_articles": True},
+    # World Cup radio widget. Same sidebar slot and behaviour as "radio", and mutually exclusive
+    # with it (enforced in save_grid + the editor JS). Starts off (default_active=False) so it does
+    # not collide with the regular radio, which is on by default, on layouts that predate it.
+    {"key": "radio_mundial",        "label": "Radio Mundial",            "description": "No coexiste con Radio", "no_articles": True, "default_active": False},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
@@ -141,7 +145,7 @@ def _insert_component_at_def_position(componentes, comp):
     componentes.append(comp)
 
 
-DEFAULT_COMPONENTES = [{"key": d["key"], "active": True} for d in COMPONENT_DEFINITIONS]
+DEFAULT_COMPONENTES = [{"key": d["key"], "active": d.get("default_active", True)} for d in COMPONENT_DEFINITIONS]
 
 # Maximum article_ids per block — enforced in save_grid (backend) and mirrored in the picker (frontend).
 # "area" applies to every section in the sections list.
@@ -490,6 +494,22 @@ def _validate_block_article_limits(grid_data):
     return None
 
 
+def _validate_radio_exclusivity(grid_data):
+    """Return an error message if both 'radio' and 'radio_mundial' are active, else None.
+
+    They share the same sidebar slot and must never both show. The editor JS turns the other
+    off when one is enabled; this is the backend safety net for save_grid and save_pending_grid.
+    """
+    active_radios = {
+        c.get("key")
+        for c in grid_data.get("componentes", [])
+        if c.get("key") in ("radio", "radio_mundial") and c.get("active", True)
+    }
+    if "radio" in active_radios and "radio_mundial" in active_radios:
+        return "Radio and Radio Mundial cannot be active at the same time"
+    return None
+
+
 @staff_member_required
 def save_grid(request, layout_id):
     if request.method != "POST":
@@ -502,6 +522,10 @@ def save_grid(request, layout_id):
         _limit_error = _validate_block_article_limits(grid_data)
         if _limit_error:
             return JsonResponse({"error": _limit_error}, status=400)
+        # Radio and Radio Mundial share a sidebar slot — reject if both were left active.
+        _exclusivity_error = _validate_radio_exclusivity(grid_data)
+        if _exclusivity_error:
+            return JsonResponse({"error": _exclusivity_error}, status=400)
         # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
@@ -537,16 +561,18 @@ def save_grid(request, layout_id):
         request.session["preview_grid_data"] = layout.grid_data
         request.session["preview_grid_saved"] = True
 
-        # Sync RadioGeneralConfig.show_banner when the editor toggles the radio block.
+        # Sync RadioGeneralConfig banners when the editor toggles a radio block.
         # Uses .update() (no signals) to avoid triggering the post_save cycle.
-        old_radio = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == "radio"), None)
-        new_radio = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == "radio"), None)
-        if old_radio is not None and new_radio is not None and old_radio != new_radio:
-            try:
-                from utopia_cms_radio.models import RadioGeneralConfig
-                RadioGeneralConfig.objects.update(show_banner="Y" if new_radio else "N")
-            except ImportError:
-                pass
+        # radio → show_banner, radio_mundial → show_banner_mundial (mutually exclusive blocks).
+        for _comp_key, _banner_field in (("radio", "show_banner"), ("radio_mundial", "show_banner_mundial")):
+            _old = next((c.get("active", True) for c in old_grid.get("componentes", []) if c.get("key") == _comp_key), None)
+            _new = next((c.get("active", True) for c in layout.grid_data.get("componentes", []) if c.get("key") == _comp_key), None)
+            if _old is not None and _new is not None and _old != _new:
+                try:
+                    from utopia_cms_radio.models import RadioGeneralConfig
+                    RadioGeneralConfig.objects.update(**{_banner_field: "Y" if _new else "N"})
+                except ImportError:
+                    pass
 
         return JsonResponse({"status": "ok", **stats})
     except Exception as e:
@@ -816,7 +842,7 @@ def _pick_newsletter_dia(newsletters, user):
 # Manual-only: no fallback exists (editor curation only).
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
-    "radio", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
+    "radio", "radio_mundial", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
     "crucigrama", "edicion_del_dia",
     # Live blog teaser: editor-curated only, no automatic fallback source.
     "blog_en_vivo",
@@ -990,7 +1016,8 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
     for _defn in COMPONENT_DEFINITIONS:
         if _defn["key"] not in _existing_comp_keys:
             _insert_component_at_def_position(
-                resolved.setdefault("componentes", []), {"key": _defn["key"], "active": True}
+                resolved.setdefault("componentes", []),
+                {"key": _defn["key"], "active": _defn.get("default_active", True)},
             )
 
     # 6. OTHER COMPONENTS: opinion, le_monde, lento (skip dynamic and manual-only keys)
@@ -1990,7 +2017,7 @@ def build_editor_data(grid_data, publication=None):
                     "key": defn["key"],
                     "label": defn["label"],
                     "description": defn["description"],
-                    "active": True,
+                    "active": defn.get("default_active", True),
                     "has_picker": defn.get("has_picker", False),
                     "replace_mode": defn.get("replace_mode", False),
                     "pin_mode": defn.get("pin_mode", False),
@@ -2018,7 +2045,7 @@ def build_editor_data(grid_data, publication=None):
                 "key": defn["key"],
                 "label": defn["label"],
                 "description": defn["description"],
-                "active": saved.get("active", True),
+                "active": saved.get("active", defn.get("default_active", True)),
                 "has_picker": defn.get("has_picker", False),
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
@@ -2240,6 +2267,10 @@ def save_pending_grid(request):
         _limit_error = _validate_block_article_limits(grid_data)
         if _limit_error:
             return JsonResponse({"error": _limit_error}, status=400)
+        # Radio and Radio Mundial cannot both be active (same rule as save_grid).
+        _exclusivity_error = _validate_radio_exclusivity(grid_data)
+        if _exclusivity_error:
+            return JsonResponse({"error": _exclusivity_error}, status=400)
         layout = HomeLayout.objects.filter(publication=publication).first()
         if not layout:
             return JsonResponse({"error": "No layout found"}, status=404)

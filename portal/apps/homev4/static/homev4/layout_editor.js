@@ -126,12 +126,29 @@ document.addEventListener("DOMContentLoaded", function () {
         block.classList.toggle("is-inactive", !checkbox.checked);
     }
 
+    // Radio and Radio Mundial share a single sidebar slot and cannot both be on (mirrors the
+    // backend check in save_grid). Enabling one automatically turns the other off in the editor.
+    var RADIO_EXCLUSIVE_KEYS = ["radio", "radio_mundial"];
+    function enforceRadioExclusivity(changedCheckbox) {
+        if (!changedCheckbox.checked) return;
+        var item = changedCheckbox.closest(".componente-item[data-comp-key]");
+        if (!item || RADIO_EXCLUSIVE_KEYS.indexOf(item.dataset.compKey) === -1) return;
+        var otherKey = item.dataset.compKey === "radio" ? "radio_mundial" : "radio";
+        var otherItem = document.querySelector(".componente-item[data-comp-key='" + otherKey + "']");
+        var otherCb = otherItem && otherItem.querySelector(".comp-active");
+        if (otherCb && otherCb.checked) {
+            otherCb.checked = false;
+            applyActiveState(otherCb);
+        }
+    }
+
     function initActiveToggles() {
         document.querySelectorAll(TOGGLE_CHECKBOXES).forEach(function (cb) {
             applyActiveState(cb);
             cb.addEventListener("change", function () {
                 markChanged();
                 applyActiveState(this);
+                enforceRadioExclusivity(this);
                 var block = this.closest(TOGGLE_CONTAINER);
                 var nameEl = block && block.querySelector(".block-badge, .comp-name");
                 log("toggle", (this.checked ? "activated" : "deactivated"), {
