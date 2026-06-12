@@ -1740,6 +1740,17 @@ def active_layout(request, publication_slug=None):
     logger.warning("active_layout newsletter_dia: %.1f ms", (time.perf_counter() - _t_nl) * 1000)
     context["newsletter_dia_nl"] = newsletter_dia_nl
 
+    # liveblog_articles — the curated right-column list for the home LiveBlog card
+    # (card_big_new_liveblog_70.html) lives in the blog_en_vivo component; the backend
+    # stores the picks there instead of in a dedicated var. Surface them so the card can
+    # iterate. Falls back to `destacados` in the template when there are none.
+    liveblog_articles = None
+    for comp in home_data.get("componentes", []):
+        if comp.get("key") == "blog_en_vivo":
+            liveblog_articles = comp.get("articles", [])
+            break
+    context["liveblog_articles"] = liveblog_articles
+
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
     # DEBUG: uncomment to inspect context in the terminal
