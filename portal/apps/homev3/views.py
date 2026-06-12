@@ -234,10 +234,22 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
         cover_article = None
 
     # None → publication has no newsletter; False → not subscribed; True → already subscribed.
+    # A publication whose own newsletter is disabled but that has a same-slug category with a
+    # newsletter delegates its cover-page newsletter widget to that category newsletter, so the
+    # subscription state is read from the subscriber's category newsletters in that case.
+    nl_category = (
+        not publication.has_newsletter
+        and Category.objects.filter(slug=publication.slug, has_newsletter=True).exists()
+    )
     category_nl_subscribed = None
-    if publication.has_newsletter:
+    if publication.has_newsletter or nl_category:
         if is_authenticated and user_has_subscriber:
-            category_nl_subscribed = user.subscriber.newsletters.filter(slug=publication.slug).exists()
+            if nl_category:
+                category_nl_subscribed = user.subscriber.category_newsletters.filter(
+                    slug=publication.slug
+                ).exists()
+            else:
+                category_nl_subscribed = user.subscriber.newsletters.filter(slug=publication.slug).exists()
         else:
             category_nl_subscribed = False
 
