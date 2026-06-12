@@ -467,6 +467,29 @@ def _sync_principal_to_edition(old_ids, new_ids, layout, user):
     )
 
 
+def _validate_block_article_limits(grid_data):
+    """Return an error message if any block exceeds its BLOCK_ARTICLE_LIMITS cap, else None.
+
+    Shared by save_grid and save_pending_grid so the Preview 5am editor enforces the same
+    limits as the regular editor. The picker caps additions in the UI; this is the backend
+    safety net against a manipulated POST or a JS bug. Violating these breaks dedup logic.
+    """
+    for block in ("principal", "suplemento", "especial"):
+        ids = grid_data.get(block, {}).get("article_ids", [])
+        if len(ids) > BLOCK_ARTICLE_LIMITS[block]:
+            return f"{block} cannot have more than {BLOCK_ARTICLE_LIMITS[block]} articles"
+    area_limit = BLOCK_ARTICLE_LIMITS["area"]
+    for section in grid_data.get("sections", []):
+        if len(section.get("article_ids", [])) > area_limit:
+            return f"Area '{section.get('slug', '?')}' cannot have more than {area_limit} articles"
+    for comp in grid_data.get("componentes", []):
+        key = comp.get("key", "")
+        limit = BLOCK_ARTICLE_LIMITS.get(key)
+        if limit and len(comp.get("article_ids", [])) > limit:
+            return f"Component '{key}' cannot have more than {limit} articles"
+    return None
+
+
 @staff_member_required
 def save_grid(request, layout_id):
     if request.method != "POST":
@@ -476,22 +499,9 @@ def save_grid(request, layout_id):
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
         # Enforce per-block article_ids limits — violating these breaks deduplication logic.
-        for block in ("principal", "suplemento", "especial"):
-            ids = grid_data.get(block, {}).get("article_ids", [])
-            limit = BLOCK_ARTICLE_LIMITS[block]
-            if len(ids) > limit:
-                return JsonResponse({"error": f"{block} cannot have more than {limit} articles"}, status=400)
-        area_limit = BLOCK_ARTICLE_LIMITS["area"]
-        for section in grid_data.get("sections", []):
-            ids = section.get("article_ids", [])
-            if len(ids) > area_limit:
-                slug = section.get("slug", "?")
-                return JsonResponse({"error": f"Area '{slug}' cannot have more than {area_limit} articles"}, status=400)
-        for comp in grid_data.get("componentes", []):
-            key = comp.get("key", "")
-            limit = BLOCK_ARTICLE_LIMITS.get(key)
-            if limit and len(comp.get("article_ids", [])) > limit:
-                return JsonResponse({"error": f"Component '{key}' cannot have more than {limit} articles"}, status=400)
+        _limit_error = _validate_block_article_limits(grid_data)
+        if _limit_error:
+            return JsonResponse({"error": _limit_error}, status=400)
         # Strip article_ids from newsletter_mode components — they use newsletter_refs instead.
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
@@ -2225,6 +2235,11 @@ def save_pending_grid(request):
     try:
         data = json.loads(request.body)
         grid_data = data.get("grid_data", {})
+        # Same per-block limits as the regular editor (save_grid) — the Preview 5am grid moves
+        # to grid_data at 5am, so it must respect the caps before it is persisted.
+        _limit_error = _validate_block_article_limits(grid_data)
+        if _limit_error:
+            return JsonResponse({"error": _limit_error}, status=400)
         layout = HomeLayout.objects.filter(publication=publication).first()
         if not layout:
             return JsonResponse({"error": "No layout found"}, status=404)
