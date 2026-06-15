@@ -323,6 +323,13 @@ def toggle_radio_block_task(active):
     Runs at 7am (activate) and 10pm (deactivate) via Celery Beat.
     Updates every layout — not just the active one — so the state stays consistent
     when the scheduler switches between layouts.
+
+    When activating, layouts where "radio_mundial" is currently active are skipped:
+    Radio and Radio Mundial share the same sidebar slot and are mutually exclusive
+    (the same rule enforced by _validate_radio_exclusivity in the layout editor).
+    The 7am turn-on must not "pisar" an active Radio Mundial — without this guard
+    the cron would write both blocks active at once, a state the editor never allows.
+    No guard is needed when deactivating: turning the regular radio off is always safe.
     """
     from core.models import Publication
 
@@ -338,9 +345,19 @@ def toggle_radio_block_task(active):
             continue
 
         updated = 0
+        skipped = 0
         for layout in HomeLayout.objects.filter(publication=publication):
             gd = layout.grid_data if isinstance(layout.grid_data, dict) else {}
             componentes = gd.get("componentes", [])
+            # Don't turn the regular radio on where Radio Mundial is active (mutual
+            # exclusion). Uses the same default-active convention as the editor's
+            # _validate_radio_exclusivity so both sides agree on what "active" means.
+            if active and any(
+                comp.get("key") == "radio_mundial" and comp.get("active", True)
+                for comp in componentes
+            ):
+                skipped += 1
+                continue
             changed = False
             for comp in componentes:
                 if comp.get("key") == "radio" and comp.get("active") != active:
@@ -353,10 +370,11 @@ def toggle_radio_block_task(active):
                 updated += 1
 
         logger.info(
-            "toggle_radio_block_task: publication=%s active=%s updated=%d layouts",
+            "toggle_radio_block_task: publication=%s active=%s updated=%d skipped=%d layouts",
             publication.slug,
             active,
             updated,
+            skipped,
         )
 
     # Sync RadioGeneralConfig.show_banner to reflect the scheduled toggle.
