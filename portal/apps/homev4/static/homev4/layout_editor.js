@@ -182,6 +182,45 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /*
+     * Visual dimming of the suplemento_extra (Adicional) source section in áreas y
+     * publicaciones. Mirrors applySuplementoSourceDimming, but the Adicional source is
+     * chosen in a <select> (not fixed by weekday), so this also re-runs when the source
+     * changes. Uses a distinct class (is-suplemento-extra-source) so it does not clash with
+     * the suplemento principal dimming when both target different cards. As with the
+     * suplemento, the section's `active` flag is NOT changed — dimming is purely cosmetic,
+     * mirroring the home where build_home_data skips the Adicional source from áreas.
+     */
+    function applySuplementoExtraSourceDimming() {
+        // Clear any previous Adicional dimming first — the selected source can change.
+        document.querySelectorAll(".block-area.is-suplemento-extra-source").forEach(function (card) {
+            card.classList.remove("is-suplemento-extra-source");
+            // Keep the tooltip only if the card is still dimmed as the suplemento principal source.
+            if (!card.classList.contains("is-suplemento-source")) {
+                card.removeAttribute("title");
+            }
+        });
+        var wrapper = document.getElementById("suplemento-extra-wrapper");
+        var cb = document.querySelector(".block-active[data-block='suplemento_extra']");
+        var select = document.getElementById("suplemento-extra-source");
+        // Dim only when the block is present, active, and has a selected source.
+        if (!wrapper || wrapper.dataset.present !== "true" || !cb || !cb.checked || !select) return;
+        var parts = (select.value || "").split(":");
+        var slug = parts.length > 1 ? parts[1] : parts[0];
+        if (!slug) return;
+        var card = document.querySelector(".block-area[data-section-slug='" + slug + "']");
+        if (!card) return;
+        card.classList.add("is-suplemento-extra-source");
+        card.title = "Este vertical no se muestra en áreas porque es la fuente del Adicional activo. Se restaura automáticamente si el Adicional se apaga o cambia de fuente.";
+    }
+
+    // Init + react to the Adicional active checkbox (source select / add / remove are wired below).
+    var suplementoExtraCb = document.querySelector(".block-active[data-block='suplemento_extra']");
+    if (suplementoExtraCb) {
+        suplementoExtraCb.addEventListener("change", applySuplementoExtraSourceDimming);
+    }
+    applySuplementoExtraSourceDimming();
+
     // Init: article sorting within PRINCIPAL
     makeSortable(document.getElementById("principal-articles"), ".article-row[data-article-id]");
 
@@ -220,6 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Activate the block immediately so it shows as enabled on add
             var cb = block.querySelector(".block-active[data-block='suplemento_extra']");
             if (cb) { cb.checked = true; applyActiveState(cb); }
+            applySuplementoExtraSourceDimming();
             markChanged();
             log("toggle", "added suplemento_extra block");
         });
@@ -231,6 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
             seWrapper.dataset.present = "false";
             document.getElementById("block-suplemento-extra").style.display = "none";
             document.getElementById("suplemento-extra-add-row").style.display = "";
+            applySuplementoExtraSourceDimming();
             markChanged();
             log("toggle", "removed suplemento_extra block");
         });
@@ -263,6 +304,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 renumberArticles();
             }
+            // Move the dim to the área of the newly selected source.
+            applySuplementoExtraSourceDimming();
         });
     }
 

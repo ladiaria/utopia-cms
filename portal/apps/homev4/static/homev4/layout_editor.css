@@ -210,12 +210,14 @@
  * in grid_data is intentionally left as-is (see applySuplemento­SourceDimming in
  * layout_editor.js). This is purely cosmetic — the checkbox remains checked.
  */
-#homev4-editor .block-area.is-suplemento-source {
+#homev4-editor .block-area.is-suplemento-source,
+#homev4-editor .block-area.is-suplemento-extra-source {
     opacity: 0.4;
     filter: grayscale(0.7);
     transition: opacity 0.2s, filter 0.2s;
 }
-#homev4-editor .block-area.is-suplemento-source .section-articles {
+#homev4-editor .block-area.is-suplemento-source .section-articles,
+#homev4-editor .block-area.is-suplemento-extra-source .section-articles {
     pointer-events: none;
 }
 
