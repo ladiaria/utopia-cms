@@ -172,6 +172,44 @@ class SupplementoExtraResolveTest(SimpleTestCase):
         self.assertEqual(result["suplemento_extra"]["source_type"], "category")
         self.assertEqual(result["suplemento_extra"]["source_slug"], "cultura")
 
+    # --- Group 6: the suplemento_extra source area is skipped (not duplicated) ---
+
+    def test_suplemento_extra_source_area_skipped(self):
+        """The area used as the suplemento_extra source must NOT be auto-filled as its own
+        area block — otherwise it would render twice (as Adicional and as the área)."""
+        grid = {
+            "suplemento_extra": _suplemento_extra([], source_type="publication", source_slug="deporte"),
+            "sections": [
+                {"type": "publication", "slug": "deporte", "name": "Deporte", "active": True, "article_ids": []},
+                {"type": "category", "slug": "cultura", "name": "Cultura", "active": True, "article_ids": []},
+            ],
+        }
+        # Empty the weekday->suplemento map so today_source can't skip deporte on its own —
+        # this isolates the suplemento_extra skip (Monday's suplemento source is also deporte).
+        with patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", {}):
+            result = self._run(grid, principal_ids=(1,), suplemento_ids=(), area_ids=(5, 6))
+        by_slug = {s["slug"]: s for s in result.get("sections", [])}
+        # deporte is the Adicional source -> skipped, stays empty
+        self.assertEqual(by_slug["deporte"]["article_ids"], [])
+        # an unrelated area is still filled normally
+        self.assertNotEqual(by_slug["cultura"]["article_ids"], [])
+
+    def test_inactive_suplemento_extra_source_area_not_skipped(self):
+        """When the Adicional block is inactive, its source area is filled as usual."""
+        grid = {
+            "suplemento_extra": _suplemento_extra(
+                [], source_type="publication", source_slug="deporte", active=False
+            ),
+            "sections": [
+                {"type": "publication", "slug": "deporte", "name": "Deporte", "active": True, "article_ids": []},
+            ],
+        }
+        # Isolate from the principal suplemento skip (Monday's source is also deporte).
+        with patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", {}):
+            result = self._run(grid, principal_ids=(1,), suplemento_ids=(), area_ids=(5, 6))
+        by_slug = {s["slug"]: s for s in result.get("sections", [])}
+        self.assertNotEqual(by_slug["deporte"]["article_ids"], [])
+
 
 # ---------------------------------------------------------------------------
 # Group 4 — build_home_data: suplemento_extra articles in static_ids
@@ -243,6 +281,46 @@ class SupplementoExtraBuildHomeDataTest(SimpleTestCase):
         exclude_ids = self._get_lo_ultimo_exclude_ids(resolved)
         self.assertNotIn(50, exclude_ids)
         self.assertNotIn(51, exclude_ids)
+
+    def _get_section_slugs(self, resolved_grid):
+        """Run build_home_data and return the slugs of the rendered áreas/publicaciones."""
+        with patch("homev4.views.resolve_layout_grid_data", return_value=resolved_grid), \
+             patch("homev4.views.Article") as mock_art, \
+             patch("homev4.views._fetch_component_articles", return_value=[]), \
+             patch("homev4.views._block_active", side_effect=lambda _key, val: bool(val)), \
+             patch("homev4.views._SUPLEMENTO_SOURCE_BY_WEEKDAY", {}), \
+             patch("homev4.views.timezone") as mock_tz:
+            mock_art.published = self._article_filter_mock()
+            mock_tz.localdate.return_value = _SUNDAY
+            mock_tz.now.return_value = MagicMock()
+            data = build_home_data(resolved_grid, publication=None, layout=None)
+        return [s["slug"] for s in data.get("sections", [])]
+
+    def _resolved_with_deporte_area(self, *, se_active):
+        return {
+            "principal":        {"active": True, "article_ids": [1]},
+            "suplemento":       {"active": True, "article_ids": []},
+            "suplemento_extra": _suplemento_extra(
+                [], source_type="publication", source_slug="deporte", active=se_active
+            ),
+            "especial":         {"active": True, "article_ids": []},
+            "sections": [
+                {"type": "publication", "slug": "deporte", "name": "Deporte", "active": True, "article_ids": []},
+                {"type": "category", "slug": "cultura", "name": "Cultura", "active": True, "article_ids": []},
+            ],
+            "componentes": [],
+        }
+
+    def test_suplemento_extra_source_area_hidden_from_sections(self):
+        """Active Adicional with source 'deporte' must hide the 'deporte' área from the home."""
+        slugs = self._get_section_slugs(self._resolved_with_deporte_area(se_active=True))
+        self.assertNotIn("deporte", slugs)
+        self.assertIn("cultura", slugs)
+
+    def test_inactive_suplemento_extra_source_area_shown(self):
+        """Inactive Adicional must not hide its source área."""
+        slugs = self._get_section_slugs(self._resolved_with_deporte_area(se_active=False))
+        self.assertIn("deporte", slugs)
 
 
 # ---------------------------------------------------------------------------

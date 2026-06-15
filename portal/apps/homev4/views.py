@@ -984,6 +984,15 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
         _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if suplemento_has_content else None
     )
+    # Also skip the area used as the suplemento_extra (Adicional) source, so the same area is
+    # not rendered both as the Adicional block and as its own area block. Only when the block
+    # is active and has a configured source — the manual "Aniversaria" case has no source and
+    # must not skip anything. Mirrors the today_source skip used for the suplemento above.
+    se_extra_source = (
+        (se_data["source_type"], se_data["source_slug"])
+        if se_data and se_data.get("active", True) and se_data.get("source_type") and se_data.get("source_slug")
+        else None
+    )
     existing_slugs = {s.get("slug") for s in resolved.get("sections", [])}
     for da in _DEFAULT_AREAS:
         if da["slug"] not in existing_slugs:
@@ -995,7 +1004,11 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
             continue
         area_type = area.get("type", "section")
         slug = area.get("slug", "")
-        if not slug or (today_source and (area_type, slug) == today_source):
+        if (
+            not slug
+            or (today_source and (area_type, slug) == today_source)
+            or (se_extra_source and (area_type, slug) == se_extra_source)
+        ):
             continue
         a_ids = area.get("article_ids") or []
         if not a_ids:
@@ -1174,6 +1187,15 @@ def build_home_data(grid_data, publication=None, layout=None):
         _SUPLEMENTO_SOURCE_BY_WEEKDAY.get(timezone.localdate().weekday())
         if _suplemento_has_content else None
     )
+    # Skip the area used as the suplemento_extra (Adicional) source so it is not shown twice
+    # (as the Adicional block and as its own area block). Only when the block is active and has
+    # a configured source — the manual "Aniversaria" case has no source and skips nothing.
+    _se_extra_source = (
+        (se_data.get("source_type"), se_data.get("source_slug"))
+        if result.get("suplemento_extra_active")
+        and se_data and se_data.get("source_type") and se_data.get("source_slug")
+        else None
+    )
     _sections_shown = 0
     for area in resolved.get("sections", []):
         if _sections_shown >= 12:
@@ -1182,7 +1204,11 @@ def build_home_data(grid_data, publication=None, layout=None):
             continue
         area_type = area.get("type", "section")
         slug = area.get("slug", "")
-        if not slug or (_today_suplemento_source and (area_type, slug) == _today_suplemento_source):
+        if (
+            not slug
+            or (_today_suplemento_source and (area_type, slug) == _today_suplemento_source)
+            or (_se_extra_source and (area_type, slug) == _se_extra_source)
+        ):
             continue
         a_ids = area.get("article_ids", [])
         result["sections"].append({
@@ -1739,6 +1765,17 @@ def active_layout(request, publication_slug=None):
             break
     logger.warning("active_layout newsletter_dia: %.1f ms", (time.perf_counter() - _t_nl) * 1000)
     context["newsletter_dia_nl"] = newsletter_dia_nl
+
+    # liveblog_articles — the curated right-column list for the home LiveBlog card
+    # (card_big_new_liveblog_70.html) lives in the blog_en_vivo component; the backend
+    # stores the picks there instead of in a dedicated var. Surface them so the card can
+    # iterate. Falls back to `destacados` in the template when there are none.
+    liveblog_articles = None
+    for comp in home_data.get("componentes", []):
+        if comp.get("key") == "blog_en_vivo":
+            liveblog_articles = comp.get("articles", [])
+            break
+    context["liveblog_articles"] = liveblog_articles
 
     _t2 = time.perf_counter()
     response = render(request, home_template, context)
