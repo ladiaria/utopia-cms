@@ -824,23 +824,22 @@ a.ld-link-low {
 }
 
 .breaking-notice {
-  background: #d8d8d8;
-  color: $off-black;
-  font-size: 14px;
+  background: #d1f5ff;
+  color: #000;
+  font-size: px-to-rem(14px);
   line-height: 1.2;
-  text-transform: uppercase;
   text-align: center;
-  padding: 14px 20px 14px 3px;
-  position: fixed;
+  padding: 12px 32px;
   width: 100%;
   z-index: 100;
   top: 60px;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid #b4b4b4;
+  border-bottom: 0.5px solid #ababab;
 
   @media #{$small-and-down} {
+    position: fixed;
     top: auto;
     bottom: 65px;
+    padding: 8px 20px;
 
     .msg-title {
       display: block;
@@ -848,53 +847,65 @@ a.ld-link-low {
   }
 
   .container {
-    font-size: 14px;
+    font-size: px-to-rem(14px);
+    padding: 0;
   }
+
+  // grupo centrado: badge "EN VIVO" + link
+  .msg-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+  }
+
   .msg-link {
-    color: $off-black;
+    color: #000;
     text-decoration: underline;
-    font-weight: bold;
+    font-family: "Dialect Gothic A", sans-serif;
+    font-weight: 500;
+    font-size: px-to-rem(16px);
 
     &:hover {
       opacity: 0.8;
     }
   }
+
   .btn-close {
-    position: absolute;
-    right: 20px;
-    top: 10px;
     cursor: pointer;
-    background-color: #e7e6e6;
     display: block;
-    padding: 5px;
-    border-radius: 4px;
 
     svg {
       display: block;
+      width: 20px;
+      height: 20px;
+    }
+    @media #{$medium-and-up} {
+      position: absolute;
+      right: 32px;
     }
   }
+
+  // badge "EN VIVO": punto rojo + texto rojo bold + flecha
   .live {
-    display: inline-block;
-    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff0000;
+    font-family: "Dialect Gothic A", sans-serif;
+    font-weight: 700;
+    letter-spacing: px-to-rem(1.12px); // Figma: 8% de 14px
+    text-transform: uppercase;
 
     &:before {
       content: "";
       width: 6px;
       height: 6px;
-      display: block;
-      background: #ee0000;
-      margin-right: 5px;
-      position: absolute;
-      top: 5px;
-      left: -10px;
+      flex-shrink: 0;
+      background: #ff0000;
+      border-radius: 50%;
       animation-iteration-count: infinite;
       animation-name: twinkle-1;
       animation-duration: 2s;
-      border-radius: 50%;
-    }
-
-    svg {
-      margin: 0 10px;
     }
   }
 }
