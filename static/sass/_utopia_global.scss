@@ -868,6 +868,9 @@ a.ld-link-low {
     &:hover {
       opacity: 0.8;
     }
+    @media #{$medium-and-down} {
+      flex: 1;
+    }
   }
 
   .btn-close {
