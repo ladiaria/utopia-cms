@@ -32,6 +32,8 @@ logger = logging.getLogger("homev4")
 
 _cache_maxage = getattr(settings, "HOMEV3_INDEX_CACHE_MAXAGE", 120)
 
+_home_auth_decorator = getattr(settings, "HOMEV3_INDEX_AUTH_DECORATOR", decorate_if_auth)
+
 # Newsletters auto-activated on registration — excluded from the newsletter_dia picker.
 _MASIVA_NEWSLETTER_SLUGS = frozenset([
     ("publication", "ladiaria"),     # A la mañana
@@ -1644,7 +1646,7 @@ def _add_auth_context(context, user, articles):
 
 
 @_log_timing
-@decorate_if_auth(decorator=never_cache)
+@_home_auth_decorator(decorator=never_cache)
 @decorate_if_no_auth(decorator=vary_on_cookie)
 @decorate_if_no_auth(decorator=cache_control(no_cache=True, no_store=True, must_revalidate=True, max_age=_cache_maxage))
 def active_layout(request, publication_slug=None):
