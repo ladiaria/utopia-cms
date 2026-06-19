@@ -257,7 +257,21 @@ def refresh_home_layouts_task():
         # get_current_edition applies the 5am gate (date_published <= today after 5am),
         # so on Sunday it correctly picks up Saturday's "Fin de semana" edition because
         # date_published=Saturday satisfies date_published <= Sunday.
-        weekday = timezone.localdate().weekday()
+        # Use the "editorial day", aligned to the SAME 5am gate (PUBLISHING_TIME) that
+        # get_current_edition uses to decide which edition is "current". The naive
+        # localdate().weekday() flips to the next day at 00:00, but the current edition
+        # only flips at 5am. Between 00:00 and 05:00 those two disagree, so a refresh
+        # would resolve the wrong edition: on Saturday pre-5am the weekend branch fires
+        # but get_current_edition(findesemana) still returns LAST week's edition
+        # (date_published < today) — injecting "viejazo de una semana atrás" into the
+        # principal. Anchoring weekday to the gate keeps the pre-5am day as "yesterday"
+        # (e.g. Saturday before 5am is still editorially Friday), so the edition picked
+        # matches what is actually live on the home until the 5am flip.
+        now_local = timezone.localtime()
+        publishing_hour, publishing_minute = [int(i) for i in settings.PUBLISHING_TIME.split(":")]
+        publishing = now_local.replace(hour=publishing_hour, minute=publishing_minute, second=0, microsecond=0)
+        editorial_date = now_local.date() if now_local > publishing else now_local.date() - timedelta(days=1)
+        weekday = editorial_date.weekday()
         if weekday >= 5:
             fds_pub = Publication.objects.filter(slug="findesemana").first()
             edition = get_current_edition(publication=fds_pub) if fds_pub else None
