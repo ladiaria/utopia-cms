@@ -41,6 +41,10 @@
     padding-inline: 24px;
   }
 
+  #coral_talk_stream {
+    max-width: px-to-rem(412px);
+  }
+
   @media #{$medium-and-down} {
     width: 100%;
     border-left: none;
