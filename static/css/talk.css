@@ -7,14 +7,6 @@
   --palette-grey-lighter: #ABABAB;
 }
 
-#coral {
-  max-width: 25.75rem;
-}
-
-body.live-blog-debate #coral {
-  max-width: unset;
-}
-
 .coral-guidelines-content p {
   font-family: var(--font-family-sans-serif) !important;
 }
