@@ -515,12 +515,7 @@ a {
   justify-content: center;
   z-index: 100;
   padding: 16px 20px;
-}
-
-.header-container {
-  border-bottom: 0.5px solid #ABABAB;
-  margin-bottom: 16px;
-  width: 100%;
+  min-height: 32px;
 }
 
 .mobile-header-breadcrumb {
@@ -529,7 +524,6 @@ a {
   align-items: center;
   justify-content: center;
   font-family: "Dialect Gothic A", sans-serif;
-  padding-top: 16px;
 }
 
 .mobile-header-breadcrumb a {
@@ -540,10 +534,6 @@ a {
 }
 
 @media (max-width: 640px) {
-  .mobile-header:not(.logged-in) {
-    justify-content: left;
-  }
-
   .mobile-header:not(.logged-in) .btn.ingresar {
     position: absolute;
     right: 15px;
@@ -624,6 +614,7 @@ a {
   max-width: 1000px;
   font-weight: 500;
   line-height: 120%;
+  text-align: center;
 }
 
 @media (min-width: 769px) {
