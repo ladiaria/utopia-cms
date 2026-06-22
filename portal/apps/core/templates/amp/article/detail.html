@@ -32,7 +32,7 @@
   <!-- End Schema (https://schema.org) -->
 {% endblock %}
 
-{% block body_class %}article-section-{{ section.slug }}{% if not article.is_published %} draft{% endif %}{% endblock %}
+{% block body_class %}article-section-{{ section.slug }}{% if publication %} {{ publication.slug }}{% endif %}{% if not article.is_published %} draft{% endif %}{% endblock %}
 
 {% block content %}
 
