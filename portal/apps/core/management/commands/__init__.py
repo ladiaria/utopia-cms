@@ -138,7 +138,12 @@ class SendNLCommand(BaseCommand):
                 raise CommandError('--export-* options can not be used with --offline')
         if self.partitions is None and self.mod is not None or self.mod is None and self.partitions is not None:
             raise CommandError('--partitions must be used with --mod')
-        self.nl_delivery_dt = timezone.now()
+        # Use local time (settings.TIME_ZONE), not UTC. With USE_TZ=True, timezone.now() returns an
+        # aware datetime in UTC; formatting it directly (newsletter header date, log filename,
+        # NewsletterDelivery.delivery_date) yields the UTC calendar day. When a send runs after 21:00
+        # local (= 00:00 UTC), that rolls to the next day and the newsletter shows tomorrow's date.
+        # localtime() converts to the active timezone so all derived dates are the correct local day.
+        self.nl_delivery_dt = timezone.localtime(timezone.now())
 
     def initlog(self, log, substitution_prefix):
         log_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s', '%H:%M:%S')
