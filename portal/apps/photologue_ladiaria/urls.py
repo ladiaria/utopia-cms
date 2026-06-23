@@ -2,14 +2,40 @@
 Iterates over photologue's URL patterns and replaces Archive views with paginated versions to avoid loading all at once
 and prevent system crashes.
 """
+from functools import wraps
+
 import photologue.urls as photologue_urls
 
 from django.conf import settings
+from django.http import Http404
 from django.urls import path, re_path
 from django.urls.resolvers import RoutePattern, URLPattern
 
 
 app_name = photologue_urls.app_name
+
+
+def _staff_only(callback):
+    """Wrap a view so non-staff users get a 404 (public photologue pages disabled)."""
+    @wraps(callback)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise Http404()
+        return callback(request, *args, **kwargs)
+    return wrapper
+
+
+def _maybe_restrict(p):
+    """When PHOTOLOGUE_LADIARIA_RESTRICT_PUBLIC_PAGES is on, make every photologue page staff-only.
+
+    The URL patterns are kept (so reverse() and Photo.get_absolute_url keep working); only the view
+    callback is wrapped to raise Http404 for the public.
+    """
+    if not getattr(settings, "PHOTOLOGUE_LADIARIA_RESTRICT_PUBLIC_PAGES", False):
+        return p
+    if not isinstance(p, URLPattern):
+        return p
+    return URLPattern(p.pattern, _staff_only(p.callback), p.default_args, p.name)
 
 
 def get_pl_view_kwargs(photologue_template, **extra):
@@ -49,7 +75,7 @@ def _build_urlpatterns():
         else:
             new_p = re_path(pattern_obj._regex, callback, name=p.name)
         result.append(new_p)
-    return result
+    return [_maybe_restrict(p) for p in result]
 
 
 urlpatterns = _build_urlpatterns()
