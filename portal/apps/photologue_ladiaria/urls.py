@@ -26,12 +26,12 @@ def _staff_only(callback):
 
 
 def _maybe_restrict(p):
-    """When PHOTOLOGUE_LADIARIA_RESTRICT_PUBLIC_PAGES is on, make every photologue page staff-only.
+    """When PHOTOLOGUE_RESTRICT_PUBLIC_PAGES is on, make every photologue page staff-only.
 
     The URL patterns are kept (so reverse() and Photo.get_absolute_url keep working); only the view
     callback is wrapped to raise Http404 for the public.
     """
-    if not getattr(settings, "PHOTOLOGUE_LADIARIA_RESTRICT_PUBLIC_PAGES", False):
+    if not getattr(settings, "PHOTOLOGUE_RESTRICT_PUBLIC_PAGES", False):
         return p
     if not isinstance(p, URLPattern):
         return p
