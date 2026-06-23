@@ -15,6 +15,46 @@ from django.utils.deconstruct import deconstructible
 from django.utils.timezone import is_aware, make_aware, localtime
 
 
+# Cache of computed cache-busting suffixes, keyed by static path. Filled once per worker process
+# (at admin import time) so repeated calls do not re-hash the same file.
+_VERSIONED_STATIC_CACHE = {}
+
+
+def versioned_static(path):
+    """Return the static URL for `path` with a ?v=<hash> cache-busting suffix derived from the
+    file's current content.
+
+    Why: nginx serves /static/ with `expires 1y` (Cache-Control: max-age=31536000), and the admin
+    references its JS/CSS by a fixed, unversioned URL (e.g. js/homev2/article_admin.js). When such a
+    file changes, the URL stays identical, so browsers and Cloudflare keep serving the year-old
+    cached copy until someone manually purges the CDN and hard-refreshes. Appending a content hash
+    makes the URL change whenever the file changes, busting both caches automatically on deploy.
+
+    The returned value already starts with STATIC_URL ('/static/...'), so Django's Media.absolute_path
+    emits it verbatim instead of running it through static()/URL-quoting (which would escape the '?').
+    Falls back to the plain static URL if the source file can't be located.
+    """
+    import hashlib
+    import os
+    from django.contrib.staticfiles.finders import find
+    from django.templatetags.static import static
+
+    if path in _VERSIONED_STATIC_CACHE:
+        return _VERSIONED_STATIC_CACHE[path]
+    url = static(path)
+    abs_path = find(path)
+    if abs_path:
+        try:
+            with open(abs_path, "rb") as f:
+                digest = hashlib.md5(f.read()).hexdigest()[:8]
+            url = f"{url}?v={digest}"
+        except OSError:
+            # Unreadable file: degrade to the unversioned URL rather than breaking the admin.
+            pass
+    _VERSIONED_STATIC_CACHE[path] = url
+    return url
+
+
 def get_section_articles_sql(section_ids, excluded=[], limit=None):
     # pre: sections has at least 1 element
     # TODO: "is_published" notion should be the same used in core.managers.get_published_kwargs
