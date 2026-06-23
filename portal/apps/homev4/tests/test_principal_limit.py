@@ -230,7 +230,7 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
     Each block has a limit defined in BLOCK_ARTICLE_LIMITS:
       principal: 10, suplemento: 7, especial: 1, area: 2,
       apuntes_del_dia: 1, opinion: 3, recomendadas_lv: 4,
-      recomendadas_domingo: 4, le_monde: 2, lento: 2.
+      le_monde: 2, lento: 2.
     """
 
     def _post(self, grid_data):
@@ -301,11 +301,6 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
         response = self._post({"componentes": [{"key": "recomendadas_lv", "article_ids": list(range(1, 6))}]})
         self.assertEqual(response.status_code, 400)
 
-    def test_recomendadas_domingo_over_limit_returns_400(self):
-        """recomendadas_domingo with 5 IDs (limit 4) → HTTP 400."""
-        response = self._post({"componentes": [{"key": "recomendadas_domingo", "article_ids": list(range(1, 6))}]})
-        self.assertEqual(response.status_code, 400)
-
     def test_le_monde_over_limit_returns_400(self):
         """le_monde with 3 IDs (limit 2) → HTTP 400."""
         response = self._post({"componentes": [{"key": "le_monde", "article_ids": [1, 2, 3]}]})
@@ -331,7 +326,6 @@ class SaveGridAllBlockLimitsTest(SimpleTestCase):
             "componentes": [
                 {"key": "opinion",              "article_ids": [20, 21, 22]},
                 {"key": "recomendadas_lv",      "article_ids": [23, 24, 25, 26]},
-                {"key": "recomendadas_domingo", "article_ids": [27, 28, 29, 30]},
                 {"key": "le_monde",             "article_ids": [31, 32]},
                 {"key": "lento",                "article_ids": [33, 34]},
                 {"key": "apuntes_del_dia",      "article_ids": [35]},

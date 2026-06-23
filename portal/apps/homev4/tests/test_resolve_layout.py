@@ -201,19 +201,6 @@ class ResolveLayoutGridDataTest(SimpleTestCase):
         self.assertNotIn(20, all_area_ids)
         self.assertIn(5, all_area_ids)
 
-    def test_recomendadas_domingo_excludes_from_areas(self):
-        """Same as above but with recomendadas_domingo."""
-        grid = {
-            "componentes": [
-                {"key": "recomendadas_domingo", "active": True, "article_ids": [21]},
-            ]
-        }
-        result = self._run(grid, principal_ids=(), suplemento_ids=(), area_ids=(21, 6))
-        all_area_ids = set()
-        for section in result["sections"]:
-            all_area_ids.update(section["article_ids"])
-        self.assertNotIn(21, all_area_ids)
-
     def test_no_cross_block_duplicates_with_overlapping_pool(self):
         """
         No article ID may appear in more than one block when all pools overlap.
@@ -384,6 +371,34 @@ class ResolveLayoutGridDataTest(SimpleTestCase):
         # Inactive recomendadas should NOT exclude article 30 from areas
         self.assertIn(30, all_area_ids)
 
+    def test_orphan_component_key_is_stripped(self):
+        """
+        A component whose key is no longer in COMPONENT_DEFINITIONS (e.g. one removed
+        from the editor, like the former "recomendadas_domingo") must be dropped by
+        resolve_layout_grid_data. Otherwise it remains an invisible block that the editor
+        no longer shows, yet whose saved article_ids could still feed deduplication or
+        render on the home — an impossible-to-trace bug. resolve is the single chokepoint
+        shared by both build_home_data and build_editor_data, so filtering here covers
+        every consumer. Uses a synthetic key so the guarantee outlives any one removal.
+        """
+        grid = {
+            "componentes": [
+                {"key": "zzz_removed_component", "active": True, "article_ids": [99]},
+                {"key": "recomendadas_lv", "active": True, "article_ids": [20]},
+            ]
+        }
+        result = self._run(grid, principal_ids=(), suplemento_ids=(), area_ids=(99, 5))
+        keys = [c.get("key") for c in result["componentes"]]
+        # Orphan key is dropped entirely; the valid component survives.
+        self.assertNotIn("zzz_removed_component", keys)
+        self.assertIn("recomendadas_lv", keys)
+        # The orphan's IDs must NOT be excluded from areas (no phantom dedup from an
+        # invisible block).
+        all_area_ids = set()
+        for section in result["sections"]:
+            all_area_ids.update(section["article_ids"])
+        self.assertIn(99, all_area_ids)
+
     def test_inactive_principal_not_added_to_seen_ids(self):
         """
         Inactive principal must NOT contribute to seen_ids — its saved articles
@@ -550,20 +565,18 @@ class BuildHomeDataLoUltimoTest(SimpleTestCase):
         self.assertIn(20, exclude)
 
     def test_recomendadas_excluded_from_lo_ultimo(self):
-        """Articles in recomendadas (lv and domingo) must be excluded from Lo último."""
+        """Articles in recomendadas must be excluded from Lo último."""
         resolved = {
             "principal":  {"active": True, "article_ids": []},
             "suplemento": {"active": True, "article_ids": []},
             "sections": [],
             "componentes": [
                 {"key": "recomendadas_lv",      "active": True, "article_ids": [30]},
-                {"key": "recomendadas_domingo",  "active": True, "article_ids": [31]},
                 {"key": "lo_ultimo",             "active": True, "article_ids": []},
             ],
         }
         exclude = self._get_lo_ultimo_exclude_ids(resolved)
         self.assertIn(30, exclude)
-        self.assertIn(31, exclude)
 
     def test_area_article_not_excluded_even_when_also_in_static_blocks(self):
         """
