@@ -79,6 +79,40 @@ if (window.jQuery) {
       $headline.on('paste', function() { setTimeout(onEdit, 10); });
       if (!serverError) { updateHeadlineCounter(); }
     }
+
+    // Description (deck) character counter — mirrors the headline counter above. Warns in real
+    // time; hard limit is 230 chars (also enforced server-side in ArticleAdminModelForm.clean_deck).
+    var DECK_MAX = 230;
+    var $deck = $('#id_deck');
+    if ($deck.length) {
+      // Insert outside the flex container so it renders as a block row below the textarea.
+      var $deckCounter = $('<div class="deck-counter"></div>')
+        .insertAfter($deck.closest('.form-row').children('div').first());
+      function updateDeckCounter() {
+        var len = $deck.val().length;
+        var over = len > DECK_MAX;
+        if (over) {
+          $deckCounter.html('<strong>' + len + ' / ' + DECK_MAX + ' caracteres — límite superado</strong>');
+        } else {
+          $deckCounter.text(len + ' / ' + DECK_MAX + ' caracteres');
+        }
+        $deckCounter.toggleClass('over-limit', over);
+        $deck.toggleClass('deck-over-limit', over);
+      }
+      // If Django already shows a server-side error, hide the counter until the user edits.
+      var deckServerError = $('.field-deck .errorlist').length > 0;
+      if (deckServerError) { $deckCounter.hide(); }
+
+      function onDeckEdit() {
+        // Hide server-side error once the user starts editing — it's now stale.
+        $('.field-deck .errorlist').hide();
+        $deckCounter.show();
+        updateDeckCounter();
+      }
+      $deck.on('input', onDeckEdit);
+      $deck.on('paste', function() { setTimeout(onDeckEdit, 10); });
+      if (!deckServerError) { updateDeckCounter(); }
+    }
     $.each($(".field-main input"), function(index, value){
       $(value).attr('name', 'main_section_radio');
       $(value).attr('data-articlerel-id', $("#id_articlerel_set-" + index + "-id").val());
