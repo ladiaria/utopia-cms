@@ -67,7 +67,7 @@ from .models import (
 from .choices import section_choices
 from .templatetags.ldml import ldmarkup, cleanhtml
 from .tasks import update_category_home, send_push_notification
-from .utils import update_article_url_in_coral_talk, smart_quotes
+from .utils import update_article_url_in_coral_talk, smart_quotes, versioned_static
 try:
     from homev4.tasks import refresh_home_layouts as _refresh_home_layouts
 except ImportError:
@@ -496,6 +496,19 @@ class ArticleAdminModelForm(ModelForm):
                     f'El título no puede tener más de 130 caracteres (tiene {len(headline)}).'
                 )
         return headline
+
+    def clean_deck(self):
+        # Mirror clean_headline for the description (deck): enforce a 230-char limit with the same
+        # escape hatch, so a legacy article whose description already exceeded the limit before this
+        # edit can still be saved without being forced to trim it.
+        deck = self.cleaned_data.get('deck', '') or ''
+        if len(deck) > 230:
+            original = self.instance.deck if self.instance.pk else ''
+            if len(original or '') <= 230:
+                raise ValidationError(
+                    f'La descripción no puede tener más de 230 caracteres (tiene {len(deck)}).'
+                )
+        return deck
 
     def clean_tags(self):
         """
@@ -993,13 +1006,15 @@ class ArticleAdmin(VersionAdmin):
         return response
 
     class Media:
-        css = {'all': ('css/charcounter.css', 'css/admin_article.css')}
-        js = (
+        # versioned_static appends a ?v=<content-hash> suffix so a changed file gets a new URL,
+        # busting the 1-year nginx/Cloudflare cache automatically on deploy (no manual CDN purge).
+        css = {'all': tuple(versioned_static(p) for p in ('css/charcounter.css', 'css/admin_article.css'))}
+        js = tuple(versioned_static(p) for p in (
             'js/jquery.charcounter-orig.js',
             'js/utopiacms_martor_semantic.js',
             'js/utopiacms_martor_fullheight.js',
             'js/homev2/article_admin.js',
-        )
+        ))
 
 
 class ForeignKeyRawIdWidgetMoreWords(widgets.ForeignKeyRawIdWidget):
