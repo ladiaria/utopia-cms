@@ -148,6 +148,23 @@ div.field-headline div.headline-counter.over-limit {
   outline-color: var(--error-fg, #ba2121);
 }
 
+/* description (deck) character counter — red when over the 230-char limit. Uses its own
+   deck-counter class so it does not collide with the martor .charcounter already on this field. */
+div.field-deck > div.deck-counter {
+  font-size: 0.6875rem;
+  line-height: 16.5px;
+  margin-left: 160px;
+  padding-left: 10px;
+  margin-top: 2px;
+}
+div.field-deck div.deck-counter.over-limit {
+  color: var(--error-fg, #ba2121);
+}
+#id_deck.deck-over-limit {
+  border-color: var(--error-fg, #ba2121) !important;
+  outline-color: var(--error-fg, #ba2121);
+}
+
 /* published status row */
 .field-is_published, .field-to_be_published, .field-date_published {
   width: unset !important;
