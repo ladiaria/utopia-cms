@@ -58,15 +58,17 @@
   {% endcompress %}
 
   <script>
-    // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
+    // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button.
+    // When the publication delegates its cover newsletter to a same-slug category
+    // (publication_nl_category), the button subscribes to that category newsletter instead.
     window.NL_HEADER_CONFIG = {
       isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
       isSubscribed: {{ category_nl_subscribed|yesno:"true,false" }},
-      subscribeUrl: "{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}",
+      subscribeUrl: "{% if publication_nl_category %}{% url 'nl-auth-subscribe' nltype='c' nlslug=publication_nl_category.slug %}{% else %}{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}{% endif %}",
       dataKey: "nl_subscribe",
       anonymousMessage: "Iniciá sesión para recibir el newsletter",
       successMessage: "Newsletter activada",
-      subscribeMessage: "Recibir newsletter de {{ publication }}"
+      subscribeMessage: "Recibir newsletter de {{ publication_nl_category|default:publication }}"
     };
     document.addEventListener('DOMContentLoaded', function() {
       switch_change_events(document.querySelectorAll('.cover-newsletter__switch'));
