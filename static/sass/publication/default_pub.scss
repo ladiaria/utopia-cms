@@ -542,6 +542,10 @@
 }
 .lo-ultimo-sidebar {
   display: contents;
+  &:first-child > .sidebar__block {
+    padding-top: 0;
+    border-top: none;
+  }
 }
 
 // ─── Categories and publications ──────────────────────────────────────────────
@@ -850,6 +854,8 @@
 
     .sidebar__block {
       gap: 16px;
+      border-top: none;
+      padding-top: 0;
     }
 
     .sidebar__block-title h2 {
