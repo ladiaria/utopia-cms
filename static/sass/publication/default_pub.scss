@@ -475,17 +475,17 @@
   flex-direction: column;
   gap: $gap-8;
 
+  > .sidebar__block:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
   &__block {
     display: flex;
     flex-direction: column;
     gap: $gap-8;
     padding-top: $gap-8;
     border-top: 0.5px solid #000;
-
-    &:first-child {
-      border-top: none;
-      padding-top: 0;
-    }
 
     article {
       border-bottom: $border-divider;
