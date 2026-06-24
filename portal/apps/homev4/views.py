@@ -1286,12 +1286,18 @@ def build_home_data(grid_data, publication=None, layout=None):
         elif key in ("lo_ultimo", "apuntes_del_dia"):
             # Dynamic: always fetched fresh at request time — not covered by the bulk fetch.
             if key == "lo_ultimo":
+                # soft_pin_saved=False so the live home refreshes dynamically: only articles
+                # explicitly pinned by the editor (pinned_ids) hold their saved position; every
+                # other slot is filled with the most recently published article on each request.
+                # (soft_pin_saved=True would anchor ALL saved articles, freezing the block until
+                # someone re-saved it via the editor's "Últimos disponibles" button — which is
+                # meant for in-editor adjustments, not for keeping the block up to date.)
                 articles = _fetch_component_articles(
                     key,
                     saved_ids=item.get("article_ids", []),
                     pinned_ids=set(item.get("pinned_ids", [])),
                     exclude_ids=static_ids,
-                    soft_pin_saved=True,
+                    soft_pin_saved=False,
                 )
             else:
                 articles = _fetch_component_articles(key, saved_ids=item.get("article_ids", []), exclude_ids=static_ids)
