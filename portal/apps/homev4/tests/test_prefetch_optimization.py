@@ -259,10 +259,6 @@ class ComponentArticlesSavedIdsPrefetchTest(SimpleTestCase):
         _, qs = self._run("recomendadas_lv", [5], [_art(5)])
         self._assert_both_optimizations(qs)
 
-    def test_recomendadas_domingo_saved_ids_has_prefetch(self):
-        _, qs = self._run("recomendadas_domingo", [7, 8], [_art(7), _art(8)])
-        self._assert_both_optimizations(qs)
-
     def test_le_monde_saved_ids_has_prefetch(self):
         _, qs = self._run("le_monde", [3], [_art(3)])
         self._assert_both_optimizations(qs)

@@ -117,7 +117,11 @@ COMPONENT_DEFINITIONS = [
     {"key": "radio_mundial",        "label": "Radio Mundial",            "description": "No coexiste con Radio", "no_articles": True, "default_active": False},
     {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
-    {"key": "recomendadas_domingo", "label": "Recomendadas Domingo",     "description": "Los domingos",    "has_picker": True},
+    # "recomendadas_domingo" was removed: in practice it behaved identically to "recomendadas_lv"
+    # (its only differentiator, a "destacados de toda la semana" description, was dropped) and it
+    # broke the sidebar styles. Dropping it from COMPONENT_DEFINITIONS hides it from the editor,
+    # since build_editor_data only lists components present in _COMP_DEF_MAP. Any leftover key in a
+    # saved layout's grid_data is simply ignored by the editor and the resolve guards.
     {"key": "edicion_del_dia",      "label": "Edición del día",          "description": "",                "no_articles": True},
     {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
@@ -159,7 +163,6 @@ BLOCK_ARTICLE_LIMITS = {
     "apuntes_del_dia":      1,
     "opinion":              3,
     "recomendadas_lv":      4,
-    "recomendadas_domingo": 4,
     "le_monde":             2,
     "lento":                2,
     "humor":                1,
@@ -844,7 +847,7 @@ def _pick_newsletter_dia(newsletters, user):
 # Manual-only: no fallback exists (editor curation only).
 _RESOLVE_SKIP_KEYS = frozenset({
     "lo_ultimo", "lo_mas_leido", "apuntes_del_dia",
-    "radio", "radio_mundial", "newsletter_dia", "recomendadas_lv", "recomendadas_domingo",
+    "radio", "radio_mundial", "newsletter_dia", "recomendadas_lv",
     "crucigrama", "edicion_del_dia",
     # Live blog teaser: editor-curated only, no automatic fallback source.
     "blog_en_vivo",
@@ -922,6 +925,14 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
     resolved = _copy.deepcopy(grid_data) if isinstance(grid_data, dict) else get_default_grid_data()
     seen_ids = set()
 
+    # Drop orphan components whose key is no longer in COMPONENT_DEFINITIONS (e.g. a component
+    # removed from the editor). Their saved article_ids would otherwise still feed the dedup
+    # accumulation below and could silently hide articles from other blocks, or render on the
+    # home — an invisible bug, since the editor no longer shows the block. Filtering at this single
+    # chokepoint covers every consumer (dedup, home render and the editor all go through here).
+    if isinstance(resolved.get("componentes"), list):
+        resolved["componentes"] = [c for c in resolved["componentes"] if c.get("key") in _COMP_DEF_MAP]
+
     # 1. PRINCIPAL — skip fallback and dedup accumulation when inactive
     principal = resolved.setdefault("principal", {"active": True, "article_ids": []})
     if principal.get("active", True):
@@ -974,7 +985,7 @@ def resolve_layout_grid_data(grid_data, publication=None, layout=None, dedup_pop
 
     # 4. RECOMENDADAS — purely manual, accumulate before processing Áreas (active only)
     for comp in resolved.get("componentes", []):
-        if comp.get("key") in ("recomendadas_lv", "recomendadas_domingo") and comp.get("active", True):
+        if comp.get("key") == "recomendadas_lv" and comp.get("active", True):
             seen_ids.update(comp.get("article_ids", []))
 
     # 5. ÁREAS — merge defaults not yet in sections, then resolve fallback with full seen_ids
@@ -1123,7 +1134,7 @@ def build_home_data(grid_data, publication=None, layout=None):
     if _se_data and _block_active("suplemento_extra", _se_data.get("active", True)):
         static_ids.update(_se_data.get("article_ids", []))
     for _comp in resolved.get("componentes", []):
-        if _comp.get("key") in ("recomendadas_lv", "recomendadas_domingo") and _comp.get("active", True):
+        if _comp.get("key") == "recomendadas_lv" and _comp.get("active", True):
             static_ids.update(_comp.get("article_ids", []))
 
     # PRINCIPAL
@@ -1591,8 +1602,8 @@ def _fetch_component_articles(key, saved_ids=None, pinned_ids=None, exclude_ids=
             logger.warning("_fetch_component_articles: apuntes section slug=%r not found", slug)
         return []
 
-    # recomendadas_lv, recomendadas_domingo: fully manual — only saved articles are shown
-    if key in ("recomendadas_lv", "recomendadas_domingo"):
+    # recomendadas_lv: fully manual — only saved articles are shown
+    if key == "recomendadas_lv":
         if saved_ids:
             by_id = {a.id: a for a in Article.published.filter(id__in=saved_ids).select_related(*_ARTICLE_AUTH_SELECT_RELATED).prefetch_related(*_ARTICLE_PREFETCH_RELATED, *_ARTICLE_EXTRA_PREFETCH)}
             return [by_id[aid] for aid in saved_ids if aid in by_id]
