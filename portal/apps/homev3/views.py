@@ -233,14 +233,14 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
     else:
         cover_article = None
 
-    # None → publication has no newsletter; False → not subscribed; True → already subscribed.
     # A publication whose own newsletter is disabled but that has a same-slug category with a
-    # newsletter delegates its cover-page newsletter widget to that category newsletter, so the
-    # subscription state is read from the subscriber's category newsletters in that case.
-    nl_category = (
-        not publication.has_newsletter
-        and Category.objects.filter(slug=publication.slug, has_newsletter=True).exists()
-    )
+    # newsletter delegates its cover-page newsletter widget to that category newsletter (the
+    # Category instance, or None). When delegated, the subscription state is read from the
+    # subscriber's category newsletters instead of the publication ones.
+    # category_nl_subscribed: None → no newsletter widget; False → not subscribed; True → subscribed.
+    nl_category = None
+    if not publication.has_newsletter:
+        nl_category = Category.objects.filter(slug=publication.slug, has_newsletter=True).first()
     category_nl_subscribed = None
     if publication.has_newsletter or nl_category:
         if is_authenticated and user_has_subscriber:
@@ -261,6 +261,10 @@ def index(request, year=None, month=None, day=None, domain_slug=None):
             'questions_topic': questions_topic,
             'big_photo': publication.full_width_cover_image,
             'category_nl_subscribed': category_nl_subscribed,
+            # Header newsletter widget: show it when the publication has its own newsletter
+            # or delegates to a same-slug category newsletter (nl_category).
+            'publication_cover_newsletter': bool(publication.has_newsletter or nl_category),
+            'publication_nl_category': nl_category,
         }
     )
     if publication.meta_description:
