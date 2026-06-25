@@ -649,6 +649,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll("[data-article-id]").forEach(function (el) {
             // Skip articles inside disabled blocks — they should remain searchable.
             if (el.closest(".is-inactive")) return;
+            // "Lo más leído" is a read-only ranking, not an editorial choice. It is the sole
+            // exception to the no-repeat rule: its articles must stay searchable so they can be
+            // inserted into other blocks. Skip its rows so they are not sent as exclude_ids.
+            if (el.closest("[data-comp-key='lo_mas_leido']")) return;
             var id = parseInt(el.dataset.articleId, 10);
             if (!isNaN(id)) ids.push(id);
         });
