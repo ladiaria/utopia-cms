@@ -47,6 +47,13 @@
 
 {% block header_scripts %}
   <script type="text/javascript">
+    // Article data exposed for the SIIM / analytics GTM script.
+    window.LDArticle = {
+      author: "{% for author in article.get_authors %}{{ author.name|escapejs }}{% if not forloop.last %}, {% endif %}{% endfor %}",
+      tags: "{{ article.tags|escapejs }}"
+    };
+  </script>
+  <script type="text/javascript">
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
       {% if request.signupwall_header %}
