@@ -292,10 +292,11 @@
                         <span class="drag-handle">⠿</span>
                         <div class="comp-body">
                             <div class="comp-header-row">
-                                <label class="comp-header">
+                                <label class="comp-header"{% if comp.mandatory_active %} title="Este bloque no se puede desactivar"{% endif %}>
                                     <input type="checkbox"
                                            class="comp-active"
-                                           {% if comp.active %}checked{% endif %}>
+                                           {% if comp.active %}checked{% endif %}
+                                           {% if comp.mandatory_active %}disabled{% endif %}>
                                     <span class="comp-info">
                                         <span class="comp-name">{{ comp.label }}</span>
                                         {% if comp.description %}

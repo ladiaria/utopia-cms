@@ -115,7 +115,7 @@ COMPONENT_DEFINITIONS = [
     # with it (enforced in save_grid + the editor JS). Starts off (default_active=False) so it does
     # not collide with the regular radio, which is on by default, on layouts that predate it.
     {"key": "radio_mundial",        "label": "Radio Mundial",            "description": "No coexiste con Radio", "no_articles": True, "default_active": False},
-    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True},
+    {"key": "recomendadas_lv",      "label": "Recomendadas",             "description": "Lunes a sábado",  "has_picker": True, "mandatory_active": True},
     {"key": "newsletter_dia",       "label": "Newsletter del día",       "description": "",                "newsletter_mode": True},
     # "recomendadas_domingo" was removed: in practice it behaved identically to "recomendadas_lv"
     # (its only differentiator, a "destacados de toda la semana" description, was dropped) and it
@@ -123,7 +123,7 @@ COMPONENT_DEFINITIONS = [
     # since build_editor_data only lists components present in _COMP_DEF_MAP. Any leftover key in a
     # saved layout's grid_data is simply ignored by the editor and the resolve guards.
     {"key": "edicion_del_dia",      "label": "Edición del día",          "description": "",                "no_articles": True},
-    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False},
+    {"key": "lo_mas_leido",         "label": "Lo más leído hoy",         "description": "",                "sortable_articles": False, "mandatory_active": True},
     {"key": "le_monde",             "label": "Le Monde Diplomatique",    "description": "",                "has_picker": True},
     {"key": "lento",                "label": "Lento",                    "description": "",                "has_picker": True},
     {"key": "humor",                "label": "Humor",                    "description": "",                "replace_mode": True},
@@ -135,6 +135,14 @@ _COMP_DEF_MAP = {d["key"]: d for d in COMPONENT_DEFINITIONS}
 # Position of each component in the canonical definitions order. Used to place a newly added
 # component at its natural slot instead of always at the end (see _insert_component_at_def_position).
 _COMP_DEF_INDEX = {d["key"]: i for i, d in enumerate(COMPONENT_DEFINITIONS)}
+
+# Components that cannot be deactivated from the editor: their checkbox is rendered disabled and
+# the editor must always treat them as active. lo_mas_leido is a ranking and recomendadas is a
+# fixed editorial slot — turning them off is not a valid layout choice. Enforced both in the
+# editor (disabled checkbox + build_editor_data forcing active) and server-side in save_grid.
+_MANDATORY_ACTIVE_COMP_KEYS = frozenset(
+    d["key"] for d in COMPONENT_DEFINITIONS if d.get("mandatory_active")
+)
 
 
 def _insert_component_at_def_position(componentes, comp):
@@ -535,6 +543,11 @@ def save_grid(request, layout_id):
         for comp in grid_data.get("componentes", []):
             if "newsletter_refs" in comp:
                 comp.pop("article_ids", None)
+        # Mandatory components cannot be deactivated. The editor renders their checkbox disabled,
+        # but enforce it server-side too so a crafted POST cannot turn them off.
+        for comp in grid_data.get("componentes", []):
+            if comp.get("key") in _MANDATORY_ACTIVE_COMP_KEYS:
+                comp["active"] = True
         # Capture state before save so audit log can compute the diff per block.
         old_grid = layout.grid_data if isinstance(layout.grid_data, dict) else {}
         with transaction.atomic():
@@ -2033,11 +2046,14 @@ def build_editor_data(grid_data, publication=None):
             if not defn or key in seen_keys:
                 continue
             seen_keys.add(key)
+            mandatory_active = defn.get("mandatory_active", False)
             comp_dict = {
                 "key": key,
                 "label": defn["label"],
                 "description": defn["description"],
-                "active": item.get("active", True),
+                # Mandatory components are always shown active, ignoring any stale saved state.
+                "active": True if mandatory_active else item.get("active", True),
+                "mandatory_active": mandatory_active,
                 "has_picker": defn.get("has_picker", False),
                 "replace_mode": defn.get("replace_mode", False),
                 "pin_mode": defn.get("pin_mode", False),
@@ -2069,11 +2085,13 @@ def build_editor_data(grid_data, publication=None):
             result["componentes"].append(comp_dict)
         for defn in COMPONENT_DEFINITIONS:
             if defn["key"] not in seen_keys:
+                mandatory_active = defn.get("mandatory_active", False)
                 comp_dict = {
                     "key": defn["key"],
                     "label": defn["label"],
                     "description": defn["description"],
-                    "active": defn.get("default_active", True),
+                    "active": True if mandatory_active else defn.get("default_active", True),
+                    "mandatory_active": mandatory_active,
                     "has_picker": defn.get("has_picker", False),
                     "replace_mode": defn.get("replace_mode", False),
                     "pin_mode": defn.get("pin_mode", False),
@@ -2097,11 +2115,13 @@ def build_editor_data(grid_data, publication=None):
     else:
         for defn in COMPONENT_DEFINITIONS:
             saved = saved_comps_raw.get(defn["key"], {})
+            mandatory_active = defn.get("mandatory_active", False)
             comp_dict = {
                 "key": defn["key"],
                 "label": defn["label"],
                 "description": defn["description"],
-                "active": saved.get("active", defn.get("default_active", True)),
+                "active": True if mandatory_active else saved.get("active", defn.get("default_active", True)),
+                "mandatory_active": mandatory_active,
                 "has_picker": defn.get("has_picker", False),
                 "pin_mode": defn.get("pin_mode", False),
                 "newsletter_mode": defn.get("newsletter_mode", False),
