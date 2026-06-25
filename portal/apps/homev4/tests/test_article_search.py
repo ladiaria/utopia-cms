@@ -189,3 +189,33 @@ class ArticleSearchTest(SimpleTestCase):
         self.assertNotIn(3, excluded)
         self.assertNotIn(5, excluded)
         self.assertNotIn(7, excluded)
+
+    @patch("homev4.views.HomeLayout")
+    @patch("homev4.views.Article")
+    def test_db_fallback_skips_lo_mas_leido(self, MockArticle, MockLayout):
+        """
+        "Lo más leído" is a read-only ranking and the sole exception to the no-repeat rule:
+        even when active, its article_ids must NOT be excluded from search, so those articles
+        remain insertable into other blocks. The DB fallback path must skip this component.
+        """
+        layout = MagicMock()
+        layout.grid_data = {
+            "principal":   {"active": True, "article_ids": [1]},   # active — must be excluded
+            "componentes": [
+                {"key": "opinion",      "active": True, "article_ids": [6]},   # active — must be excluded
+                {"key": "lo_mas_leido", "active": True, "article_ids": [8, 9]},  # exception — must NOT be excluded
+            ],
+        }
+        MockLayout.objects.get.return_value = layout
+        qs = _chain_qs()
+        MockArticle.published = qs
+
+        req = _staff_request({"q": "noticias", "layout_id": "5"})
+        article_search(req)
+
+        excluded = qs.exclude.call_args[1]["id__in"]
+        self.assertIn(1, excluded)
+        self.assertIn(6, excluded)
+        # lo_mas_leido articles stay searchable
+        self.assertNotIn(8, excluded)
+        self.assertNotIn(9, excluded)
