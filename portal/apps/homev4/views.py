@@ -687,6 +687,10 @@ def article_search(request):
                     if sec.get("active", True):
                         excluded_ids.update(sec.get("article_ids", []))
                 for comp in gd.get("componentes", []):
+                    # "Lo más leído" is a read-only ranking, the sole exception to the no-repeat
+                    # rule: its articles must stay searchable so they can be inserted elsewhere.
+                    if comp.get("key") == "lo_mas_leido":
+                        continue
                     if comp.get("active", True):
                         excluded_ids.update(comp.get("article_ids", []))
             except HomeLayout.DoesNotExist:
