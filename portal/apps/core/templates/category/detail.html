@@ -253,7 +253,7 @@
     // NL_HEADER_CONFIG is used by nl_header_subscribe_init() for the header newsletter button
     window.NL_HEADER_CONFIG = {
       isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
-      isSubscribed: {{ category_nl_subscribed|yesno:"true,false" }},
+      isSubscribed: {{ nl_subscribed|yesno:"true,false" }},
       subscribeUrl: "{% url 'nl-auth-subscribe' nltype='c' nlslug=category.slug %}",
       dataKey: "nl_subscribe",
       anonymousMessage: "Iniciá sesión para recibir el newsletter",

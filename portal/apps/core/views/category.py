@@ -63,13 +63,13 @@ def category_detail(request, slug):
             pass
 
     # None → category has no newsletter; False → not subscribed; True → already subscribed.
-    category_nl_subscribed = None
+    nl_subscribed = None
     if category.has_newsletter:
         user = request.user
         if user.is_authenticated and hasattr(user, 'subscriber'):
-            category_nl_subscribed = user.subscriber.category_newsletters.filter(slug=slug).exists()
+            nl_subscribed = user.subscriber.category_newsletters.filter(slug=slug).exists()
         else:
-            category_nl_subscribed = False
+            nl_subscribed = False
 
     return render(
         request,
@@ -86,7 +86,7 @@ def category_detail(request, slug):
             'edition': get_latest_edition(),
             'questions_topic': questions_topic,
             'big_photo': category.full_width_cover_image,
-            'category_nl_subscribed': category_nl_subscribed,
+            'nl_subscribed': nl_subscribed,
             'site_description': (
                 category.meta_description
                 or (

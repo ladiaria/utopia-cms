@@ -63,7 +63,7 @@
     // (publication_nl_category), the button subscribes to that category newsletter instead.
     window.NL_HEADER_CONFIG = {
       isAnonymous: {{ user.is_anonymous|yesno:"true,false" }},
-      isSubscribed: {{ category_nl_subscribed|yesno:"true,false" }},
+      isSubscribed: {{ nl_subscribed|yesno:"true,false" }},
       subscribeUrl: "{% if publication_nl_category %}{% url 'nl-auth-subscribe' nltype='c' nlslug=publication_nl_category.slug %}{% else %}{% url 'nl-auth-subscribe' nltype='p' nlslug=publication.slug %}{% endif %}",
       dataKey: "nl_subscribe",
       anonymousMessage: "Iniciá sesión para recibir el newsletter",
