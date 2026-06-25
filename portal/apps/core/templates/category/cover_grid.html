@@ -100,9 +100,9 @@
     {% endfor %}
   </div>
 
-  {% if category and category.has_newsletter %}
+  {% if category and category.has_newsletter and not nl_subscribed %}
     {% include "newsletter/_cover_newsletter.html" with title=category.name slug=category.slug nltype="c" tagline=category.newsletter_tagline %}
-  {% elif publication and publication != default_pub and publication.has_newsletter %}
+  {% elif publication and publication != default_pub and publication.has_newsletter and not nl_subscribed %}
     {% include "newsletter/_cover_newsletter.html" with title=publication.name slug=publication.slug nltype="p" tagline=publication.newsletter_tagline preview_url=cover_newsletter_publication_preview_url %}
   {% endif %}
 
