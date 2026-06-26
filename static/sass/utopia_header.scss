@@ -328,26 +328,31 @@ header {
 
 .mobile-header-search {
   display: none;
-  border-bottom: 0.5px solid #e0e0e0;
+  margin-bottom: 16px;
 
   body.mobile-search-open & {
     display: block;
   }
 
+  // Caja blanca redondeada (Figma): el input ocupa el espacio y el botón de
+  // submit queda a la derecha.
   form {
     display: flex;
     align-items: center;
-    border-bottom: 0.5px solid #000;
-    padding-left: 4px;
-    height: 39px; /* matches the min-height of the subscribe button shown for non-subscribed users */
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 5px;
+    padding: 8px 8px 8px 16px;
   }
 
   &__input {
     flex: 1;
     border: none;
     outline: none;
+    font-family: $sans;
     font-size: px-to-rem(18px);
     font-weight: 500;
+    letter-spacing: 0.01em;
     background: transparent;
 
     &::placeholder {
@@ -363,10 +368,24 @@ header {
   &__submit {
     display: flex;
     align-items: center;
-    padding: 8px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    flex-shrink: 0;
     background: none;
     border: none;
     cursor: pointer;
+
+    svg path {
+      transition: stroke-opacity 0.2s ease;
+    }
+  }
+
+  // Con texto en el input, el chevron pasa de 0.3 a opacidad plena. La regla
+  // CSS pisa el stroke-opacity=".3" inline del SVG.
+  &__input:not(:placeholder-shown) + &__submit svg path {
+    stroke-opacity: 1;
   }
 }
 
