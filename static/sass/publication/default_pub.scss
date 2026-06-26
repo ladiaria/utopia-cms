@@ -814,6 +814,40 @@
         padding-bottom: 0;
       }
     }
+
+    // Variante suplemento-extra (≥7): los últimos 3 secundarios van en una tira
+    // con scroll horizontal que se desborda hasta los bordes del viewport. El
+    // wrapper .secondary-scroll lo crea el slider JS solo en mobile.
+    &__secondary-scroll {
+      display: flex;
+      gap: $gap-8;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+
+      > article {
+        position: relative;
+        flex: 0 0 px-to-rem(240px);
+        border-bottom: none;
+        padding-bottom: 0;
+        scroll-snap-align: start;
+
+        // Divisor vertical entre las cards del scroll (Figma: 0.5px #ababab),
+        // centrado en el gap. No se muestra después de la última.
+        &::after {
+          position: absolute;
+          content: "";
+          top: 0;
+          right: -$gap-4;
+          width: 0.5px;
+          height: 100%;
+          background-color: $color-divider;
+        }
+        &:last-child::after {
+          display: none;
+        }
+      }
+    }
   }
 
   .especial-section {
