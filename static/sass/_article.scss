@@ -792,17 +792,17 @@ article#main-article {
       width: 100%;
       height: auto;
       display: block;
-      position: relative;
 
-      // Oculta el ícono de placeholder nativo del navegador mientras la
-      // imagen termina de descargar. El pseudo-elemento solo se pinta cuando
-      // el <img> todavía no cargó su contenido; una vez cargada, el contenido
-      // reemplazado lo tapa y el ícono nunca llega a verse.
-      &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: #fff;
+      // Evita el flash del ícono de placeholder nativo del navegador mientras
+      // la imagen descarga: el <img> arranca transparente (con esto el ícono no
+      // se ve) y se revela con un fade cuando dispara su evento `load`, momento
+      // en que el template le agrega la clase `is-loaded` (ver onload en
+      // article/detail.html). El <noscript> deja la imagen visible si no hay JS.
+      opacity: 0;
+      transition: opacity 0.25s ease-in;
+
+      &.is-loaded {
+        opacity: 1;
       }
     }
   }

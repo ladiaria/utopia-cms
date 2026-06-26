@@ -198,7 +198,10 @@
                   height="{{ article.photo.get_700w_size.1 }}"
                   data-caption="{{ article.photo_caption }}"
                   alt="{{ article.photo_caption }}"
+                  onload="this.classList.add('is-loaded')"
+                  onerror="this.classList.add('is-loaded')"
                 >
+                <noscript><style>.container-photo .ld-article__main-photo{opacity:1 !important}</style></noscript>
                 <figcaption class="article-caption ld-caption">
                   {% if article.photo.caption %}<p id="photo-caption">{{ article.photo.caption|ldmarkup|bleach }}</p>{% endif %}
                   {% if article.photo_author %}<p>{{ article.photo_type }}: {{ article.photo_author }}</p>{% endif %}
