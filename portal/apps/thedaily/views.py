@@ -1860,6 +1860,111 @@ def delete_user_from_crm(request):
     return JsonResponse({"msg": "OK"})
 
 
+def _resolve_subscriber_from_crm(contact_id, email):
+    """
+    Resolve a Subscriber from the data the CRM sends, the same way fromcrm/deletefromcrm do: first by
+    contact_id, falling back to the web user's email. Returns the Subscriber or None if there's no web
+    account for that person yet.
+    """
+    if contact_id:
+        try:
+            return Subscriber.objects.select_related("user").get(contact_id=contact_id)
+        except Subscriber.DoesNotExist:
+            pass
+        except Subscriber.MultipleObjectsReturned:
+            return None
+    if email:
+        try:
+            user = User.objects.select_related("subscriber").get(email__exact=email)
+            return getattr(user, "subscriber", None)
+        except (User.DoesNotExist, MultipleObjectsReturned):
+            return None
+    return None
+
+
+@never_cache
+@api_view(['POST'])
+@api_view_auth_decorator
+@permission_classes([HasAPIKey])
+def newsletters_from_crm(request):
+    """
+    Read API for the CRM: given a contact_id (fallback email), return every available newsletter split by
+    type (publication / category) and whether the subscriber is subscribed to it. The CMS is the source of
+    truth; the CRM consumes this on demand instead of keeping its own mirror.
+    """
+    contact_id = request.data.get('contact_id')
+    email = request.data.get('email')
+    if not contact_id and not email:
+        return HttpResponseBadRequest("Missing contact_id or email")
+
+    subscriber = _resolve_subscriber_from_crm(contact_id, email)
+    if subscriber is None:
+        return JsonResponse({"exists": False, "publication": [], "category": []})
+
+    pub_slugs = set(subscriber.newsletters.values_list('slug', flat=True))
+    cat_slugs = set(subscriber.category_newsletters.values_list('slug', flat=True))
+
+    publication = [
+        {"slug": p.slug, "name": p.newsletter_name or p.name, "subscribed": p.slug in pub_slugs}
+        for p in Publication.objects.filter(has_newsletter=True).order_by('weight', 'name')
+    ]
+    category = [
+        {"slug": c.slug, "name": c.name, "subscribed": c.slug in cat_slugs}
+        for c in Category.objects.filter(has_newsletter=True).order_by('order', 'name')
+    ]
+    return JsonResponse({"exists": True, "publication": publication, "category": category})
+
+
+@never_cache
+@api_view(['POST'])
+@api_view_auth_decorator
+@permission_classes([HasAPIKey])
+def newsletter_update_from_crm(request):
+    """
+    Delta API for the CRM: subscribe/unsubscribe a single newsletter for a subscriber, non-destructively
+    (add/remove on the corresponding M2M, never .set()). nl_type selects which relation to touch.
+    """
+    contact_id = request.data.get('contact_id')
+    email = request.data.get('email')
+    nl_type = request.data.get('nl_type')
+    slug = request.data.get('slug')
+    action = request.data.get('action')
+
+    if nl_type not in ('publication', 'category'):
+        return HttpResponseBadRequest("Invalid nl_type")
+    if action not in ('subscribe', 'unsubscribe'):
+        return HttpResponseBadRequest("Invalid action")
+    if not slug:
+        return HttpResponseBadRequest("Missing slug")
+
+    subscriber = _resolve_subscriber_from_crm(contact_id, email)
+    if subscriber is None:
+        return JsonResponse({"exists": False, "msg": "No hay suscriptor en la web para este contacto"}, status=404)
+
+    if nl_type == 'publication':
+        manager = subscriber.newsletters
+        model = Publication
+    else:
+        manager = subscriber.category_newsletters
+        model = Category
+
+    try:
+        obj = model.objects.get(slug=slug, has_newsletter=True)
+    except model.DoesNotExist:
+        return HttpResponseBadRequest(f"Newsletter no encontrada: {slug}")
+
+    # Guard against the CMS->CRM push loop while we mutate the M2M.
+    subscriber.updatefromcrm = True
+    if action == 'subscribe':
+        manager.add(obj)
+        subscribed = True
+    else:
+        manager.remove(obj)
+        subscribed = False
+
+    return JsonResponse({"exists": True, "nl_type": nl_type, "slug": slug, "subscribed": subscribed})
+
+
 @never_cache
 def amp_access_authorization(request):
     """
