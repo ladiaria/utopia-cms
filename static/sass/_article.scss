@@ -799,7 +799,6 @@ article#main-article {
       // en que el template le agrega la clase `is-loaded` (ver onload en
       // article/detail.html). El <noscript> deja la imagen visible si no hay JS.
       opacity: 0;
-      transition: opacity 0.25s ease-in;
 
       &.is-loaded {
         opacity: 1;
