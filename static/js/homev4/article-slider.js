@@ -6,7 +6,9 @@
  * Clicking a button animates the track horizontally to reveal the next group.
  *
  * On mobile (≤ MOBILE_BREAKPOINT) the slider is not initialized and all
- * articles are shown vertically via CSS.
+ * articles are shown vertically via CSS. For the suplemento-extra variant
+ * (.suplemento-section__secondary-row--mobile-scroll) the trailing articles are
+ * grouped into a horizontally scrollable strip on mobile (see wrapMobile).
  */
 (function () {
   'use strict';
@@ -17,6 +19,13 @@
   function initSlider(container) {
     var articles = Array.prototype.slice.call(container.querySelectorAll(':scope > article'));
     if (articles.length <= PAGE_SIZE) return;
+
+    // Variante suplemento-extra (≥7): en mobile los últimos artículos se agrupan
+    // en una tira con scroll horizontal. El wrapper se crea/destruye acá; el HTML
+    // queda plano para que el slider desktop siga funcionando igual.
+    var isMobileScroll = container.classList.contains('suplemento-section__secondary-row--mobile-scroll');
+    var SCROLL_GROUP_FROM = 3;
+    var scrollGroup = null;
 
     var currentPage = 0;
     var totalPages = Math.ceil(articles.length / PAGE_SIZE);
@@ -124,10 +133,31 @@
       active = false;
     }
 
+    function wrapMobile() {
+      if (!isMobileScroll || scrollGroup || articles.length <= SCROLL_GROUP_FROM) return;
+      scrollGroup = document.createElement('div');
+      scrollGroup.className = 'suplemento-section__secondary-scroll';
+      container.insertBefore(scrollGroup, articles[SCROLL_GROUP_FROM]);
+      for (var i = SCROLL_GROUP_FROM; i < articles.length; i++) {
+        scrollGroup.appendChild(articles[i]);
+      }
+    }
+
+    function unwrapMobile() {
+      if (!scrollGroup) return;
+      for (var i = SCROLL_GROUP_FROM; i < articles.length; i++) {
+        container.insertBefore(articles[i], scrollGroup);
+      }
+      container.removeChild(scrollGroup);
+      scrollGroup = null;
+    }
+
     window.addEventListener('resize', function () {
       if (window.innerWidth <= MOBILE_BREAKPOINT) {
         if (active) destroy();
+        wrapMobile();
       } else {
+        unwrapMobile();
         if (!active) {
           setup();
         } else {
@@ -139,6 +169,8 @@
 
     if (window.innerWidth > MOBILE_BREAKPOINT) {
       setup();
+    } else {
+      wrapMobile();
     }
   }
 

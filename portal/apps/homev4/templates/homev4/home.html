@@ -140,7 +140,7 @@
 
       {% if articles|length >= 7 %}
         {% with secondary=articles|slice:"1:7" %}
-          {% include "homev4/suplemento_section/_secondary.html" %}
+          {% include "homev4/suplemento_section/_secondary.html" with mobile_scroll=True %}
         {% endwith %}
       {% else %}
         {% with secondary=articles|slice:"1:4" %}
@@ -228,7 +228,7 @@
   {{ block.super }}
 
   {% if not tarde_mode and home_data.principal_articles|length >= 10 or home_data.suplemento_active and home_data.suplemento_articles|length >= 7 or home_data.suplemento_extra_active and home_data.suplemento_extra_articles|length >= 7 %}
-    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.2"></script>
+    <script src="{% static 'js/homev4/article-slider.js' %}?v=1.3"></script>
   {% endif %}
 
   {% if allow_ads and not is_subscriber %}
