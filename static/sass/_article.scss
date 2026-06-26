@@ -792,6 +792,18 @@ article#main-article {
       width: 100%;
       height: auto;
       display: block;
+      position: relative;
+
+      // Oculta el ícono de placeholder nativo del navegador mientras la
+      // imagen termina de descargar. El pseudo-elemento solo se pinta cuando
+      // el <img> todavía no cargó su contenido; una vez cargada, el contenido
+      // reemplazado lo tapa y el ícono nunca llega a verse.
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: #fff;
+      }
     }
   }
 
