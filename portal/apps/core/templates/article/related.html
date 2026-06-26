@@ -1,7 +1,7 @@
 {% load core_tags %}
 
 {% if articles %}
-  <section class="ld-block ld-related article-container" data-nosnippet>
+  <section class="ld-block ld-related article-container{% if article.type == 'OP' %} ld-related--no-images{% endif %}" data-nosnippet>
     <div class="ld-related-inner-container">
       <h2>{% block more_of_label %}Más de {{ section }}{% endblock %}</h2>
       <div class="ld-grid-3-6">

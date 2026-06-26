@@ -1385,6 +1385,12 @@ aside {
     border-top: 2px solid #000;
   }
 
+  // En artículos de opinión (article.type == 'OP') las cards de relacionados
+  // van sin imagen. El hook lo agrega related.html.
+  &--no-images .article__image-container {
+    display: none;
+  }
+
   h2:not(.article__title) {
     font-family: $sans-title;
     font-size: px-to-rem(32px);
