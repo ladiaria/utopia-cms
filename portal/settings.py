@@ -559,6 +559,9 @@ BLEACH_STRIP_TAGS = True
 CRM_UPDATE_SUBSCRIBER_FIELDS = {}
 # Online sync User fields with CRM disabled by default
 CRM_UPDATE_USER_ENABLED = False
+# Push newsletter add/remove to the CRM on every change. Set to False once the CRM reads newsletters on
+# demand from the CMS (it no longer keeps a mirror that needs this push).
+CRM_UPDATE_NEWSLETTERS_ENABLED = True
 # CRM API urls will be assigned after local_settings import, if not overrided
 CRM_API_BASE_URI = None
 CRM_API_UPDATE_USER_URI = None

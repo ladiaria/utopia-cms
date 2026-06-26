@@ -5,7 +5,7 @@ usuarios/api/newsletter_update/). They exercise the API key auth, the two newsle
 that the delta is non-destructive (never wipes the other newsletters).
 """
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from rest_framework_api_key.models import APIKey
 
 from core.models import Publication, Category
@@ -90,6 +90,19 @@ class NewslettersFromCrmTestCase(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(self.subscriber.category_newsletters.count(), 0)
+
+    @override_settings(THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS=['salto'])
+    def test_fromcrm_applies_default_newsletters_on_creation(self):
+        # New person coming from the CRM (no existing web user): fromcrm creates the Subscriber and the CMS
+        # applies its default category newsletters.
+        resp = self.client.post(
+            "/usuarios/fromcrm",
+            {"contact_id": 770077, "newemail": "newfromcrm@example.com", "fields": "{}"},
+            **self.auth,
+        )
+        self.assertEqual(resp.status_code, 200)
+        sub = Subscriber.objects.get(contact_id=770077)
+        self.assertIn("salto", list(sub.category_newsletters.values_list("slug", flat=True)))
 
     def test_delta_unknown_contact_404(self):
         resp = self.client.post(

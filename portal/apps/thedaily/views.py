@@ -1759,6 +1759,10 @@ def update_user_from_crm(request):
                     subscriber.contact_id = contact_id
                     subscriber.updatefromcrm = True
                     subscriber.save()
+                    # First time this person becomes a web subscriber from the CRM: the CMS (now the
+                    # authority for newsletters) applies its own default newsletters. updatefromcrm avoids
+                    # pushing them back to the CRM.
+                    add_default_newsletters(subscriber)
                 except IntegrityError as inner_ie:
                     mail_managers(
                         'IntegrityError saving user', "%s: %s" % (email_to_use, strip_tags(str(inner_ie))), True
@@ -1791,6 +1795,8 @@ def update_user_from_crm(request):
                 subscriber.contact_id = contact_id
                 subscriber.updatefromcrm = True
                 subscriber.save()
+                # See note above: CMS applies its default newsletters on first creation from the CRM.
+                add_default_newsletters(subscriber)
             except MultipleObjectsReturned:
                 mail_managers('Multiple email in users', newemail, True)
                 return HttpResponseBadRequest()
