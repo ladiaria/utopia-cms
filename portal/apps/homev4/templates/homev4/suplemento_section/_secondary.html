@@ -1,7 +1,7 @@
 {% load core_tags homev4_tags %}
 
 {% if secondary %}
-<div class="suplemento-section__secondary-row" data-slider>
+<div class="suplemento-section__secondary-row{% if mobile_scroll %} suplemento-section__secondary-row--mobile-scroll{% endif %}" data-slider>
   {% with total=secondary|length %}
     {% for article in secondary %}
       {% with slider_class=forloop.counter|slider_position_class:total %}
