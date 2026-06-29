@@ -44,10 +44,10 @@
     }{% if article.photo %},
     "image": {
       "@type": "ImageObject",
-      "url": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}",
+      "url": "{{ SITE_URL_SD }}{{ article.photo.get_schema_image_url }}",
       "width": "1200"
     },
-    "thumbnailUrl": "{{ SITE_URL_SD }}{{ article.photo.get_1200w_url }}"
+    "thumbnailUrl": "{{ SITE_URL_SD }}{{ article.photo.get_schema_image_url }}"
     {% elif default_pub.open_graph_image %},
     "image": {
       "@type": "ImageObject",
