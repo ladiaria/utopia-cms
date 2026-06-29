@@ -532,6 +532,10 @@ def subscriber_newsletters_changed(sender, instance, action, reverse, model, pk_
         print(
             'DEBUG: thedaily.models.subscriber_newsletters_changed called with action=%s, pk_set=%s' % (action, pk_set)
         )
+    # When the CRM reads newsletters on demand from the CMS, it no longer needs this per-change push.
+    # Dedicated sub-gate so it can be turned off without disabling the rest of CRM_UPDATE_USER_ENABLED.
+    if not getattr(settings, "CRM_UPDATE_NEWSLETTERS_ENABLED", True):
+        return True
     if getattr(instance, "updatefromcrm", False):
         return True
     if instance.contact_id and action.startswith('post_'):
