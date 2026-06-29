@@ -39,3 +39,11 @@ class Command(BaseCommand):
             PhotoSize.objects.create(
                 name='article_thumb', width=180, height=180, crop=False, pre_cache=False, increment_count=False
             )
+
+        # image for the article structured data (JSON-LD). Google Discover requires it to be at least
+        # 1200px wide, so this size upscales smaller source images instead of returning them as-is.
+        if not PhotoSize.objects.filter(name='schema_image').exists():
+            PhotoSize.objects.create(
+                name='schema_image', width=1200, height=0, crop=False, upscale=True, pre_cache=False,
+                increment_count=False
+            )
