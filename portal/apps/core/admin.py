@@ -533,6 +533,12 @@ class ArticleAdminModelForm(ModelForm):
         # escape hatch, so a legacy article whose description already exceeded the limit before this
         # edit can still be saved without being forced to trim it.
         deck = self.cleaned_data.get('deck', '') or ''
+        # Skip the limit entirely for "Lento" ('LE') articles, which intentionally use longer decks.
+        # `type` is declared before `deck` on the model, so its field cleaning already populated
+        # cleaned_data by now; fall back to the saved instance value just in case it is missing.
+        article_type = self.cleaned_data.get('type') or (self.instance.type if self.instance.pk else None)
+        if article_type == 'LE':
+            return deck
         if len(deck) > 230:
             original = self.instance.deck if self.instance.pk else ''
             if len(original or '') <= 230:

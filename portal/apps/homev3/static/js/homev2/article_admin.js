@@ -85,11 +85,22 @@ if (window.jQuery) {
     var DECK_MAX = 230;
     var $deck = $('#id_deck');
     if ($deck.length) {
+      // "Lento" ('LE') articles intentionally use longer decks, so the 230-char limit does not
+      // apply to them (mirrors the server-side skip in ArticleAdminModelForm.clean_deck). Read the
+      // current type from the select so this reacts live if the editor changes it.
+      function deckLimitExempt() { return $('#id_type').val() === 'LE'; }
       // Insert outside the flex container so it renders as a block row below the textarea.
       var $deckCounter = $('<div class="deck-counter"></div>')
         .insertAfter($deck.closest('.form-row').children('div').first());
       function updateDeckCounter() {
         var len = $deck.val().length;
+        if (deckLimitExempt()) {
+          // No limit for Lento: just report the count, never warn.
+          $deckCounter.text(len + ' caracteres');
+          $deckCounter.removeClass('over-limit');
+          $deck.removeClass('deck-over-limit');
+          return;
+        }
         var over = len > DECK_MAX;
         if (over) {
           $deckCounter.html('<strong>' + len + ' / ' + DECK_MAX + ' caracteres — límite superado</strong>');
@@ -111,6 +122,8 @@ if (window.jQuery) {
       }
       $deck.on('input', onDeckEdit);
       $deck.on('paste', function() { setTimeout(onDeckEdit, 10); });
+      // Refresh the counter when the type changes, so switching to/from Lento updates the warning.
+      $('#id_type').on('change', updateDeckCounter);
       if (!deckServerError) { updateDeckCounter(); }
     }
     $.each($(".field-main input"), function(index, value){
