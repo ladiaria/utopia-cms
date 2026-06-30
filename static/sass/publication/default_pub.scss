@@ -825,6 +825,13 @@
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x proximity;
 
+      // Ocultar la barra de scroll (mantiene el scroll funcional)
+      scrollbar-width: none; // Firefox
+      -ms-overflow-style: none; // IE/Edge legacy
+      &::-webkit-scrollbar {
+        display: none; // Chrome/Safari/Opera
+      }
+
       > article {
         position: relative;
         flex: 0 0 px-to-rem(240px);
