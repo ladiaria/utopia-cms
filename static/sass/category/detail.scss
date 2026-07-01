@@ -213,6 +213,7 @@
     .article {
       &__body {
         width: auto;
+        max-width: 100%;
       }
 
       &__title {
