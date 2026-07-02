@@ -12,6 +12,27 @@ function showNotification(notification) {
   }, isError ? 3000 : 2000);
 }
 
+// POST form-encoded data, mirroring jQuery's $.ajax success/error split:
+// the returned promise rejects on network errors AND on HTTP 4xx/5xx.
+function postForm(url, data) {
+  const body = new URLSearchParams();
+  Object.keys(data).forEach(function (key) {
+    body.append(key, data[key]);
+  });
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    },
+    body: body.toString(),
+    cache: "no-store",
+  }).then(function (response) {
+    if (!response.ok) throw new Error("Request failed: " + response.status);
+    return response;
+  });
+}
+
 // function to revert a switch value
 function revertSwitch(switchHTMLElement) {
   const input = switchHTMLElement.querySelector('input[type="checkbox"]');
@@ -19,34 +40,36 @@ function revertSwitch(switchHTMLElement) {
   const onLabel = switchHTMLElement.querySelector('.on');
   const slider = switchHTMLElement.querySelector(".slider");
   input.checked = !input.checked;
-  slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
-  offLabel.style.display = input.checked ? "none" : "inline-block";
-  onLabel.style.display = input.checked ? "inline-block" : "none";
+  if (slider) slider.style.backgroundColor = input.checked ? "#6FCF97" : "#ccc";
+  if (offLabel) offLabel.style.display = input.checked ? "none" : "inline-block";
+  if (onLabel) onLabel.style.display = input.checked ? "inline-block" : "none";
 }
 
 // handler for the switches that are not the push_notification one
-function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement) {
-  $.ajax({
-    type: "POST",
-    data: data,
-    url: newsletterUrl,
-    cache: false,
-    success: function (html, textStatus) {
+function handleNewsletterSwitchChange(newsletterUrl, data, switchHTMLElement, keepDisabledOnSuccess) {
+  const input = switchHTMLElement.querySelector('input[type="checkbox"]');
+  // Disable the switch while the request is in flight so the user can't queue
+  // overlapping toggles whose responses could land out of order (race condition).
+  // It gets re-enabled once the backend confirms the result (success or error).
+  if (input) input.setAttribute("disabled", "disabled");
+  postForm(newsletterUrl, data)
+    .then(function () {
       showNotification({
         text: "Tus cambios fueron guardados"
       });
-    },
-    error: function (XMLHttpRequest, textStatus, errorThrown) {
+      if (input && !keepDisabledOnSuccess) input.removeAttribute("disabled");
+    })
+    .catch(function () {
       showNotification({
         text: "No se pudieron guardar los cambios, intentá de nuevo más tarde",
         type: "error",
         duration: 3000,
       });
       setTimeout(function () {
-        revertSwitch(switchHTMLElement)
+        revertSwitch(switchHTMLElement);
+        if (input) input.removeAttribute("disabled");
       }, 250);
-    }
-  });
+    });
 }
 
 // initialize newsletter header subscribe button. For anonymous users, the
@@ -66,19 +89,15 @@ function nl_header_subscribe_init() {
 function initSubscribeMode(btn, config) {
   function handleClick() {
     const textSpan = btn.querySelector('.newsletter-header__text');
-    $.ajax({
-      type: 'POST',
-      url: config.subscribeUrl,
-      data: { [config.dataKey]: true },
-      success: function () {
+    postForm(config.subscribeUrl, { [config.dataKey]: true })
+      .then(function () {
         if (textSpan) textSpan.textContent = config.successMessage;
         btn.classList.add('newsletter-header--active');
         btn.disabled = true;
-      },
-      error: function () {
+      })
+      .catch(function () {
         if (textSpan) textSpan.textContent = 'No se pudo suscribir, intentá de nuevo';
-      }
-    });
+      });
   }
   btn.addEventListener('click', handleClick);
 }
@@ -101,21 +120,17 @@ function initUnsubscribeMode(btn, config) {
   tooltip.querySelector('.nl-unsubscribe-tooltip__cancel').addEventListener('click', hideTooltip);
 
   tooltip.querySelector('.nl-unsubscribe-tooltip__confirm').addEventListener('click', function () {
-    $.ajax({
-      type: 'POST',
-      url: config.subscribeUrl,
-      data: { [config.dataKey]: false },
-      success: function () {
+    postForm(config.subscribeUrl, { [config.dataKey]: false })
+      .then(function () {
         hideTooltip();
         const textSpan = btn.querySelector('.newsletter-header__text');
         if (textSpan) textSpan.textContent = config.subscribeMessage;
         btn.removeEventListener('click', showTooltip);
         initSubscribeMode(btn, config);
-      },
-      error: function () {
+      })
+      .catch(function () {
         hideTooltip();
-      }
-    });
+      });
   });
 
   document.addEventListener('click', function (e) {
@@ -155,11 +170,13 @@ function switch_change_events(switches, push_notifications_keys_set, callbackFun
           handlePushNotificationSwitchChange(switchElement, input.id);
         }
       } else {
-        handleNewsletterSwitchChange(newsletterUrl, { [dataKey]: input.checked }, switchElement);
-        // disable input after a bouncer NL or communication deactivation
-        if (["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer) {
-          input.setAttribute("disabled", "disabled");
-        }
+        // A bouncer NL/communication deactivation must stay disabled after a
+        // successful save (the user shouldn't be able to re-activate it).
+        const keepDisabledOnSuccess =
+          ["nl_subscribe", "com_subscribe"].includes(dataKey) && !input.checked && dataBouncer;
+        handleNewsletterSwitchChange(
+          newsletterUrl, { [dataKey]: input.checked }, switchElement, keepDisabledOnSuccess
+        );
       }
       if (callbackFunction) callbackFunction(input);
     });

@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags %}
+{% load static core_tags ldml cartelera_tags adzone_tags tagging_tags videologue_tags bleach_tags thedaily_tags signupwall_tags compress %}
 
 {% block head_first_content %}
   <!-- Canonical and AMP (if allowed) urls -->
@@ -835,7 +835,9 @@
 {% endblock %}
 
 {% block footer_scripts_extra %}
-  <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% compress js %}
+    <script src="{% static 'js/switch_change_events.js' %}"></script>
+  {% endcompress %}
   <script type="text/javascript">
     $(function(){
       {% if bn_module_published_count %}
