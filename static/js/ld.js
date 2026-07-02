@@ -454,6 +454,23 @@
       }
     });
 
+    // Close the comments panel when clicking outside of it
+    document.addEventListener("click", function (event) {
+      const commentsContainer = qs("#comentarios");
+      if (!commentsContainer || commentsContainer.classList.contains("closed")) {
+        return;
+      }
+      // Ignore clicks inside the panel or on the buttons that open it
+      if (
+        event.target.closest("#comentarios") ||
+        event.target.closest(".btn-comments") ||
+        event.target.closest(".action-bar-comment-btn")
+      ) {
+        return;
+      }
+      commentsContainer.classList.add("closed");
+    });
+
     // Load comments if coming from AMP version
     if (window.location.hash === "#comentarios") {
       loadComments();
