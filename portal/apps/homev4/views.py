@@ -1361,6 +1361,13 @@ _DEFAULT_AREAS = [
     {"type": "publication", "slug": "feminismos", "name": "Feminismos"},
     {"type": "publication", "slug": "ciencia",    "name": "Ciencia"},
     {"type": "category",    "slug": "futuro",     "name": "Futuro"},
+    # Three extra verticals so the áreas block has 16 candidates instead of 13. With more
+    # candidates the block can still fill its 12 slots when two verticals are taken away as
+    # the SUPLEMENTO and SUPLEMENTO_EXTRA (Adicional) sources, avoiding an empty gap on the
+    # home. build_home_data still shows only the 12 most-recently-updated of the set.
+    {"type": "category",    "slug": "cotidiana",  "name": "Cotidiana"},
+    {"type": "category",    "slug": "libros",     "name": "Libros"},
+    {"type": "category",    "slug": "verifica",   "name": "Verifica"},
 ]
 
 
