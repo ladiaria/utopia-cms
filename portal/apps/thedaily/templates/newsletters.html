@@ -1,5 +1,5 @@
 {% extends base_template %}
-{% load static %}
+{% load static compress %}
 
 {% block page_title %}Configurá tus Newsletters{% endblock %}
 
@@ -87,7 +87,9 @@
 
 {% block javascript %}
   {% if not user.is_anonymous  %}
-    <script src="{% static 'js/switch_change_events.js' %}"></script>
+    {% compress js %}
+      <script src="{% static 'js/switch_change_events.js' %}"></script>
+    {% endcompress %}
   {% endif %}
   <script type="text/javascript">
     {% if not user.is_anonymous  %}
