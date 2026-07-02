@@ -48,7 +48,8 @@ article a {
     }
   }
 
-  &__article-image {
+  &__article-image,
+  &__image-container {
     display: flex;
   }
 
@@ -66,6 +67,7 @@ article a {
     display: flex;
     align-items: center;
     gap: 8px;
+    line-height: normal;
     span {
       display: flex;
     }
