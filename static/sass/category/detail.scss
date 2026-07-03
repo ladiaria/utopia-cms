@@ -30,6 +30,9 @@
   &__cover {
     grid-column: 1 / 4;
     display: flex;
+    // don't stretch the card to the grid row height: size it to its content
+    // (the photo), not to the secondary articles column
+    align-self: start;
   }
 
   &__secondary {
@@ -106,6 +109,9 @@
     min-width: 0;
     max-width: $col-width * 2 + $col-gap;
     display: flex;
+    // hug the image (don't stretch to the body height) so it keeps its 3/2
+    // aspect-ratio without leaving a gap below
+    align-self: flex-start;
     img {
       margin: 0;
     }
