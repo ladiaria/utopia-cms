@@ -74,15 +74,19 @@ movable = (
     Follow,
     Favorite,
     User.user_permissions.through,
+    User.groups.through,
 )
 
 
-def collector_analysis(collector_data, indent_level=1, ignore_movable=False):
+def collector_analysis(collector_data, indent_level=1, ignore_movable=False, extra_movable=()):
+    # extra_movable: modelos que el llamador sabe mover/descartar en su contexto y que no deben
+    # marcar inseguro (además de los de `movable`). No cambia el default para el resto de usos.
     safety, report = True, ""
+    movable_all = movable + tuple(extra_movable)
     for key in collector_data:
         key_count = len(collector_data[key])
         if key not in non_relevant_data_max_amounts or key_count > non_relevant_data_max_amounts[key]:
-            if not ignore_movable or key not in movable:
+            if not ignore_movable or key not in movable_all:
                 safety = False
         report += "\n%s%s: %d" % ("\t" * indent_level, key, key_count)
     return safety, report
@@ -98,6 +102,11 @@ def move_data(s0, s1):
     for uperm in User.user_permissions.through.objects.filter(user=s0.user):
         try:
             User.user_permissions.through.objects.filter(id=uperm.id).update(user=s1.user)
+        except IntegrityError:
+            pass
+    for ugroup in User.groups.through.objects.filter(user=s0.user):
+        try:
+            User.groups.through.objects.filter(id=ugroup.id).update(user=s1.user)
         except IntegrityError:
             pass
     Follow.objects.filter(user=s0.user).update(user=s1.user)
