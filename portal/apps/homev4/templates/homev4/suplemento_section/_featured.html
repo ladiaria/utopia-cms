@@ -31,11 +31,20 @@
       <a href="{{ featured.get_absolute_url }}">{{ featured.headline|ldmarkup|bleach }}</a>
     </h2>
     {% if featured.home_lead %}<p class="article__lead">{{ featured.home_lead|ldmarkup|bleach }}</p>{% endif %}
-    {% if article_card_read_later_enabled and user.is_authenticated %}
-      <div class="article__footer">
-        {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
-      </div>
+    {% with authors=featured.get_authors %}
+    {% if authors or article_card_read_later_enabled and user.is_authenticated %}
+    <div class="article__footer">
+      {% if authors %}
+        <div class="article__byline">
+          {% for author in authors %}
+            <a href="{{ author.get_absolute_url }}">{{ author.name }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% include "article/article_card_read_later.html" with a=featured prefetched_article_data=True %}
+    </div>
     {% endif %}
+    {% endwith %}
   </article>
 </div>
 {% endwith %}
