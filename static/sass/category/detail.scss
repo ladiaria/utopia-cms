@@ -21,22 +21,27 @@
 .category-grid {
   @include utopia-container;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, $col-width));
+  // Dos columnas independientes: el bloque principal (cover + secundarias) y la
+  // columna terciaria. `align-items: start` desacopla sus altos: ninguna se
+  // estira para igualar a la más alta, así la cover conserva su relación 3/2 y
+  // las secundarias no quedan estiradas hacia abajo.
+  grid-template-columns: minmax(0, $col-width * 3 + $col-gap * 2) minmax(0, $col-width);
+  align-items: start;
   gap: $col-gap;
-  row-gap: 32px;
   padding-inline: $padding-inline;
   padding-bottom: 32px;
 
-  &__cover {
-    grid-column: 1 / 4;
+  &__main {
     display: flex;
-    // don't stretch the card to the grid row height: size it to its content
-    // (the photo), not to the secondary articles column
-    align-self: start;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  &__cover {
+    display: flex;
   }
 
   &__secondary {
-    grid-column: 1 / 4;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: $col-gap;
@@ -59,8 +64,6 @@
   }
 
   &__tertiary-group {
-    grid-column: 4;
-    grid-row: 1 / 3;
     display: flex;
     flex-direction: column;
     gap: $col-gap;
@@ -165,12 +168,11 @@
     padding: 0 20px 24px;
     gap: 24px;
 
-    &__cover {
-      grid-column: 1;
+    &__main {
+      gap: 24px;
     }
 
     &__secondary {
-      grid-column: 1;
       grid-template-columns: 1fr;
       padding-bottom: 24px;
       border-bottom: 0.5px solid #000;
@@ -191,8 +193,6 @@
     }
 
     &__tertiary-group {
-      grid-column: 1;
-      grid-row: auto;
       .article:first-child {
         .article__image-link {
           display: flex;
