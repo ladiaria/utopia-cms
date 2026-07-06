@@ -178,7 +178,7 @@
       border-bottom: 0.5px solid #000;
 
       .article {
-        img {
+        &__image-link {
           display: none;
         }
         &::after {
