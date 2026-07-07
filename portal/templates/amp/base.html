@@ -80,12 +80,11 @@
 
     <header amp-access="NOT authenticated" amp-access-hide>
       {% render_header %}
-      {% if extra_header_template %}{% include extra_header_template %}{% endif %}
     </header>
     <header amp-access="authenticated" amp-access-hide>
       {% render_header '_authenticated' %}
-      {% if extra_header_template %}{% include extra_header_template %}{% endif %}
     </header>
+    {% if extra_header_template %}{% include extra_header_template %}{% endif %}
     <main id="content" role="main" class="">{% block content %}{% endblock %}</main>
     <div class="footer-desktop">{% include "amp/footer_amp.html" %}</div>
   </body>

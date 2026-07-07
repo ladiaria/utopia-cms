@@ -209,6 +209,11 @@ section {
 
 header {
   display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 0.5px solid #ababab;
 }
 
 h1 {
@@ -514,7 +519,7 @@ a {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  padding: 16px 20px;
+  padding: 16px 0;
   min-height: 32px;
 }
 
@@ -1873,19 +1878,23 @@ amp-selector {
 
 /* Related */
 .ld-related {
-  padding: 0 20px 48px;
+  padding: 0 20px;
 }
 
 .ld-related-inner-container {
   border-top: 0.5px solid #ABABAB;
 }
 
-.ld-related h2 {
+.ld-related-inner-container.ld-related-inner-container>h2 {
   font-family: "Review Condensed", "Dialect Gothic A",
     sans-serif;
   font-size: 1.75rem;
-  margin: 0;
   padding: 24px 0 16px;
+}
+
+.ld-related h2 {
+  font-size: 1.125rem;
+  margin: 0;
 }
 
 .ld-related .section-detail__title {
