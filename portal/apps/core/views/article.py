@@ -248,6 +248,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
     comments_count = 0
 
     publication = article.main_section.edition.publication if article.main_section else None
+    register_wall_param = request.GET.get("register_wall")
+    register_wall_state = {"1": "email", "login": "login"}.get(register_wall_param)
     context = {
         "DEBUG": settings.DEBUG,
         'article': article,
@@ -278,8 +280,10 @@ def article_detail(request, year, month, slug, domain_slug=None):
         # TEMPORARY: preview switch to render the registration wall without going through the signupwall middleware,
         # so the work in progress can be reviewed in any environment. It only swaps the article body for a teaser plus
         # the wall, no access is granted or denied by it. Remove once the wall is wired to the middleware (anon user
-        # without credits).
-        "registration_wall": request.GET.get("register_wall") == "1",
+        # without credits) and the email step resolves the state server-side.
+        # "1" keeps the email step, "login" and "signup" preview the states reached after submitting the email.
+        "registration_wall": register_wall_state is not None,
+        "registration_wall_state": register_wall_state,
     }
 
     context.update(
