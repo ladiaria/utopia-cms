@@ -1,0 +1,45 @@
+{% load static %}
+
+{% comment %}
+  Registration wall shown inline in the article to anonymous users that ran out of free credits.
+
+  WIP: right now this is only reachable through the "?register_wall=1" preview switch (DEBUG only), and the form is
+  static markup: the email step is not wired to email_check_api yet, and the "Ingresar" / "Crear cuenta gratuita"
+  states are not implemented.
+{% endcomment %}
+
+<div class="registration-wall">
+
+  <div class="registration-wall__intro">
+    <h2 class="registration-wall__title">Creá una cuenta gratuita o ingresá para seguir leyendo</h2>
+    <p class="registration-wall__lead">
+      Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes
+      y recibís nuestras newsletters.
+    </p>
+  </div>
+
+  <div class="registration-wall__actions">
+
+    <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
+      <img src="{% static 'img/icon-google.svg' %}" alt="" aria-hidden="true">
+      <span>Continuar con Google</span>
+    </a>
+
+    <hr class="registration-wall__separator">
+
+    <form class="registration-wall__form" method="post">
+      {% csrf_token %}
+
+      <p class="registration-wall__form-title">o continuá con tu email</p>
+
+      <div class="registration-wall__field">
+        <label for="registration-wall-email">Email <span class="registration-wall__required">*</span></label>
+        <input type="email" id="registration-wall-email" name="email" required autocomplete="email">
+      </div>
+
+      <button type="submit" class="registration-wall__submit">Continuar</button>
+    </form>
+
+  </div>
+
+</div>

@@ -1,0 +1,144 @@
+@import "../variables";
+
+// Registration wall shown inline in the article to anonymous users without credits.
+// See core/templates/article/paywall/pw_registration_wall.html
+
+$registration-wall-width: 332px;
+$registration-wall-required: #81898b;
+
+// Faded tail of the truncated article body.
+// NOTE: this only hides the rest of the body visually. The real implementation must truncate the body server-side,
+// otherwise the full text is still in the HTML source.
+.article-body--registration-wall {
+  max-height: 320px;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+
+  // ldmarkup_plus injects these into the body markup (google follow card, mid-article notices, extensions).
+  // TEMPORARY: server-side truncation will drop them and this rule goes away with it. !important because
+  // _ladiaria_article.scss shows them from an id-anchored selector we can't outweigh with a class.
+  > aside,
+  > .extension {
+    display: none !important;
+  }
+}
+
+.registration-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: $registration-wall-width;
+  margin: 0 auto 48px;
+
+  @media #{$medium-and-down} {
+    padding: 0 16px;
+  }
+
+  &__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: $sans-title;
+    font-weight: 700;
+    font-size: px-to-rem(24px);
+    line-height: px-to-rem(26.88px); // 1.12em
+    letter-spacing: px-to-rem(0.72px); // 0.03em
+    text-align: center;
+  }
+
+  &__lead {
+    margin: 0;
+    font-family: $sans;
+    font-weight: 400;
+    font-size: px-to-rem(16px);
+    text-align: center;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__separator {
+    width: 100%;
+    margin: 0;
+    border: none;
+    border-top: 0.5px solid #000;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+  }
+
+  &__form-title {
+    margin: 0;
+    font-family: $sans;
+    font-weight: 450;
+    font-size: px-to-rem(16px);
+    text-align: center;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+
+    label {
+      font-family: $sans;
+      font-size: px-to-rem(15px);
+      color: #000;
+    }
+
+    // Materialize styles bare inputs with an underline, override it.
+    input[type="email"] {
+      box-sizing: border-box;
+      width: 100%;
+      height: 48px;
+      margin: 0;
+      padding: 0 12px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      background-color: #fff;
+      font-family: $sans;
+      font-size: px-to-rem(16px);
+      box-shadow: none;
+
+      &:focus {
+        border: 1px solid #000;
+        box-shadow: none;
+        outline: 2px solid #000;
+        outline-offset: 1px;
+      }
+    }
+  }
+
+  &__required {
+    color: $registration-wall-required;
+  }
+
+  &__submit {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 5px;
+    background-color: #000;
+    color: #fff;
+    font-family: $sans;
+    font-weight: 500;
+    font-size: px-to-rem(16px);
+    letter-spacing: px-to-rem(0.16px); // 0.01em
+    cursor: pointer;
+  }
+}
