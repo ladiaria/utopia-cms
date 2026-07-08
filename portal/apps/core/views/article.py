@@ -275,6 +275,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
+        # TEMPORARY: preview switch to render the registration wall without going through the signupwall middleware,
+        # so the work in progress can be reviewed in any environment. It only swaps the article body for a teaser plus
+        # the wall, no access is granted or denied by it. Remove once the wall is wired to the middleware (anon user
+        # without credits).
+        "registration_wall": request.GET.get("register_wall") == "1",
     }
 
     context.update(

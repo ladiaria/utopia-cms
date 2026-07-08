@@ -43,6 +43,11 @@
   <link href="{% static 'sass/cardv4.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
   {# nl_switch: mid-article newsletter subscribe switch #}
   <link href="{% static 'sass/components/nl_switch.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
+  {% comment %}
+    Loaded unconditionally: this block is wrapped in a compress tag by base.html, and a conditional link would make
+    offline compression precompress only one variant of it.
+  {% endcomment %}
+  <link href="{% static 'sass/article/registration_wall.scss' %}" media="screen" rel="stylesheet" type="text/x-scss" charset="utf-8">
 {% endblock %}
 
 {% block header_scripts %}
@@ -128,9 +133,9 @@
       {# TODO: - apply this 'render_allowed' condition also in all places that render article's photos #}
       {#       - img tag should have the width and height attribute (ask UX for help)                  #}
       {% if photo_render_allowed %}
+        {% if header_display == 'FW' %}<div>{% endif %}{# begin fullwidth wrapper (outside main_photo so overrides of that block can't unbalance it) #}
         {% block main_photo %}
         {% if header_display == 'FW' %}{# FW = "Ancho completo" (full width); la alternativa es BG = "Grande" (ancho regular) #}
-          <div>{# closed in line 300 #}
             <div class="fullwidth-container">
               <div class="main-photo">
                 <figure class="js-figure principal" data-src="{{ article.photo.get_1200w_url }}"
@@ -155,7 +160,7 @@
                 </figure>
               </div>
             </div>
-          {# missing close div here is closed correctly in line 300 #}
+          {# the fullwidth wrapper div opens before this block and closes after the article header, both outside it #}
         {% else %}
           {% if article.articlecollection %}
             <div class="collection-header">
@@ -296,7 +301,7 @@
         {% endcomment %}
       </div>
       {% if photo_render_allowed and header_display == 'FW' %}
-        </div>{# opened in line 103 #}
+        </div>{# end fullwidth wrapper #}
       {% endif %}
 
       <div class="article-action-bar">
@@ -436,12 +441,14 @@
       {# begin restricted content #}
       {% if not request.signupwall or not article_restricted_cf or restricted_access %}
 
-        {% if not request.signupwall %}{# closed in line 676 #}
+        {% if not request.signupwall %}
 
-          {% include 'article/paywall/pw_not_in_request.html' %}
+          {% if not registration_wall %}{% include 'article/paywall/pw_not_in_request.html' %}{% endif %}
 
-          <div class="article-body article-container paywalled-content{% block article_body_extra_class %}{% endblock %}">
+          <div class="article-body article-container paywalled-content{% if registration_wall %} article-body--registration-wall{% endif %}{% block article_body_extra_class %}{% endblock %}">
             {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
+
+            {% if not registration_wall %}{# begin article body extras #}
 
             {# colection articles #}
             {% if article.articlecollection %}
@@ -506,7 +513,13 @@
             {% endif %}
             {# END collection articles #}
             {% block inside_article_body_end %}{% endblock %}
+
+            {% endif %}{# end article body extras (not registration_wall) #}
           </div>
+
+          {% if registration_wall %}{% include 'article/paywall/pw_registration_wall.html' %}{% endif %}
+
+          {% if not registration_wall %}{# begin after-body content (gallery, video, feedback) #}
 
           {% if article.gallery %}
             <div class="thumbnails container gallery-wrap">
@@ -666,8 +679,9 @@
             </div>
           {% endif %}
 
+          {% endif %}{# end after-body content (not registration_wall) #}
 
-        {% endif %}{# opened in line 317 #}
+        {% endif %}{# not request.signupwall #}
 
       {% else %}{# restricted content message #}
 
@@ -684,7 +698,7 @@
 
   <aside>
 
-    {% if not request.signupwall %}{# closed in line 823 #}
+    {% if not request.signupwall and not registration_wall %}
 
       {% if article.public %}
 
@@ -740,7 +754,7 @@
 
       {% endif %}{# end restricted content2 #}
 
-    {% endif %}{# opened in line 694 #}
+    {% endif %}{# not request.signupwall and not registration_wall #}
 
     {% block article_extra %}{% endblock %}
 
