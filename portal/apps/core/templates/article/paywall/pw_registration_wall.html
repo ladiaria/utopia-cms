@@ -1,45 +1,21 @@
-{% load static %}
-
 {% comment %}
   Registration wall shown inline in the article to anonymous users that ran out of free credits.
 
-  WIP: right now this is only reachable through the "?register_wall=1" preview switch (DEBUG only), and the form is
-  static markup: the email step is not wired to email_check_api yet, and the "Ingresar" / "Crear cuenta gratuita"
-  states are not implemented.
+  It has three states: the email step, and the login / signup steps reached after submitting an email that does or
+  does not have an account. Right now the state comes from the "?register_wall=" preview switch and the forms are
+  static markup, so nothing is submitted anywhere. The email step will eventually resolve the state server-side.
+
+  The outer element takes its width from .article-container and insets the box from the viewport edges with padding
+  (never a margin: .article-container is width:100%, and a margin there would overflow instead of shrinking).
+  __box paints the background and centers the fixed-width content column.
 {% endcomment %}
 
-<div class="registration-wall">
-
-  <div class="registration-wall__intro">
-    <h2 class="registration-wall__title">Creá una cuenta gratuita o ingresá para seguir leyendo</h2>
-    <p class="registration-wall__lead">
-      Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes
-      y recibís nuestras newsletters.
-    </p>
+<div class="registration-wall article-container">
+  <div class="registration-wall__box">
+    {% if registration_wall_state == 'login' %}
+      {% include "article/paywall/registration_wall/_login.html" %}
+    {% else %}
+      {% include "article/paywall/registration_wall/_email.html" %}
+    {% endif %}
   </div>
-
-  <div class="registration-wall__actions">
-
-    <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
-      <img src="{% static 'img/icon-google.svg' %}" alt="" aria-hidden="true">
-      <span>Continuar con Google</span>
-    </a>
-
-    <hr class="registration-wall__separator">
-
-    <form class="registration-wall__form" method="post">
-      {% csrf_token %}
-
-      <p class="registration-wall__form-title">o continuá con tu email</p>
-
-      <div class="registration-wall__field">
-        <label for="registration-wall-email">Email <span class="registration-wall__required">*</span></label>
-        <input type="email" id="registration-wall-email" name="email" required autocomplete="email">
-      </div>
-
-      <button type="submit" class="registration-wall__submit">Continuar</button>
-    </form>
-
-  </div>
-
 </div>
