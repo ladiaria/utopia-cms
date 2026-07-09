@@ -49,13 +49,16 @@ $registration-wall-mobile-inset: 20px;
     background-color: $registration-wall-bg;
     border-radius: 5px;
 
-    @media #{$medium-and-down} {
-      padding: 32px 16px;
-    }
-
     > * {
       width: 100%;
       max-width: $registration-wall-width;
+    }
+    @media #{$medium-and-down} {
+      padding: 32px 16px;
+
+      > * {
+        max-width: 100%;
+      }
     }
   }
 
