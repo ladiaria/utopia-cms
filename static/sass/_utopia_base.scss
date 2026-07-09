@@ -129,11 +129,15 @@ a {
   }
 }
 
+// Form controls do not inherit typography: without this they fall back to the user agent stylesheet (13.33px), which
+// also makes iOS Safari zoom in when one of them gets focus. 16px is the project's base size, so a design asking for
+// 16px on an input needs no font-size at all.
 button,
 input,
 select,
 textarea {
   font-family: inherit;
+  font-size: px-to-rem(16px);
 }
 
 button,
@@ -147,7 +151,6 @@ button {
   background-color: transparent;
   padding: 0;
   border: none;
-  font-size: px-to-rem(16px);
 }
 
 small {

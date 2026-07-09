@@ -50,7 +50,7 @@ $registration-wall-mobile-inset: 20px;
     border-radius: 5px;
 
     @media #{$medium-and-down} {
-      padding: 48px 16px;
+      padding: 32px 16px;
     }
 
     > * {
@@ -73,14 +73,18 @@ $registration-wall-mobile-inset: 20px;
     line-height: px-to-rem(26.88px); // 1.12em
     letter-spacing: px-to-rem(0.72px); // 0.03em
     text-align: center;
+
+    @media #{$medium-and-down} {
+      font-size: px-to-rem(23px);
+    }
   }
 
   &__lead {
     margin: 0;
-    font-family: $sans;
-    font-weight: 400;
-    font-size: px-to-rem(16px);
     text-align: center;
+    @media #{$medium-and-down} {
+      font-size: px-to-rem(15px);
+    }
   }
 
   &__actions {
@@ -106,9 +110,7 @@ $registration-wall-mobile-inset: 20px;
 
   &__form-title {
     margin: 0;
-    font-family: $sans;
     font-weight: 450;
-    font-size: px-to-rem(16px);
     text-align: center;
   }
 
@@ -124,7 +126,7 @@ $registration-wall-mobile-inset: 20px;
       color: #000;
     }
 
-    // Materialize styles bare inputs with an underline, override it.
+    // The article page does not load Materialize's form styles, so these carry the user agent's inset border.
     input[type="text"],
     input[type="email"],
     input[type="password"] {
@@ -136,8 +138,6 @@ $registration-wall-mobile-inset: 20px;
       border: 1px solid #000;
       border-radius: 5px;
       background-color: #fff;
-      font-family: $sans;
-      font-size: px-to-rem(16px);
       box-shadow: none;
 
       &:focus {
@@ -213,18 +213,13 @@ $registration-wall-mobile-inset: 20px;
     gap: 8px;
     width: 100%;
 
-    // Materialize hides bare checkboxes (opacity:0, position:absolute) to draw its own out of the label, so this has
-    // to bring the input back before restyling it. The class here outweighs Materialize's [type="checkbox"] rules.
     input[type="checkbox"] {
-      position: static;
       flex: 0 0 auto;
       box-sizing: border-box;
       width: 20px;
       height: 20px;
       margin: 0;
       padding: 0;
-      opacity: 1;
-      pointer-events: auto;
       appearance: none;
       border: 1px solid #000;
       border-radius: 2px;
