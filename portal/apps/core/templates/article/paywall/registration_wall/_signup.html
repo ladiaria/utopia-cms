@@ -1,0 +1,57 @@
+{% comment %}
+  Registration wall, signup step: reached when the submitted email does not have an account yet.
+
+  WIP: static markup. The form has no action yet, the reveal-password button does nothing and the terms link does not
+  open the terms modal (signup.html wires that one with js). When this is wired, the email must come prefilled from the
+  previous step and the form must post to the real signup view. Field names match LaDiariaSignupForm so the crispy
+  render can replace this markup without touching the styles.
+
+  There is no phone field on purpose: validating the phone by sms stops being a requirement to complete the signup.
+{% endcomment %}
+
+<div class="registration-wall__intro">
+  <h2 class="registration-wall__title">Crear cuenta gratuita</h2>
+  <p class="registration-wall__lead">
+    Con tu cuenta gratuita accedés a {{ signupwall_max_credits }} artículos gratis por mes
+    y recibís nuestras newsletters.
+  </p>
+</div>
+
+<form class="registration-wall__form registration-wall__form--signup" method="post">
+  {% csrf_token %}
+
+  <div class="registration-wall__fields">
+
+    <div class="registration-wall__field">
+      <label for="registration-wall-signup-name">Nombre <span class="registration-wall__required">*</span></label>
+      <input type="text" id="registration-wall-signup-name" name="first_name" required autocomplete="name">
+    </div>
+
+    <div class="registration-wall__field">
+      <label for="registration-wall-signup-email">Email <span class="registration-wall__required">*</span></label>
+      <input type="email" id="registration-wall-signup-email" name="email" required autocomplete="email"
+             placeholder="nombre@ejemplo.com" value="{{ registration_wall_email|default:'' }}">
+    </div>
+
+    <div class="registration-wall__field registration-wall__field--password">
+      <label for="registration-wall-signup-password">Contraseña <span class="registration-wall__required">*</span></label>
+      <div class="registration-wall__password-input">
+        <input type="password" id="registration-wall-signup-password" name="password" required
+               autocomplete="new-password" autocapitalize="none">
+        <button type="button" class="registration-wall__reveal" aria-label="Mostrar contraseña" aria-pressed="false">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="11" fill="none" viewBox="0 0 16 11" aria-hidden="true">
+            <path fill="currentColor" d="M8 0C4.727 0 1.932 2.02.667 4.87a.66.66 0 0 0 0 .534C1.932 8.253 4.727 10.273 8 10.273s6.068-2.02 7.333-4.87a.66.66 0 0 0 0-.533C14.068 2.02 11.273 0 8 0m0 9.09c-2.673 0-5.008-1.6-6.121-3.953C2.992 2.784 5.327 1.182 8 1.182s5.008 1.602 6.121 3.955C13.008 7.49 10.673 9.09 8 9.09m0-6.59a2.636 2.636 0 1 0 0 5.273A2.636 2.636 0 0 0 8 2.5m0 4.09a1.455 1.455 0 1 1 0-2.908 1.455 1.455 0 0 1 0 2.909"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="registration-wall__terms">
+    <input type="checkbox" id="registration-wall-signup-terms" name="terms_and_conds_accepted" required>
+    <label for="registration-wall-signup-terms">Leí y acepto los <a>términos y condiciones</a></label>
+  </div>
+
+  <button type="submit" class="registration-wall__submit">Crear cuenta</button>
+</form>

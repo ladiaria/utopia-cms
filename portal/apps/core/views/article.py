@@ -249,7 +249,7 @@ def article_detail(request, year, month, slug, domain_slug=None):
 
     publication = article.main_section.edition.publication if article.main_section else None
     register_wall_param = request.GET.get("register_wall")
-    register_wall_state = {"1": "email", "login": "login"}.get(register_wall_param)
+    register_wall_state = {"1": "email", "login": "login", "signup": "signup"}.get(register_wall_param)
     context = {
         "DEBUG": settings.DEBUG,
         'article': article,
