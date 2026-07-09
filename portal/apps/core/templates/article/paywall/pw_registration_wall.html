@@ -14,6 +14,8 @@
   <div class="registration-wall__box">
     {% if registration_wall_state == 'login' %}
       {% include "article/paywall/registration_wall/_login.html" %}
+    {% elif registration_wall_state == 'signup' %}
+      {% include "article/paywall/registration_wall/_signup.html" %}
     {% else %}
       {% include "article/paywall/registration_wall/_email.html" %}
     {% endif %}
