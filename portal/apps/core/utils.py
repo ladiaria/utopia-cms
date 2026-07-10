@@ -12,7 +12,50 @@ from django.template import Engine
 from django.template.exceptions import TemplateDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.utils.deconstruct import deconstructible
+from django.utils.safestring import mark_safe
+from django.utils.text import Truncator
 from django.utils.timezone import is_aware, make_aware, localtime
+
+
+# Registration wall shown inline in the article. The email step (thedaily.views.registration_wall_email) resolves
+# whether the submitted email already has an account and leaves the next step here, then redirects back to the
+# article, which consumes it. The session and not the query string, so the email stays out of the referrer and the
+# access logs and the article keeps a shareable url.
+REGISTRATION_WALL_SESSION_KEY = "registration_wall"
+
+
+def set_registration_wall_state(request, article, state, email):
+    request.session[REGISTRATION_WALL_SESSION_KEY] = {
+        "article_id": article.id, "state": state, "email": email
+    }
+    request.session.modified = True
+
+
+def pop_registration_wall_state(request, article):
+    """
+    Return the (state, email) left for `article` by the email step, removing it from the session so a reload of the
+    article starts the wall over. Returns (None, "") when there is nothing for this article.
+    """
+    stored = request.session.get(REGISTRATION_WALL_SESSION_KEY)
+    # keyed by article so the state does not follow the reader into the next article
+    if not stored or stored.get("article_id") != article.id:
+        return None, ""
+    del request.session[REGISTRATION_WALL_SESSION_KEY]
+    request.session.modified = True
+    return stored.get("state"), stored.get("email", "")
+
+
+def truncate_body_words(body_html, words=None):
+    """
+    Return the first `words` words of a formatted article body, as the registration wall teaser, keeping the html
+    tags balanced (Truncator with html=True closes any tag left open by the cut).
+
+    The teaser is built here and not hidden with css on purpose: the registration wall must not ship the rest of the
+    article in the page source, or the wall is trivially bypassed by reading it.
+    """
+    if words is None:
+        words = getattr(settings, "SIGNUPWALL_TRUNCATE_ARTICLE_WORDS", 100)
+    return mark_safe(Truncator(body_html).words(words, html=True))
 
 
 # Cache of computed cache-busting suffixes, keyed by static path. Filled once per worker process

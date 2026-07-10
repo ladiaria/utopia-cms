@@ -446,7 +446,7 @@
           {% if not registration_wall %}{% include 'article/paywall/pw_not_in_request.html' %}{% endif %}
 
           <div class="article-body article-container paywalled-content{% if registration_wall %} article-body--registration-wall{% endif %}{% block article_body_extra_class %}{% endblock %}">
-            {% block article_body_content %}{{ article.body|ldmarkup:article.id }}{% endblock %}
+            {% block article_body_content %}{% if registration_wall %}{{ article.body|ldmarkup:article.id|truncatehtml:signupwall_truncate }}{% else %}{{ article.body|ldmarkup:article.id }}{% endif %}{% endblock %}
 
             {% if not registration_wall %}{# begin article body extras #}
 
@@ -832,6 +832,12 @@
     };
   </script>
   <script src="{% static 'js/article.js' %}"></script>
+  {% if registration_wall %}
+    {# swaps the email step for the login/signup step in place, so the reader keeps their scroll position #}
+    {% compress js %}
+      <script src="{% static 'js/registration_wall.js' %}"></script>
+    {% endcompress %}
+  {% endif %}
 {% endblock %}
 
 {% block footer_scripts %}

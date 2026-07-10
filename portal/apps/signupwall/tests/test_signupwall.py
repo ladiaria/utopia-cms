@@ -96,7 +96,11 @@ class SignupwallTestCase(PreCopyImage):
 
         a = Article.objects.create(headline='test_walled')
         response = c.get(a.get_absolute_url(), **self.http_host_header_param)
-        if settings.SIGNUPWALL_RISE_REDIRECT:
+        if getattr(settings, "SIGNUPWALL_ANON_REGISTRATION_WALL", False):
+            # the wall is shown inline in the article, no redirect
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("registration-wall", response.content.decode())
+        elif settings.SIGNUPWALL_RISE_REDIRECT:
             self.assertEqual(response.status_code, 302)
             response = c.get(response.headers["location"],  **self.http_host_header_param)
             self.assertIn("Registrate para acceder a", response.content.decode())

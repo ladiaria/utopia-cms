@@ -42,7 +42,7 @@ from decorators import decorate_if_no_auth, decorate_if_auth
 from core.forms import SendByEmailForm, feedback_allowed, feedback_form, feedback_handler
 from core.models import Publication, Category, Article, ArticleUrlHistory, PerplexityAPISettings
 from thedaily.templatetags.thedaily_tags import has_restricted_access
-from core.utils import ia_use_group
+from core.utils import ia_use_group, pop_registration_wall_state
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -250,6 +250,16 @@ def article_detail(request, year, month, slug, domain_slug=None):
     publication = article.main_section.edition.publication if article.main_section else None
     register_wall_param = request.GET.get("register_wall")
     register_wall_state = {"1": "email", "login": "login", "signup": "signup"}.get(register_wall_param)
+    register_wall_email = ""
+    if register_wall_state is None:
+        # step resolved by the email form of the wall, left in the session by thedaily.views.registration_wall_email
+        register_wall_state, register_wall_email = pop_registration_wall_state(request, article)
+    if register_wall_state is None and getattr(request, "registration_wall", False):
+        # raised by the signupwall middleware for an anonymous reader that ran out of credits
+        register_wall_state = "email"
+    # whatever raised the wall (middleware, the email step in session, or the ?register_wall= preview switch), let the
+    # context processor know so it truncates the body teaser the same way in every case
+    request.registration_wall = register_wall_state is not None
     context = {
         "DEBUG": settings.DEBUG,
         'article': article,
@@ -270,6 +280,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
         "signupwall_label_exclusive": settings.SIGNUPWALL_LABEL_EXCLUSIVE,
+        # word count the registration wall teaser is truncated to (used by the truncatehtml filter in detail.html)
+        "signupwall_truncate": getattr(settings, "SIGNUPWALL_TRUNCATE_ARTICLE_WORDS", 100),
         'publication_newsletters':
             Publication.objects.filter(has_newsletter=True).exclude(slug__in=settings.CORE_PUBLICATIONS_USE_ROOT_URL),
         'date_published_use_main_publication': (
@@ -280,10 +292,11 @@ def article_detail(request, year, month, slug, domain_slug=None):
         # TEMPORARY: preview switch to render the registration wall without going through the signupwall middleware,
         # so the work in progress can be reviewed in any environment. It only swaps the article body for a teaser plus
         # the wall, no access is granted or denied by it. Remove once the wall is wired to the middleware (anon user
-        # without credits) and the email step resolves the state server-side.
-        # "1" keeps the email step, "login" and "signup" preview the states reached after submitting the email.
+        # without credits). It takes precedence over the state resolved by the email step, to keep working as a
+        # design tool: "1" is the email step, "login" and "signup" the states reached after submitting the email.
         "registration_wall": register_wall_state is not None,
         "registration_wall_state": register_wall_state,
+        "registration_wall_email": register_wall_email,
     }
 
     context.update(
