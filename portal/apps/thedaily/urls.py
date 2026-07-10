@@ -15,6 +15,7 @@ from .views import (
     user_profile,
     users_api,
     signup,
+    registration_wall_email,
     edit_profile,
     update_user_from_crm,
     delete_user_from_crm,
@@ -154,6 +155,7 @@ urlpatterns = [
     ),
     re_path(r'^completar-registro/(?P<user_id>\d{1,})-(?P<hash>.*)/$', complete_signup, name="account-signup-hash"),
     path('entrar/', login, name="account-login"),
+    path('registration-wall/email/', registration_wall_email, name="registration-wall-email"),
     path(
         'error/login/',
         never_cache(TemplateView.as_view(template_name='thedaily/templates/login_error.html')),

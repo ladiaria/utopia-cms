@@ -455,6 +455,13 @@ CORE_PUSH_NOTIFICATIONS_OPTIONS = {
 SIGNUPWALL_MAX_CREDITS = 10
 SIGNUPWALL_ANON_MAX_CREDITS = 0  # NOTE: values greater than 0 is not fully supported (only AMP endpoints need updates)
 SIGNUPWALL_RISE_REDIRECT = True
+# Show an anonymous reader that ran out of credits an inline registration wall in the article instead of redirecting
+# to the login/subscribe page. Only the anonymous branch changes; authenticated readers still redirect. Off by
+# default: enabling it requires a middleware that sets request.registration_wall (see the ladiaria middleware).
+SIGNUPWALL_ANON_REGISTRATION_WALL = False
+# Words of the article body shown as the registration wall teaser before it fades out; the rest is truncated away
+# server-side (not hidden with css) so it never reaches the page source.
+SIGNUPWALL_TRUNCATE_ARTICLE_WORDS = 100
 SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily

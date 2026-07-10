@@ -8,24 +8,14 @@ $registration-wall-required: #81898b;
 $registration-wall-bg: #b3efff;
 $registration-wall-mobile-inset: 20px;
 
-// Faded tail of the truncated article body.
-// NOTE: this only hides the rest of the body visually. The real implementation must truncate the body server-side,
-// otherwise the full text is still in the HTML source.
+// Faded tail of the truncated article body. The body is already cut to the first paragraphs server-side (see
+// core.utils.truncate_body_to_paragraphs), so this only fades the tail as a visual cue that there is more; it is
+// not what hides the rest of the article.
 .article-body--registration-wall {
-  max-height: 320px;
-  overflow: hidden;
   user-select: none;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-
-  // ldmarkup_plus injects these into the body markup (google follow card, mid-article notices, extensions).
-  // TEMPORARY: server-side truncation will drop them and this rule goes away with it. !important because
-  // _ladiaria_article.scss shows them from an id-anchored selector we can't outweigh with a class.
-  > aside,
-  > .extension {
-    display: none !important;
-  }
 }
 
 .registration-wall {
@@ -262,6 +252,14 @@ $registration-wall-mobile-inset: 20px;
 
   &__required {
     color: $registration-wall-required;
+  }
+
+  &__error {
+    margin: 0;
+    font-family: $sans;
+    font-size: px-to-rem(14px);
+    color: #d50000;
+    text-align: center;
   }
 
   &__submit {

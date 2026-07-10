@@ -1,12 +1,13 @@
 {% comment %}
   Registration wall, signup step: reached when the submitted email does not have an account yet.
 
-  WIP: static markup. The form has no action yet, the reveal-password button does nothing and the terms link does not
-  open the terms modal (signup.html wires that one with js). When this is wired, the email must come prefilled from the
-  previous step and the form must post to the real signup view. Field names match LaDiariaSignupForm so the crispy
-  render can replace this markup without touching the styles.
+  The email arrives prefilled from the email step, but the form still has no action: the signup view sends the reader
+  into the sms wizard, so wiring it waits until validating the phone stops being a requirement to finish the signup.
+  The reveal-password button does nothing and the terms link does not open the terms modal either (signup.html wires
+  that one with js).
 
-  There is no phone field on purpose: validating the phone by sms stops being a requirement to complete the signup.
+  Field names match the signup form, so its crispy render can replace this markup without touching the styles.
+  There is no phone field on purpose, for the same reason the action is missing.
 {% endcomment %}
 
 <div class="registration-wall__intro">

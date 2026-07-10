@@ -72,6 +72,7 @@ from decorators import render_response
 
 from core.models import Publication, Category, Article, ArticleUrlHistory
 from core.forms import feedback_allowed
+from core.utils import set_registration_wall_state
 from signupwall.middleware import (
     get_article_by_url_path, get_session_key, get_or_create_visitor, subscriber_access, number_to_words
 )
@@ -86,6 +87,7 @@ from .models import (
     OAuthState,
     MailtrainList,
     deletecrmuser,
+    email_extra_validations,
 )
 from .forms import (
     __name__ as forms_module_name,
@@ -189,6 +191,60 @@ def hard_paywall_template():
     else:
         template = template_try
     return template
+
+
+REGISTRATION_WALL_PARTIALS = {
+    "email": "article/paywall/registration_wall/_email.html",
+    "login": "article/paywall/registration_wall/_login.html",
+    "signup": "article/paywall/registration_wall/_signup.html",
+}
+
+
+def render_registration_wall_step(request, article, state, email, error=""):
+    """Render one registration wall step partial, to swap into the wall over ajax without reloading the article."""
+    return render(
+        request,
+        REGISTRATION_WALL_PARTIALS[state],
+        {"article": article, "registration_wall_email": email, "registration_wall_email_error": error},
+    )
+
+
+@never_cache
+@require_POST
+def registration_wall_email(request):
+    """
+    Email step of the registration wall shown inline in the article: decides whether the submitted email already has
+    an account, and hands over the next step.
+
+    Over ajax (the usual path, driven by registration_wall.js) it returns the next step's partial so the wall swaps it
+    in place and the reader keeps their scroll position. Without js it falls back to storing the step in the session
+    and reloading the article, so the email never reaches the referrer or the access logs and the url stays clean.
+
+    Note this asks email_extra_validations directly instead of validating a PreLoginForm. The login view tells "this
+    email is taken" apart from "this email is invalid" by reading the code of the form error (see the article branch
+    at the end of `login`), but that only works when the form has no other fields to fail: outside of the countries
+    in THEDAILY_SUBSCRIPTION_CAPTCHA_COUNTRIES_IGNORED the form class also carries a required captcha, which this
+    wall does not render, and every reader would be sent to the login step.
+    """
+    article = get_object_or_404(Article, id=request.POST.get("article"))
+    email = request.POST.get("email", "").strip().lower()
+
+    error_msg, error_code = email_extra_validations(None, email)
+    if error_code == EmailValidationError.INVALID:
+        state = "email"
+    elif error_msg:
+        # taken by a user, a google account or a username: ask for the password
+        state = "login"
+    else:
+        state = "signup"
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render_registration_wall_step(
+            request, article, state, email, error=error_msg if state == "email" else ""
+        )
+
+    set_registration_wall_state(request, article, state, email)
+    return HttpResponseRedirect(article.get_absolute_url())
 
 
 @never_cache
