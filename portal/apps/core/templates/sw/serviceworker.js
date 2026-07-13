@@ -12,6 +12,8 @@ var filesToCache = [{% block files_to_cache %}
   '/static/meta/utopia-512x512.png',
   '/static/meta/utopia-192x192.png'{% endblock %}
 ];
+// Caches left behind by service workers of previous installations, deleted on activate.
+var legacyCacheNames = [{% block legacy_cache_names %}{% endblock %}];
 
 self.addEventListener('install', function(e) {
   self.skipWaiting();
@@ -22,50 +24,12 @@ self.addEventListener('install', function(e) {
   );
 });
 
+// The handler must exist even though it does nothing: Chrome only fires
+// `beforeinstallprompt` — which the add-to-home-screen banner depends on — when the
+// service worker registers a fetch handler. Nothing is cached at runtime, so it never
+// calls respondWith() and every request reaches the network untouched.
 self.addEventListener('fetch', e => {
-  // Don't intercept navigation requests — let browser handle page loads natively.
-  // Prevents blank pages on iOS Safari when resuming from background (TCP not re-established).
-  if (e.request.mode === 'navigate') return;
-  {% block fetch_begin %}{% endblock %}
-  {% block fetch_body %}
-    e.respondWith(
-      caches.match(e.request).then(response => {
-
-        if (response) {
-          return response;
-        } else {
-
-          return (async () => {
-            try {
-              // Try to fetch the request from the network
-              const response = await fetch(e.request);
-              if (!response || response.status !== 200 || response.type !== 'basic') {
-                return response; // Return the original response if valid
-              }
-              // optionally cache, disabled (TODO: investigate)
-              // const responseClone = response.clone();
-              // caches.open(staticCacheName).then(cache => cache.put(e.request, responseClone));
-              return response;
-            } catch (error) {
-              console.warn('SW fetch failed:', error);
-              // Retry once — handles transient failures when mobile app resumes
-              // and the TCP connection hasn't fully re-established yet.
-              try {
-                return await fetch(e.request);
-              } catch (retryError) {
-                console.warn('SW fetch retry failed:', retryError);
-                return new Response('Network error occurred', {
-                  status: 503,
-                  statusText: 'Service Unavailable',
-                });
-              }
-            }
-          })();
-
-        }
-      })
-    );
-  {% endblock %}
+  {% block fetch_body %}{% endblock %}
 });
 
 self.addEventListener('activate', e => {
@@ -73,9 +37,11 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
-        // deletes the previous staticCache (TODO: confirm this assumption)
+        // deletes any legacy cache plus every staticCache other than the current one
         cacheNames.filter(function(cacheName) {
-          return cacheName.startsWith(staticCacheNamePrefix) && cacheName != staticCacheName;
+          return legacyCacheNames.indexOf(cacheName) !== -1 || (
+            cacheName.startsWith(staticCacheNamePrefix) && cacheName != staticCacheName
+          );
         }).map(function(cacheName) {
           return caches.delete(cacheName);
         })
