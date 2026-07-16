@@ -462,6 +462,11 @@ SIGNUPWALL_ANON_REGISTRATION_WALL = False
 # Words of the article body shown as the registration wall teaser before it fades out; the rest is truncated away
 # server-side (not hidden with css) so it never reaches the page source.
 SIGNUPWALL_TRUNCATE_ARTICLE_WORDS = 100
+# Faded excerpt shown under the registration wall so the wall does not look like the end of the page. Taken from
+# further down the body and not from the words right after the teaser: text continuing across the wall reads as if
+# the wall were an ad dropped mid-paragraph. Skipped when the article is shorter than the start word.
+SIGNUPWALL_TRUNCATE_TAIL_START_WORD = 300
+SIGNUPWALL_TRUNCATE_TAIL_WORDS = 50
 SIGNUPWALL_LABEL_EXCLUSIVE = "Exclusivo para suscripción digital de pago"
 
 # thedaily

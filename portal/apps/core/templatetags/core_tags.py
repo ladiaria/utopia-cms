@@ -20,7 +20,7 @@ from tagging.models import Tag, TaggedItem
 
 from core.models import Article, ArticleCollection, Supplement, Category, Section, PerplexityAPISettings
 from core.forms import SendByEmailForm
-from core.utils import datetime_timezone
+from core.utils import datetime_timezone, registration_wall_tail_words
 
 
 register = Library()
@@ -754,6 +754,12 @@ def truncatehtml(string, length):
 
 
 truncatehtml.is_safe = True
+
+
+@register.filter
+def registration_wall_tail(body_html):
+    """Plain text excerpt from further down a formatted body, shown faded under the registration wall."""
+    return registration_wall_tail_words(body_html)
 
 
 @register.filter

@@ -3,6 +3,7 @@ from builtins import object
 
 import re
 from datetime import datetime
+from html import unescape
 from os.path import join
 from pytz import country_timezones, country_names
 import requests
@@ -56,6 +57,42 @@ def truncate_body_words(body_html, words=None):
     if words is None:
         words = getattr(settings, "SIGNUPWALL_TRUNCATE_ARTICLE_WORDS", 100)
     return mark_safe(Truncator(body_html).words(words, html=True))
+
+
+# script and style are dropped with their content: a formatted body carries embed markup (instagram, youtube, ...)
+# whose javascript source would otherwise become "words" of the excerpt.
+REGISTRATION_WALL_TAIL_DROP_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1\s*>", re.DOTALL | re.IGNORECASE)
+# tags become a space instead of being deleted: django's strip_tags turns "<p>foo</p><p>bar</p>" into "foobar",
+# which glues two words together and shifts every word after it.
+REGISTRATION_WALL_TAIL_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def registration_wall_tail_words(body_html, start=None, words=None):
+    """
+    Return `words` words of a formatted article body starting at word `start`, as plain text, to be shown faded
+    under the registration wall as a cue that the article goes on.
+
+    Deliberately NOT the words that follow the teaser: text that continues across the wall reads as if the wall were
+    an ad dropped mid-paragraph, and invites scrolling past it to keep reading. An excerpt from further down reads
+    as an article that was cut.
+
+    Plain text because it is decorative (unselectable and masked, see .article-body--registration-wall-tail). That
+    also sidesteps balancing html tags across a cut that does not start at the beginning of the body, which
+    Truncator cannot do: it only truncates a prefix.
+
+    Not marked safe on purpose: the template escapes it, so markup that was literal text in the article stays
+    literal here.
+
+    Returns "" when the body does not reach `start`, and the tail is then not rendered at all. Falling back to the
+    last words of the body instead would give away how the article ends.
+    """
+    if start is None:
+        start = getattr(settings, "SIGNUPWALL_TRUNCATE_TAIL_START_WORD", 300)
+    if words is None:
+        words = getattr(settings, "SIGNUPWALL_TRUNCATE_TAIL_WORDS", 50)
+    text = REGISTRATION_WALL_TAIL_DROP_RE.sub(" ", body_html)
+    text = REGISTRATION_WALL_TAIL_TAG_RE.sub(" ", text)
+    return " ".join(unescape(text).split()[start:start + words])
 
 
 # Cache of computed cache-busting suffixes, keyed by static path. Filled once per worker process
