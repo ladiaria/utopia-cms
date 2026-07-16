@@ -8,14 +8,28 @@ $registration-wall-required: #81898b;
 $registration-wall-bg: #b3efff;
 $registration-wall-mobile-inset: 20px;
 
-// Faded tail of the truncated article body. The body is already cut to the first paragraphs server-side (see
-// core.utils.truncate_body_to_paragraphs), so this only fades the tail as a visual cue that there is more; it is
-// not what hides the rest of the article.
+// Faded end of the teaser. The body is already cut to its first words server-side (see core.utils
+// .truncate_body_words), so this only fades the last lines as a visual cue that there is more; it is not what hides
+// the rest of the article.
 .article-body--registration-wall {
   user-select: none;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
+
+// Excerpt from further down the article, under the wall (see core.utils.registration_wall_tail_words). Decoration:
+// it tells the reader the article goes on. Fades out faster than the teaser above because it is not there to be
+// read, and starts mid-sentence.
+.article-body--registration-wall-tail {
+  user-select: none;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+
+  p {
+    margin: 0;
+  }
 }
 
 .registration-wall {

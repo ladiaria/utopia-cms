@@ -517,7 +517,10 @@
             {% endif %}{# end article body extras (not registration_wall) #}
           </div>
 
-          {% if registration_wall %}{% include 'article/paywall/pw_registration_wall.html' %}{% endif %}
+          {% if registration_wall %}
+            {% include 'article/paywall/pw_registration_wall.html' %}
+            {% block article_body_tail %}{% include 'article/paywall/_registration_wall_tail.html' with tail=article.body|ldmarkup:article.id|registration_wall_tail %}{% endblock %}
+          {% endif %}
 
           {% if not registration_wall %}{# begin after-body content (gallery, video, feedback) #}
 

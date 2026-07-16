@@ -1,0 +1,14 @@
+{% comment %}
+  Faded excerpt from further down the article, rendered under the registration wall so the wall does not read as the
+  end of the page.
+
+  `tail` is plain text (see core.utils.registration_wall_tail_words) and is empty when the article is too short to
+  reach the excerpt, in which case nothing is rendered. It starts mid-sentence by design, hence the leading ellipsis:
+  it is an excerpt of what is below the wall, not the continuation of the teaser above it.
+{% endcomment %}
+
+{% if tail %}
+  <div class="article-body article-container article-body--registration-wall-tail">
+    <p>…{{ tail }}</p>
+  </div>
+{% endif %}
