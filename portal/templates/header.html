@@ -25,31 +25,31 @@
         {% endblock %}
       {% else %}
         {% if is_portada and category and category.newsletter or is_portada and category and category.has_newsletter %}
-          <div class="fixed-items"{% if user.is_anonymous %} data-nl-tooltip-host{% elif category_nl_subscribed %} data-nl-unsubscribe-host{% endif %}>
+          <div class="fixed-items"{% if user.is_anonymous %} data-nl-tooltip-host{% elif nl_subscribed %} data-nl-unsubscribe-host{% endif %}>
             <button type="button" class="newsletter-header"{% if user.is_anonymous %} data-nl-tooltip-trigger{% endif %}>
               <svg class="newsletter-header__icon-default" xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
               <svg class="newsletter-header__icon-active" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 12 12"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M1 6.733 4.333 10 11 3"/></svg>
               {% block newsletter_header %}
-                <span class="newsletter-header__text">{% if category_nl_subscribed %}Newsletter activada{% else %}Recibir newsletter de {{ category }}{% endif %}</span>
+                <span class="newsletter-header__text">{% if nl_subscribed %}Newsletter activada{% else %}Recibir newsletter de {{ category }}{% endif %}</span>
               {% endblock %}
             </button>
             {% if user.is_anonymous %}
               {% include "newsletter/_nl_tooltip.html" %}
-            {% elif category_nl_subscribed %}
+            {% elif nl_subscribed %}
               {% include "newsletter/_nl_unsubscribe_tooltip.html" with nl_name=category %}
             {% endif %}
           </div>
         {% elif is_portada and publication and publication != default_pub and publication_cover_newsletter %}
-          <div class="fixed-items"{% if user.is_anonymous %} data-nl-tooltip-host{% elif category_nl_subscribed %} data-nl-unsubscribe-host{% endif %}>
+          <div class="fixed-items"{% if user.is_anonymous %} data-nl-tooltip-host{% elif nl_subscribed %} data-nl-unsubscribe-host{% endif %}>
             {% block publication_newsletter_header %}
               <button type="button" class="newsletter-header"{% if user.is_anonymous %} data-nl-tooltip-trigger{% endif %}>
                 <svg class="newsletter-header__icon-default" xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 13 13"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.028" d="M11.314 3.085c0-.566-.463-1.028-1.029-1.028H2.058c-.566 0-1.029.462-1.029 1.028m10.285 0v6.17c0 .566-.463 1.03-1.029 1.03H2.058a1.03 1.03 0 0 1-1.029-1.03v-6.17m10.285 0-5.143 3.6-5.142-3.6"/></svg>
                 <svg class="newsletter-header__icon-active" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 12 12"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M1 6.733 4.333 10 11 3"/></svg>
-                <span class="newsletter-header__text">{% if category_nl_subscribed %}Newsletter activada{% else %}Recibir newsletter de {{ publication_nl_category|default:publication }}{% endif %}</span>
+                <span class="newsletter-header__text">{% if nl_subscribed %}Newsletter activada{% else %}Recibir newsletter de {{ publication_nl_category|default:publication }}{% endif %}</span>
               </button>
               {% if user.is_anonymous %}
                 {% include "newsletter/_nl_tooltip.html" %}
-              {% elif category_nl_subscribed %}
+              {% elif nl_subscribed %}
                 {% include "newsletter/_nl_unsubscribe_tooltip.html" with nl_name=publication_nl_category|default:publication %}
               {% endif %}
             {% endblock %}
