@@ -1111,16 +1111,17 @@ blockquote.tiktok-embed {
   }
 }
 
-// Newsletter tooltip — generic component shown on click of a disabled switch
-// for anonymous users. The host element (the trigger's nearest container that
-// also holds the `.nl-tooltip`) gets `position: relative` via the data attribute.
-[data-nl-tooltip-host],
+// Help tooltip — generic click-triggered popover shown for anonymous users
+// (newsletter switches, article "Guardar" button, etc.). The host element (the
+// trigger's nearest container that also holds the `.help-tooltip`) gets
+// `position: relative` via the data attribute.
+[data-help-tooltip-host],
 [data-nl-unsubscribe-host] {
   position: relative;
 }
 
-.nl-tooltip,
-.upper-content .upper-left-content .fixed-items .nl-tooltip {
+.help-tooltip,
+.upper-content .upper-left-content .fixed-items .help-tooltip {
   position: absolute;
   top: 100%;
   right: 0;

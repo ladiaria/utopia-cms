@@ -784,10 +784,12 @@
       });
     });
 
-    // Newsletter tooltip — toggle on trigger click, close on outside click
-    qsa("[data-nl-tooltip-host]").forEach(function (host) {
-      const trigger = qs("[data-nl-tooltip-trigger]", host);
-      const tooltip = qs(".nl-tooltip", host);
+    // Help tooltip — generic click-triggered popover (used by the newsletter
+    // switches and the article "Guardar" button). Toggle on trigger click,
+    // close on outside click.
+    qsa("[data-help-tooltip-host]").forEach(function (host) {
+      const trigger = qs("[data-help-tooltip-trigger]", host);
+      const tooltip = qs(".help-tooltip", host);
       if (!trigger || !tooltip) return;
 
       trigger.addEventListener("click", function (event) {
@@ -797,9 +799,9 @@
     });
 
     document.addEventListener("click", function (event) {
-      qsa(".nl-tooltip").forEach(function (tooltip) {
+      qsa(".help-tooltip").forEach(function (tooltip) {
         if (tooltip.hasAttribute("hidden")) return;
-        const host = tooltip.closest("[data-nl-tooltip-host]");
+        const host = tooltip.closest("[data-help-tooltip-host]");
         if (host && !host.contains(event.target)) {
           tooltip.setAttribute("hidden", "");
         }

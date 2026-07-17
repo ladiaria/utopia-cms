@@ -106,6 +106,19 @@ article#main-article {
           order: 1;
         }
       }
+
+      // Anonymous "Guardar" tooltip: the trigger is the leftmost button, so the
+      // shared .help-tooltip (which defaults to a right anchor) is flipped to the
+      // left here, with its arrow near the left edge under the button.
+      .help-tooltip {
+        right: auto;
+        left: 0;
+
+        &::before {
+          right: auto;
+          left: 16px;
+        }
+      }
     }
     .right-buttons {
       position: relative;
