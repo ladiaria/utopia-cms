@@ -102,11 +102,20 @@
     }, 1000); // Fallback
   }
 
+  // Reflect the share sheet open state on the mobile nav share icon so it shows
+  // its active (black) state while the sheet is open.
+  function setMobileShareActive(isActive) {
+    qsa(".js-nav-menu__share").forEach(function (btn) {
+      btn.classList.toggle("active", isActive);
+    });
+  }
+
   function bindMobileShare() {
     onAll(".js-nav-menu__share", "click", function (event) {
       const share = qs("#article-share-full");
       if (share) {
         share.classList.toggle("active");
+        setMobileShareActive(share.classList.contains("active"));
       }
       event.preventDefault();
     });
@@ -116,6 +125,7 @@
       if (share) {
         share.classList.remove("active");
       }
+      setMobileShareActive(false);
     });
   }
 
@@ -318,6 +328,44 @@
 
       window.addEventListener("scroll", updateHeaderStickyState, { passive: true });
       updateHeaderStickyState();
+    }
+
+    // Article breadcrumb (mobile): hides when scrolling down and reappears pinned
+    // below the header when scrolling up. The CSS only applies on mobile
+    // (body.article-detail); here we set the offset = header height and toggle the
+    // class based on the scroll direction.
+    const mobileBreadcrumb = qs(".article-mobile-breadcrumb");
+    if (mobileBreadcrumb && headerElement) {
+      let lastBreadcrumbScrollY = window.scrollY || 0;
+      const breadcrumbThreshold = 5; // ignore micro-scrolls
+
+      const setBreadcrumbOffset = function () {
+        // offsetHeight rounds up the header's 0.5px border-bottom (64.5 -> 65),
+        // leaving an extra pixel; flooring the rect gives the real height (64).
+        const headerHeight = Math.floor(
+          headerElement.getBoundingClientRect().height
+        );
+        mobileBreadcrumb.style.setProperty(
+          "--breadcrumb-offset",
+          headerHeight + "px"
+        );
+      };
+
+      const updateBreadcrumbReveal = function () {
+        const currentY = window.scrollY || 0;
+        if (currentY <= 0) {
+          mobileBreadcrumb.classList.remove("is-hidden");
+        } else if (currentY > lastBreadcrumbScrollY + breadcrumbThreshold) {
+          mobileBreadcrumb.classList.add("is-hidden");
+        } else if (currentY < lastBreadcrumbScrollY - breadcrumbThreshold) {
+          mobileBreadcrumb.classList.remove("is-hidden");
+        }
+        lastBreadcrumbScrollY = currentY;
+      };
+
+      setBreadcrumbOffset();
+      window.addEventListener("scroll", updateBreadcrumbReveal, { passive: true });
+      window.addEventListener("resize", setBreadcrumbOffset, { passive: true });
     }
 
     function initCategoryNavbarGradients() {
