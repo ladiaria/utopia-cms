@@ -8,9 +8,9 @@
     <span>Newsletter</span>
   </div>
   <div class="cover-newsletter__body">
-    <div class="cover-newsletter__header"{% if user.is_anonymous %} data-nl-tooltip-host{% endif %}>
+    <div class="cover-newsletter__header"{% if user.is_anonymous %} data-help-tooltip-host{% endif %}>
       <h2 class="cover-newsletter__title">{{ title }}</h2>
-      <label class="cover-newsletter__switch"{% if user.is_anonymous %} data-nl-tooltip-trigger{% endif %}>
+      <label class="cover-newsletter__switch"{% if user.is_anonymous %} data-help-tooltip-trigger{% endif %}>
         {% if not user.is_anonymous %}
           <input type="checkbox"
             id="id_cover_newsletter_{{ slug }}"
