@@ -271,6 +271,23 @@
     &.active svg path {
       fill: #000;
     }
+
+    // Two-SVG icon swap (share, radio, most-read): the default (inactive) glyph
+    // shows normally, and the bolder active glyph shows when the button is active
+    // (.active, toggled by URL match or JS) or while pressed (:active).
+    &__icon-active {
+      display: none;
+    }
+
+    &.active,
+    &:active {
+      .nav-menu-button__icon-default {
+        display: none;
+      }
+      .nav-menu-button__icon-active {
+        display: block;
+      }
+    }
   }
 
   nav {

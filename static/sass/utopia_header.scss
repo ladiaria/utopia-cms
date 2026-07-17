@@ -50,6 +50,12 @@ header {
     body.article-detail &:not(.sticky) {
       border-bottom: none;
     }
+
+    // When the breadcrumb is revealed (not .is-hidden) it provides the divider
+    // line itself, so the sticky header hides its own to avoid a double border.
+    body.article-detail:has(.article-mobile-breadcrumb:not(.is-hidden)) &.sticky {
+      border-bottom: none;
+    }
   }
 }
 
@@ -409,6 +415,27 @@ header {
     min-height: px-to-rem(44px);
     border-bottom: 1px solid $color-divider;
     justify-content: center;
+
+    // Reveal-on-scroll-up: on the article detail the breadcrumb is pinned below the
+    // sticky header. JS (ld.js) sets --breadcrumb-offset = header height and toggles
+    // .is-hidden based on the scroll direction. Its height is reserved by
+    // .header-nav-wrapper (below) to avoid the layout shift when it leaves the flow.
+    body.article-detail & {
+      position: fixed;
+      top: var(--breadcrumb-offset, px-to-rem(56px));
+      left: 0;
+      right: 0;
+      z-index: 1000; // below the header (z-index: 1001)
+      background-color: white;
+      padding: 0 20px;
+      transition: transform 0.25s ease;
+      will-change: transform;
+
+      &.is-hidden {
+        // slides up, behind the sticky header
+        transform: translateY(calc(-100% - var(--breadcrumb-offset, #{px-to-rem(56px)})));
+      }
+    }
   }
 }
 
@@ -419,6 +446,12 @@ header {
 
   @media #{$medium-and-down} {
     padding: 0 20px;
+
+    // The article breadcrumb is position: fixed (see above); reserve its height
+    // here so the content doesn't jump when it leaves the normal flow.
+    body.article-detail & {
+      min-height: px-to-rem(44px);
+    }
   }
 }
 

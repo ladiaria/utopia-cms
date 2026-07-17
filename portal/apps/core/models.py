@@ -1632,9 +1632,8 @@ class ArticleBase(Model, CT):
         Assumes that body is in Markdown format. (simple text, and html
         are also available)
 
-        Examples: * menos de un minuto
-                  * 1 min
-                  * 3 min
+        Examples: * 1 minuto
+                  * 3 minutos
         """
         wpm = 250
         result = readtime.of_markdown(self.body, wpm=wpm)
@@ -1646,9 +1645,9 @@ class ArticleBase(Model, CT):
             exts_sec = exts_sec + ext_res.seconds
 
         total_sec = art_sec + exts_sec
-        if total_sec < 60:
-            return 'Menos de 1 minuto'
-        elif 60 <= total_sec and total_sec <= 119:
+        # Sub-minute articles also show "1 minuto" to keep the label short and
+        # avoid breaking the layout (the old "Menos de 1 minuto" was too long).
+        if total_sec < 120:
             return '1 minuto'
         else:
             mins = str(old_div(total_sec, 60)) + ' minutos'

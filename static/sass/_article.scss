@@ -32,7 +32,7 @@ article#main-article {
   figure.principal .article-caption {
     padding-top: 8px;
     p {
-      font-size: px-to-rem(12px);
+      font-size: px-to-rem(13px);
       color: #999;
       margin: 0;
       line-height: px-to-rem(14px);
@@ -117,6 +117,10 @@ article#main-article {
         button > span {
           display: none;
         }
+        // Keep the comment count visible on mobile (only the text label hides).
+        button > span.comment-count {
+          display: inline;
+        }
       }
     }
 
@@ -172,6 +176,16 @@ article#main-article {
           display: none;
         }
       }
+    }
+
+    // Comment count shown in place of the "Comentar" label when the article has
+    // comments (see article/detail.html). Kept at 14px on mobile too, per design.
+    .comment-count {
+      font-family: $sans;
+      font-size: px-to-rem(14px);
+      line-height: px-to-rem(14px);
+      letter-spacing: px-to-rem(0.42px);
+      color: #000;
     }
     .popup-compartir {
       --border-radius: 8px;
@@ -375,6 +389,12 @@ article#main-article {
     gap: 4px;
     a {
       text-decoration: underline;
+    }
+
+    .reading-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
   }
 
