@@ -191,6 +191,23 @@ article#main-article {
       }
     }
 
+    // The label is swapped for the comment count once the async fetch resolves
+    // (see fetchCommentCount in ld.js). Fade it out and back in so the text does
+    // not jump abruptly.
+    .action-bar-comment-btn span {
+      transition: opacity 0.15s ease;
+
+      &.is-swapping {
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .action-bar-comment-btn span {
+        transition: none;
+      }
+    }
+
     // Comment count shown in place of the "Comentar" label when the article has
     // comments (see article/detail.html). Kept at 14px on mobile too, per design.
     .comment-count {
