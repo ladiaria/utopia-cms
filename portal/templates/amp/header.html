@@ -1,10 +1,22 @@
 {% load static %}
 
 <div class="mobile-header mobile-header--amp mobile-header--{{ publication.slug }}{% block extra-class %}{% endblock %}">
-  <a href="{% url 'home' %}" class="ladiaria-logo">{# TODO: change/remove ladiaria-logo class #}
-    {% block logo_img %}
-      <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
-    {% endblock %}
-  </a>
+  {# Three zones so the logo stays centered on the full width regardless of what the sides hold. #}
+  <div class="mobile-header__row">
+    <div class="mobile-header__left">{% block header_left %}{% endblock %}</div>
+    <a href="{% url 'home' %}" class="ladiaria-logo">{# TODO: change/remove ladiaria-logo class #}
+      {% block logo_img %}
+        <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
+      {% endblock %}
+    </a>
+    <div class="mobile-header__right">
+      {% block header_search %}
+        <a href="{% url 'search' %}" class="mobile-header__search" aria-label="Buscar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16"><path fill="#181818" d="m15.737 14.48-3.514-3.515a6.816 6.816 0 1 0-1.258 1.257l3.517 3.518a.889.889 0 1 0 1.258-1.258zM1.79 6.82a5.03 5.03 0 1 1 10.061 0 5.03 5.03 0 0 1-10.061 0"/></svg>
+        </a>
+      {% endblock %}
+      {% block login %}<a on="tap:amp-access.login" class="btn ingresar">Ingresá</a>{% endblock %}
+      {% block subscribe %}<a href="{% url 'subscribe_landing' %}" class="btn suscribite" amp-access="NOT subscriber_any" amp-access-hide>Suscribite</a>{% endblock %}
+    </div>
+  </div>
 </div>
-{% block login %}<a on="tap:amp-access.login" class="btn ingresar">Ingresá</a>{% endblock %}
