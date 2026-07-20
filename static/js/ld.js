@@ -547,10 +547,15 @@
           }
           // The server always renders "Comentar" (comments_count is not
           // computed server-side anymore), so replace the label with the count.
+          // Fade out before swapping the text so it does not change abruptly.
           const actionBarSpan = qs(".action-bar-comment-btn span");
           if (actionBarSpan) {
-            actionBarSpan.textContent = count;
-            actionBarSpan.className = "comment-count";
+            actionBarSpan.classList.add("is-swapping");
+            setTimeout(function () {
+              actionBarSpan.textContent = count;
+              // Drops "is-swapping" too, which fades the count back in.
+              actionBarSpan.className = "comment-count";
+            }, 150);
           }
         })
         .catch(function () {});
