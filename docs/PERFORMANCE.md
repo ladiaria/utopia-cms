@@ -113,11 +113,11 @@ was never revisited.
 
 #### `core/views/article.py` — `article_detail()`
 - Removed the `try/except` block that called the Coral GraphQL API.
-- `comments_count` is now hardcoded to `0` server-side.
-- The article templates already had `{% if comments_count > 0 %}...{% else %}Comentar{% endif %}`
-  fallback branches, so the UI degrades gracefully: the button shows "Comentar" and the header
-  shows "Comentarios" without a count. Coral renders the real count client-side when the widget
-  loads anyway.
+- `comments_count` is no longer part of the template context at all. The templates render a plain
+  "Comentar" label, and `fetchCommentCount()` in `ld.js` replaces it with the real number after
+  page load, using the cached `coral-comment-count` endpoint.
+- The AMP template keeps the static "Comentar" label: AMP forbids the custom JS that does the
+  fetch, so showing a count there would require an `amp-list` component.
 
 ### Expected impact
 - Every article page request saves one outbound HTTP call (typically 200–3000ms depending on
