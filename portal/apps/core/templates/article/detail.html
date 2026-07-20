@@ -319,8 +319,13 @@
               <span>Guardar</span>
             </button>
             <div class="help-tooltip" role="tooltip" hidden>
-              <h4 class="help-tooltip__title">Exclusivo para suscriptores</h4>
-              <p class="help-tooltip__body">Contenido exclusivo para suscripciones de pago</p>
+              <h4 class="help-tooltip__title">Ingresá para guardar este artículo</h4>
+              <p class="help-tooltip__body">
+                Para guardar este artículo y leerlo más tarde,
+                <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">ingresá</a>
+                o
+                <a href="{% url 'account-signup' %}?next={{ request.path|urlencode }}">creá una cuenta</a>.
+              </p>
             </div>
           {% endif %}
           {% if article.audio %}
