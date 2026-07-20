@@ -1167,13 +1167,35 @@ span.small.soft {
   padding-bottom: 24px;
   border-bottom: 0.5px solid #ABABAB;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 24px;
 }
 
 /* Read later / Fav */
 
-.read-later__btn,
+/* Pill with icon + label. .fav__btn keeps the old round icon-only shape; it has
+   no markup in any AMP template, so it is left as it was. */
+.read-later__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 0.5px solid #ABABAB;
+  background: #fff;
+  box-sizing: border-box;
+  cursor: pointer;
+  outline: none;
+  font-family: "Dialect Gothic A", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 0.875rem;
+  letter-spacing: 0.03em;
+  color: #000;
+  white-space: nowrap;
+}
+
 .fav__btn {
   display: flex;
   align-items: center;
@@ -1190,25 +1212,28 @@ span.small.soft {
   width: 36px;
 }
 
-.read-later__saved,
+/* Same pill as the unsaved state; only the icon changes (filled vs outlined). */
 .fav__saved {
   background: #222;
   color: #fff;
 }
 
-.read-later__saved:hover,
+/* Filled grey pill: the border blends into the background instead of framing it. */
+.read-later__saved:hover {
+  background: #E9E9E9;
+  border-color: #E9E9E9;
+}
+
 .fav__saved:hover {
   color: #fff;
 }
 
-.read-later .info,
 .fav .info {
   display: block;
   margin-top: 10px;
   margin-bottom: 10px;
 }
 
-.read-later .info a:hover,
 .fav .info a:hover {
   text-decoration: none;
 }
