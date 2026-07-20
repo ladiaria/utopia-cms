@@ -4,9 +4,9 @@
   {# Three zones so the logo stays centered on the full width regardless of what the sides hold. #}
   <div class="mobile-header__row">
     <div class="mobile-header__left">{% block header_left %}{% endblock %}</div>
-    <a href="{% url 'home' %}" class="ladiaria-logo">{# TODO: change/remove ladiaria-logo class #}
+    <a href="{% url 'home' %}" class="mobile-header__logo">
       {% block logo_img %}
-        <amp-img width="56" height="22" layout="fixed" class='ladiaria-amp-logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
+        <amp-img width="56" height="22" layout="fixed" class='mobile-header__logo-img' src="{% static HOMEV3_SECONDARY_LOGO %}" alt="Logo de {{ site.name }}"></amp-img>
       {% endblock %}
     </a>
     <div class="mobile-header__right">
