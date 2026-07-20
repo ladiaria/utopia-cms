@@ -245,8 +245,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
         else:
             report_form = feedback_form(article=article, request=request)
 
-    comments_count = 0
-
+    # No comments_count in the context: fetching it here meant a blocking call to Coral on every
+    # article render. Templates now get it from the coral-comment-count endpoint via ld.js.
     publication = article.main_section.edition.publication if article.main_section else None
     register_wall_param = request.GET.get("register_wall")
     register_wall_state = {"1": "email", "login": "login", "signup": "signup"}.get(register_wall_param)
@@ -275,7 +275,6 @@ def article_detail(request, year, month, slug, domain_slug=None):
         'section': article.publication_section(),
         'header_display': article.header_display,
         'tag_list': reorder_tag_list(article, get_article_tags(article)),
-        'comments_count': comments_count,
         'publication': publication,
         'signupwall_enabled': settings.SIGNUPWALL_ENABLED,
         "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,

@@ -545,6 +545,13 @@
           if (upperP) {
             upperP.textContent = "Comentarios (" + count + ")";
           }
+          // The server always renders "Comentar" (comments_count is not
+          // computed server-side anymore), so replace the label with the count.
+          const actionBarSpan = qs(".action-bar-comment-btn span");
+          if (actionBarSpan) {
+            actionBarSpan.textContent = count;
+            actionBarSpan.className = "comment-count";
+          }
         })
         .catch(function () {});
     })();
