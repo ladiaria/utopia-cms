@@ -850,6 +850,15 @@ main#content {
   line-height: 1.5;
 }
 
+/* Without this they fall back to the browser's bold. */
+.article-body h2,
+.article-body h3,
+.article-body h4,
+.article-body h5,
+.article-body h6 {
+  font-weight: 500;
+}
+
 .article-body ul,
 .article-body ol {
   font-size: 18px;
