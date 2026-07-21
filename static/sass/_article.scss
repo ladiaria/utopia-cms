@@ -261,7 +261,11 @@ article#main-article {
         max-width: 0;
         margin-left: 0;
         opacity: 0;
-        transition-delay: 0.25s;
+        // Small head start for the label, just enough for it to begin shrinking:
+        // the count opens while the label closes, so the button goes from its
+        // initial width to its final one without narrowing down to the icon in
+        // between. Waiting for the label to finish would show that third state.
+        transition-delay: 0.1s;
       }
 
       &.has-count {
@@ -269,7 +273,6 @@ article#main-article {
           max-width: 0;
           margin-left: 0;
           opacity: 0;
-          transition-delay: 0s;
         }
 
         .comment-count {
