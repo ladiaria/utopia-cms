@@ -109,17 +109,61 @@ article#main-article {
 
       // Anonymous "Guardar" tooltip: the trigger is the leftmost button, so the
       // shared .help-tooltip (which defaults to a right anchor) is flipped to the
-      // left here, with its arrow near the left edge under the button.
+      // left here. Its own arrow is dropped: it is drawn on the trigger instead
+      // (see .action-bar-read-later-anon below), which is the only element that
+      // knows where the button actually sits.
       .help-tooltip {
         right: auto;
         left: 0;
 
         &::before {
-          right: auto;
-          left: 16px;
+          display: none;
+        }
+      }
+
+      // On mobile the action bar is centered, so a fixed-width tooltip anchored
+      // to this button group overflows the viewport and adds horizontal scroll.
+      // Dropping the positioning context here makes the tooltip resolve against
+      // .article-action-bar instead, so it can span the full content width.
+      @media #{$medium-and-down} {
+        &[data-help-tooltip-host] {
+          position: static;
+        }
+
+        .help-tooltip {
+          left: 0;
+          right: 0;
+          width: auto;
+          max-width: none;
+          // .article-action-bar's bottom padding is 24px on mobile: cancel it so
+          // the tooltip keeps its 16px gap below the button.
+          margin-top: -8px;
         }
       }
     }
+
+    // Arrow of the anonymous "Guardar" tooltip, drawn on the trigger itself so
+    // it stays centered under the button at any breakpoint.
+    .action-bar-read-later-anon {
+      position: relative;
+      // Buttons in this bar clip their content, which would eat the arrow.
+      overflow: visible;
+
+      &:has(+ .help-tooltip:not([hidden]))::after {
+        content: "";
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        background-color: #fab04f;
+        border-radius: 1px;
+        transform: translateX(-50%) rotate(45deg);
+        // Above the tooltip (z-index 10) so the square blends into its top edge.
+        z-index: 11;
+      }
+    }
+
     .right-buttons {
       position: relative;
 
