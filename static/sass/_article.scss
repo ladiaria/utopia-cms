@@ -235,19 +235,53 @@ article#main-article {
       }
     }
 
-    // The label is swapped for the comment count once the async fetch resolves
-    // (see fetchCommentCount in ld.js). Fade it out and back in so the text does
-    // not jump abruptly.
-    .action-bar-comment-btn span {
-      transition: opacity 0.15s ease;
+    // The "Comentar" label gives way to the comment count once the async fetch
+    // resolves and ld.js flags the button with .has-count. The whole sequence is
+    // here so there is a single source for the timings: the label collapses to
+    // the left while it fades, and the count comes in after it (transition-delay
+    // matches the collapse duration), so the button never resizes abruptly.
+    .action-bar-comment-btn {
+      // The 4px separation moves to the spans themselves: a flex gap would also
+      // apply to the collapsed (zero-width) span and leave a dangling space.
+      gap: 0;
 
-      &.is-swapping {
+      > span {
+        overflow: hidden;
+        white-space: nowrap;
+        transition: opacity 0.15s ease, max-width 0.25s ease, margin-left 0.25s ease;
+      }
+
+      .action-bar-comment-btn__label {
+        max-width: 12ch;
+        margin-left: 4px;
+        opacity: 1;
+      }
+
+      .comment-count {
+        max-width: 0;
+        margin-left: 0;
         opacity: 0;
+        transition-delay: 0.25s;
+      }
+
+      &.has-count {
+        .action-bar-comment-btn__label {
+          max-width: 0;
+          margin-left: 0;
+          opacity: 0;
+          transition-delay: 0s;
+        }
+
+        .comment-count {
+          max-width: 4ch;
+          margin-left: 4px;
+          opacity: 1;
+        }
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .action-bar-comment-btn span {
+      .action-bar-comment-btn > span {
         transition: none;
       }
     }
