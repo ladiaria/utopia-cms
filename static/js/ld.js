@@ -545,17 +545,17 @@
           if (upperP) {
             upperP.textContent = "Comentarios (" + count + ")";
           }
-          // The server always renders "Comentar" (comments_count is not
-          // computed server-side anymore), so replace the label with the count.
-          // Fade out before swapping the text so it does not change abruptly.
-          const actionBarSpan = qs(".action-bar-comment-btn span");
-          if (actionBarSpan) {
-            actionBarSpan.classList.add("is-swapping");
-            setTimeout(function () {
-              actionBarSpan.textContent = count;
-              // Drops "is-swapping" too, which fades the count back in.
-              actionBarSpan.className = "comment-count";
-            }, 150);
+          // The server always renders "Comentar" (comments_count is not computed
+          // server-side anymore), so the count replaces that label here. Filling
+          // the count and flagging the button is all this does: collapsing the
+          // label and bringing the count in is sequenced by the stylesheet.
+          const actionBarBtn = qs(".action-bar-comment-btn");
+          if (actionBarBtn) {
+            const countSpan = qs(".comment-count", actionBarBtn);
+            if (countSpan) {
+              countSpan.textContent = count;
+              actionBarBtn.classList.add("has-count");
+            }
           }
         })
         .catch(function () {});

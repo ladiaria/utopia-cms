@@ -321,7 +321,7 @@
             <div class="help-tooltip" role="tooltip" hidden>
               <h4 class="help-tooltip__title">Ingresá para guardar este artículo</h4>
               <p class="help-tooltip__body">
-                Para guardar este artículo y leerlo más tarde,
+                Para guardar este artículo y leerlo después,
                 <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">ingresá</a>
                 o
                 <a href="{% url 'account-signup' %}?next={{ request.path|urlencode }}">creá una cuenta</a>.
@@ -375,10 +375,12 @@
           <button class="action-bar-comment-btn" aria-label="Comentar">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
             {% comment %}
-              The count is not available server-side: fetchCommentCount() in ld.js replaces this
-              label with the number and swaps in the "comment-count" class once Coral responds.
+              The count is not available server-side: fetchCommentCount() in ld.js fills the
+              count span and adds "has-count" to the button once Coral responds. The transition
+              between both labels lives entirely in the stylesheet.
             {% endcomment %}
-            <span>Comentar</span>
+            <span class="action-bar-comment-btn__label">Comentar</span>
+            <span class="comment-count"></span>
           </button>
         </div>
       </div>
