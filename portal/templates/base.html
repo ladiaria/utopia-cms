@@ -213,6 +213,8 @@
           LDUser.is_authenticated = true;
           LDUser.id = {{ user.id }};
           LDUser.subscriber = {{ is_subscriber|lower }};
+          {# subscriber of any publication, unlike LDUser.subscriber which is scoped to the current page #}
+          LDUser.subscriber_any = {{ is_subscriber_any|lower }};
           LDUser.subscriber_id = {{ user.subscriber.id }};
           LDUser.firstName = "{{ user.first_name }}";
           LDUser.lastName = "{{ user.last_name }}";
