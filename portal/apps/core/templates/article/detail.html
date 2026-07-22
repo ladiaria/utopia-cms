@@ -50,7 +50,9 @@
     // Article data exposed for the SIIM / analytics GTM script.
     window.LDArticle = {
       author: "{% for author in article.get_authors %}{{ author.name|escapejs }}{% if not forloop.last %}, {% endif %}{% endfor %}",
-      tags: "{{ article.tags|escapejs }}"
+      tags: "{{ article.tags|escapejs }}",
+      // true when the signupwall blocked this article (no credits left or restricted article)
+      paywall: {{ request.signupwall|yesno:"true,false" }}
     };
   </script>
   <script type="text/javascript">
