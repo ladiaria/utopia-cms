@@ -284,9 +284,11 @@
       <div class="container" amp-access="access AND (article_allowed OR NOT article_restricted)" amp-access-hide>
         <div class="talk-login align-center">
         <span class="title">Comentar este artículo</span>
-          <a href="{{ request.path }}#comentarios" class="btn">
-            {% if comments_count > 0 %}{{ comments_count }} comentario{{ comments_count|pluralize }}{% else %}Comentar{% endif %}
-          </a>
+          {% comment %}
+            No count here: it is not available server-side and AMP forbids the custom JS that
+            fetches it on the regular template. Showing it would require an amp-list component.
+          {% endcomment %}
+          <a href="{{ request.path }}#comentarios" class="btn">Comentar</a>
         </div>
       </div>
     {% endif %}

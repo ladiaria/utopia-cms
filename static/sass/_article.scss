@@ -32,7 +32,7 @@ article#main-article {
   figure.principal .article-caption {
     padding-top: 8px;
     p {
-      font-size: px-to-rem(12px);
+      font-size: px-to-rem(13px);
       color: #999;
       margin: 0;
       line-height: px-to-rem(14px);
@@ -106,7 +106,64 @@ article#main-article {
           order: 1;
         }
       }
+
+      // Anonymous "Guardar" tooltip: the trigger is the leftmost button, so the
+      // shared .help-tooltip (which defaults to a right anchor) is flipped to the
+      // left here. Its own arrow is dropped: it is drawn on the trigger instead
+      // (see .action-bar-read-later-anon below), which is the only element that
+      // knows where the button actually sits.
+      .help-tooltip {
+        right: auto;
+        left: 0;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      // On mobile the action bar is centered, so a fixed-width tooltip anchored
+      // to this button group overflows the viewport and adds horizontal scroll.
+      // Dropping the positioning context here makes the tooltip resolve against
+      // .article-action-bar instead, so it can span the full content width.
+      @media #{$medium-and-down} {
+        &[data-help-tooltip-host] {
+          position: static;
+        }
+
+        .help-tooltip {
+          left: 0;
+          right: 0;
+          width: auto;
+          max-width: none;
+          // .article-action-bar's bottom padding is 24px on mobile: cancel it so
+          // the tooltip keeps its 16px gap below the button.
+          margin-top: -8px;
+        }
+      }
     }
+
+    // Arrow of the anonymous "Guardar" tooltip, drawn on the trigger itself so
+    // it stays centered under the button at any breakpoint.
+    .action-bar-read-later-anon {
+      position: relative;
+      // Buttons in this bar clip their content, which would eat the arrow.
+      overflow: visible;
+
+      &:has(+ .help-tooltip:not([hidden]))::after {
+        content: "";
+        position: absolute;
+        bottom: -25px;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        background-color: #fab04f;
+        border-radius: 1px;
+        transform: translateX(-50%) rotate(45deg);
+        // Above the tooltip (z-index 10) so the square blends into its top edge.
+        z-index: 11;
+      }
+    }
+
     .right-buttons {
       position: relative;
 
@@ -116,6 +173,10 @@ article#main-article {
         }
         button > span {
           display: none;
+        }
+        // Keep the comment count visible on mobile (only the text label hides).
+        button > span.comment-count {
+          display: inline;
         }
       }
     }
@@ -172,6 +233,70 @@ article#main-article {
           display: none;
         }
       }
+    }
+
+    // The "Comentar" label gives way to the comment count once the async fetch
+    // resolves and ld.js flags the button with .has-count. The whole sequence is
+    // here so there is a single source for the timings: the label collapses to
+    // the left while it fades, and the count comes in after it (transition-delay
+    // matches the collapse duration), so the button never resizes abruptly.
+    .action-bar-comment-btn {
+      // The 4px separation moves to the spans themselves: a flex gap would also
+      // apply to the collapsed (zero-width) span and leave a dangling space.
+      gap: 0;
+
+      > span {
+        overflow: hidden;
+        white-space: nowrap;
+        transition: opacity 0.15s ease, max-width 0.25s ease, margin-left 0.25s ease;
+      }
+
+      .action-bar-comment-btn__label {
+        max-width: 12ch;
+        margin-left: 4px;
+        opacity: 1;
+      }
+
+      .comment-count {
+        max-width: 0;
+        margin-left: 0;
+        opacity: 0;
+        // Small head start for the label, just enough for it to begin shrinking:
+        // the count opens while the label closes, so the button goes from its
+        // initial width to its final one without narrowing down to the icon in
+        // between. Waiting for the label to finish would show that third state.
+        transition-delay: 0.1s;
+      }
+
+      &.has-count {
+        .action-bar-comment-btn__label {
+          max-width: 0;
+          margin-left: 0;
+          opacity: 0;
+        }
+
+        .comment-count {
+          max-width: 4ch;
+          margin-left: 4px;
+          opacity: 1;
+        }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .action-bar-comment-btn > span {
+        transition: none;
+      }
+    }
+
+    // Comment count shown in place of the "Comentar" label when the article has
+    // comments (see article/detail.html). Kept at 14px on mobile too, per design.
+    .comment-count {
+      font-family: $sans;
+      font-size: px-to-rem(14px);
+      line-height: px-to-rem(14px);
+      letter-spacing: px-to-rem(0.42px);
+      color: #000;
     }
     .popup-compartir {
       --border-radius: 8px;
@@ -375,6 +500,12 @@ article#main-article {
     gap: 4px;
     a {
       text-decoration: underline;
+    }
+
+    .reading-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
   }
 

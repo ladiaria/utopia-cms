@@ -143,6 +143,11 @@ main {
   border-color: var(--off-black) !important;
 }
 
+/* hide the user badge ("Staff") next to the commenter name */
+.coral-comment-userTag {
+  display: none !important;
+}
+
 body:not(.logged-in) .coral-comment-actionBar,
 body:not(.logged-in) #post-comment-form,
 body:not(.logged-in) .coral-guidelines,

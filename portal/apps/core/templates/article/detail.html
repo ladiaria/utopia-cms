@@ -302,7 +302,7 @@
       {% endif %}
 
       <div class="article-action-bar">
-        <div class="left-buttons">
+        <div class="left-buttons"{% if not user.is_authenticated %} data-help-tooltip-host{% endif %}>
           {% if user.is_authenticated %}
             {% if not article_restricted_cf or restricted_access %}
               <button class="ld-audio__action-bar-read-later{% if followed %} hidden{% endif %}" aria-label="Guardar">
@@ -314,6 +314,21 @@
                 <span>Guardado</span>
               </button>
             {% endif %}
+          {% else %}
+            {# Anonymous users get a disabled-like "Guardar" button that opens the subscriber tooltip (reuses the .help-tooltip component). #}
+            <button type="button" class="action-bar-read-later-anon" data-help-tooltip-trigger aria-label="Guardar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M5 5.167c0-.934 0-1.4.182-1.757.16-.314.414-.569.728-.728.357-.182.823-.182 1.757-.182h4.666c.934 0 1.4 0 1.757.182.314.16.569.414.728.728.182.357.182.823.182 1.757v11.087c0 .405 0 .608-.084.718a.42.42 0 0 1-.309.165c-.139.009-.307-.104-.644-.328L10 14.167l-3.963 2.641c-.337.225-.505.338-.645.33a.42.42 0 0 1-.308-.166C5 16.863 5 16.66 5 16.255z"/></svg>
+              <span>Guardar</span>
+            </button>
+            <div class="help-tooltip" role="tooltip" hidden>
+              <h4 class="help-tooltip__title">Ingresá para guardar este artículo</h4>
+              <p class="help-tooltip__body">
+                Para guardar este artículo y leerlo después,
+                <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">ingresá</a>
+                o
+                <a href="{% url 'account-signup' %}?next={{ request.path|urlencode }}">creá una cuenta</a>.
+              </p>
+            </div>
           {% endif %}
           {% if article.audio %}
             {% include "article/custom_audio_component.html" %}
@@ -361,7 +376,13 @@
           </button>
           <button class="action-bar-comment-btn" aria-label="Comentar">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
-            <span>Comentar</span>
+            {% comment %}
+              The count is not available server-side: fetchCommentCount() in ld.js fills the
+              count span and adds "has-count" to the button once Coral responds. The transition
+              between both labels lives entirely in the stylesheet.
+            {% endcomment %}
+            <span class="action-bar-comment-btn__label">Comentar</span>
+            <span class="comment-count"></span>
           </button>
         </div>
       </div>
@@ -402,9 +423,11 @@
                 {% endif %}
                 -
               </span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="#000" d="M9 2.126c-3.858 0-7 3.142-7 7s3.142 7 7 7 7-3.143 7-7-3.142-7-7-7m0 1.4a5.59 5.59 0 0 1 5.6 5.6 5.59 5.59 0 0 1-5.6 5.6 5.59 5.59 0 0 1-5.6-5.6 5.59 5.59 0 0 1 5.6-5.6m-.7 1.4v4.49l3.005 3.005.99-.99L9.7 8.836v-3.91z"/></svg>
             {% endif %}
-            <span class="reading-time">{{ article.reading_time }} de lectura</span>
+            <span class="reading-time">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18"><path fill="#000" d="M9 2.126c-3.858 0-7 3.142-7 7s3.142 7 7 7 7-3.143 7-7-3.142-7-7-7m0 1.4a5.59 5.59 0 0 1 5.6 5.6 5.59 5.59 0 0 1-5.6 5.6 5.59 5.59 0 0 1-5.6-5.6 5.59 5.59 0 0 1 5.6-5.6m-.7 1.4v4.49l3.005 3.005.99-.99L9.7 8.836v-3.91z"/></svg>
+                {{ article.reading_time }} de lectura
+            </span>
           </p>
           {% if authors and article.date_published %}
             <p class="article-date">
@@ -608,14 +631,8 @@
           <div class="article-container flex justify-center">
             <button class="btn btn__dark btn-comments">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
-              <p>
-                {% if comments_count > 0 %}
-                  <span>{{ comments_count }}</span>
-                  <span>comentario{{ comments_count|pluralize }}</span>
-                {% else %}
-                  <span>Comentar</span>
-                {% endif %}
-              </p>
+              {# Replaced with the count by fetchCommentCount() in ld.js. #}
+              <p><span>Comentar</span></p>
             </button>
           </div>
 
@@ -707,7 +724,8 @@
         {% if TALK_URL and article.allow_comments %}
           <div id="comentarios" class="closed">
             <div class="upper-content">
-              <p>Comentarios {% if comments_count > 0 %}({{ comments_count }}){% endif %}</p>
+              {# Replaced with "Comentarios (N)" by fetchCommentCount() in ld.js. #}
+              <p>Comentarios</p>
               <button class="toggle-comments" aria-label="Ocultar comentarios">
                 <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" fill="none" viewBox="0 0 60 60"><path fill="#000" d="M22.898 38 22 37.102 29.102 30 22 22.898l.898-.898L30 29.102 37.102 22l.898.898L30.898 30 38 37.102l-.898.898L30 30.898z"/></svg>
               </button>
