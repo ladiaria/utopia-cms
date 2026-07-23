@@ -401,10 +401,6 @@ body.hard-paywall {
           margin-top: 12px;
           padding: 0;
 
-          @media #{$medium-and-down} {
-            padding: 0 16px;
-          }
-
           #div_id_terms_and_conds_accepted {
             margin: 16px 0;
           }
