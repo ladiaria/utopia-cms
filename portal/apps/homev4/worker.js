@@ -27,13 +27,13 @@ const MAINTENANCE_HTML = `<!DOCTYPE html>
       font-family: "Dialect Gothic A";
       font-style: normal;
       font-weight: 400;
-      src: url("https://ladiaria.com.uy/static/fonts/dialect/DialectGothicA-Regular.otf") format("opentype");
+      src: url("https://ladiaria.com.uy/static/fonts/dialect/DialectGothicA-Regular.woff2") format("woff2");
     }
     @font-face {
       font-family: "Dialect Gothic A";
       font-style: normal;
       font-weight: 700;
-      src: url("https://ladiaria.com.uy/static/fonts/dialect/DialectGothicA-Bold.otf") format("opentype");
+      src: url("https://ladiaria.com.uy/static/fonts/dialect/DialectGothicA-Bold.woff2") format("woff2");
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

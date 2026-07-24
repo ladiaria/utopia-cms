@@ -115,6 +115,7 @@ def publications(request):
                 'CORE_ARTICLE_DETAIL_DATE_TOOLTIP',
                 'CORE_ARTICLE_DETAIL_ALL_DATE_TOOLTIP',
                 'CORE_ARTICLE_ENABLE_PHOTO_BYLINE',
+                'CORE_PRECONNECT_ORIGINS',
                 'PWA_MANIFEST_STATIC_PATH',
                 'LOCAL_COUNTRY',
             )
