@@ -430,6 +430,14 @@ CORE_ARTICLE_ENABLE_PHOTO_BYLINE = True
 # class to use for the body field in articles
 CORE_ARTICLE_BODY_FIELD_CLASS = "martor.models.MartorField"
 
+# Extra origins to preconnect to in the head of every page, as (origin, crossorigin) pairs, e.g.
+# (("https://connect.facebook.net", False), ). Meant for third-party scripts injected at runtime
+# (usually by the tag manager), whose origin the browser cannot discover while parsing the document.
+# Set crossorigin to True only when the origin is fetched in CORS mode (fonts, fetch/XHR); a plain
+# <script src> is not, and a mismatch makes the preconnect useless. Google Tag Manager and Google
+# Identity are already preconnected when enabled, so do not repeat them here.
+CORE_PRECONNECT_ORIGINS = ()
+
 # use job to build journalist absolute url
 CORE_JOURNALIST_GET_ABSOLUTE_URL_USE_JOB = True
 

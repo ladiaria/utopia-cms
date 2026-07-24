@@ -11,6 +11,34 @@
 {% endblock %}
   <head>
     {% block head_first_content %}<link rel="canonical" href="{{ SITE_URL_SD }}{{ request.path }}">{% endblock %}
+
+    {% comment %}
+      Tags injected by the tag manager are not in the document, so the browser cannot discover their
+      origin until gtm.js has been downloaded and executed. By then each one still owes a full
+      DNS + TCP + TLS handshake before its first byte arrives. Preconnecting warms those connections
+      while the document is still being parsed, which takes the handshake off the critical path.
+
+      The crossorigin flag is not cosmetic: connections are pooled separately for CORS and non-CORS
+      requests, so a preconnect that does not match the mode of the actual request opens a second
+      connection and the warm-up is wasted. Plain <script src> is non-CORS; fonts and fetch are CORS.
+
+      Extra origins per installation go in CORE_PRECONNECT_ORIGINS. Keep the total at 4 at most: each
+      open socket costs the client, and an unused preconnect is pure waste.
+    {% endcomment %}
+    {% block preconnect %}
+      {% if not debug %}
+        {% if GTM_CONTAINER_ID or GA_MEASUREMENT_ID %}
+          <link rel="preconnect" href="https://www.googletagmanager.com">
+        {% endif %}
+        {% if not user.is_authenticated and google_client_id and ENABLE_GOOGLE_ONE_TAP and SHOW_ONE_GOOGLE_TAP %}
+          <link rel="preconnect" href="https://accounts.google.com">
+        {% endif %}
+        {% for origin, use_crossorigin in CORE_PRECONNECT_ORIGINS %}
+          <link rel="preconnect" href="{{ origin }}"{% if use_crossorigin %} crossorigin{% endif %}>
+        {% endfor %}
+      {% endif %}
+    {% endblock %}
+
     {% if PWA_ENABLED %}
       <!-- Progressive Web App (PWA) -->
       <link rel="manifest" href="{% static PWA_MANIFEST_STATIC_PATH|default:'manifest.json' %}">

@@ -4,6 +4,7 @@
   {% render_toolbar_for featured %}
   {% if featured.photo %}
     <a href="{{ featured.get_absolute_url }}" class="main-section__featured-image">
+      {# this is the LCP element of the home: it must outrank the fonts and the cards below #}
       <img
         srcset="{{ featured.photo.get_700w_url }} 700w, {{ featured.photo.get_1200w_url }} 1200w"
         sizes="(min-width: 700px) 1200px, 100vw"
@@ -11,6 +12,7 @@
         height="{{ featured.photo.get_700w_size.1 }}"
         title="{{ featured.photo_caption }}"
         alt="{{ featured.photo_caption }}"
+        fetchpriority="high"
       >
     </a>
   {% endif %}
