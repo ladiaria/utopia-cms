@@ -1,3 +1,6 @@
+// These declarations are also in base.scss, but that stylesheet is linked with media="screen", so
+// its @font-face rules do not apply when printing. Do not remove this import: the duplication is
+// deliberate, and the print bundle is not render-blocking anyway.
 @import "utopia_fonts";
 @media print {
   // Hide all the things!

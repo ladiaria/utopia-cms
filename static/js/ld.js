@@ -102,11 +102,20 @@
     }, 1000); // Fallback
   }
 
+  // Reflect the share sheet open state on the mobile nav share icon so it shows
+  // its active (black) state while the sheet is open.
+  function setMobileShareActive(isActive) {
+    qsa(".js-nav-menu__share").forEach(function (btn) {
+      btn.classList.toggle("active", isActive);
+    });
+  }
+
   function bindMobileShare() {
     onAll(".js-nav-menu__share", "click", function (event) {
       const share = qs("#article-share-full");
       if (share) {
         share.classList.toggle("active");
+        setMobileShareActive(share.classList.contains("active"));
       }
       event.preventDefault();
     });
@@ -116,6 +125,7 @@
       if (share) {
         share.classList.remove("active");
       }
+      setMobileShareActive(false);
     });
   }
 
@@ -320,6 +330,44 @@
       updateHeaderStickyState();
     }
 
+    // Article breadcrumb (mobile): hides when scrolling down and reappears pinned
+    // below the header when scrolling up. The CSS only applies on mobile
+    // (body.article-detail); here we set the offset = header height and toggle the
+    // class based on the scroll direction.
+    const mobileBreadcrumb = qs(".article-mobile-breadcrumb");
+    if (mobileBreadcrumb && headerElement) {
+      let lastBreadcrumbScrollY = window.scrollY || 0;
+      const breadcrumbThreshold = 5; // ignore micro-scrolls
+
+      const setBreadcrumbOffset = function () {
+        // offsetHeight rounds up the header's 0.5px border-bottom (64.5 -> 65),
+        // leaving an extra pixel; flooring the rect gives the real height (64).
+        const headerHeight = Math.floor(
+          headerElement.getBoundingClientRect().height
+        );
+        mobileBreadcrumb.style.setProperty(
+          "--breadcrumb-offset",
+          headerHeight + "px"
+        );
+      };
+
+      const updateBreadcrumbReveal = function () {
+        const currentY = window.scrollY || 0;
+        if (currentY <= 0) {
+          mobileBreadcrumb.classList.remove("is-hidden");
+        } else if (currentY > lastBreadcrumbScrollY + breadcrumbThreshold) {
+          mobileBreadcrumb.classList.add("is-hidden");
+        } else if (currentY < lastBreadcrumbScrollY - breadcrumbThreshold) {
+          mobileBreadcrumb.classList.remove("is-hidden");
+        }
+        lastBreadcrumbScrollY = currentY;
+      };
+
+      setBreadcrumbOffset();
+      window.addEventListener("scroll", updateBreadcrumbReveal, { passive: true });
+      window.addEventListener("resize", setBreadcrumbOffset, { passive: true });
+    }
+
     function initCategoryNavbarGradients() {
       const categoryNavbars = qsa("nav.navbar");
       if (categoryNavbars.length === 0) {
@@ -496,6 +544,18 @@
           const upperP = qs("#comentarios .upper-content p");
           if (upperP) {
             upperP.textContent = "Comentarios (" + count + ")";
+          }
+          // The server always renders "Comentar" (comments_count is not computed
+          // server-side anymore), so the count replaces that label here. Filling
+          // the count and flagging the button is all this does: collapsing the
+          // label and bringing the count in is sequenced by the stylesheet.
+          const actionBarBtn = qs(".action-bar-comment-btn");
+          if (actionBarBtn) {
+            const countSpan = qs(".comment-count", actionBarBtn);
+            if (countSpan) {
+              countSpan.textContent = count;
+              actionBarBtn.classList.add("has-count");
+            }
           }
         })
         .catch(function () {});
@@ -736,10 +796,12 @@
       });
     });
 
-    // Newsletter tooltip — toggle on trigger click, close on outside click
-    qsa("[data-nl-tooltip-host]").forEach(function (host) {
-      const trigger = qs("[data-nl-tooltip-trigger]", host);
-      const tooltip = qs(".nl-tooltip", host);
+    // Help tooltip — generic click-triggered popover (used by the newsletter
+    // switches and the article "Guardar" button). Toggle on trigger click,
+    // close on outside click.
+    qsa("[data-help-tooltip-host]").forEach(function (host) {
+      const trigger = qs("[data-help-tooltip-trigger]", host);
+      const tooltip = qs(".help-tooltip", host);
       if (!trigger || !tooltip) return;
 
       trigger.addEventListener("click", function (event) {
@@ -749,9 +811,9 @@
     });
 
     document.addEventListener("click", function (event) {
-      qsa(".nl-tooltip").forEach(function (tooltip) {
+      qsa(".help-tooltip").forEach(function (tooltip) {
         if (tooltip.hasAttribute("hidden")) return;
-        const host = tooltip.closest("[data-nl-tooltip-host]");
+        const host = tooltip.closest("[data-help-tooltip-host]");
         if (host && !host.contains(event.target)) {
           tooltip.setAttribute("hidden", "");
         }
