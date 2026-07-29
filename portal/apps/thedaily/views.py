@@ -122,6 +122,7 @@ from .forms import (
     check_password_strength,
 )
 from .utils import (
+    find_user_by_contact_email,
     get_or_create_user_profile,
     recent_following,
     add_default_newsletters,
@@ -1790,7 +1791,19 @@ def update_user_from_crm(request):
         if email or fields.get('email'):
             try:
                 email_to_use = email or fields.get('email')
-                u = User.objects.get(email__exact=email_to_use)
+                # look the account up the same way this CMS validates a new email (email, username
+                # and Google uid), not by email alone: looking up narrower than it validates made
+                # this conclude "no account" for people who do have one, and then fail to create it
+                u, matched_by = find_user_by_contact_email(email_to_use)
+                if matched_by == "social_auth_conflict":
+                    # the address is the Google login of an account registered under another
+                    # address, which may well be another person: linking it could grant this
+                    # contact's subscription to somebody else, so let a human resolve it
+                    return HttpResponseBadRequest(
+                        "Email is the Google login of another account, needs manual review."
+                    )
+                if not u:
+                    raise User.DoesNotExist
                 u.updatefromcrm = True
                 if newemail:
                     updatesubscriberemail(u, newemail)
