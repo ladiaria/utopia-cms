@@ -49,7 +49,7 @@
                           <td class="top-cell" style="box-sizing: border-box; text-align: center;" align="center">
                             {% block logo %}
                               <img src="{{ SITE_URL_SD }}{% static logo_url %}" class="c5813"
-                                   style="width: 100%; margin-top: 5px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; max-width: 120px;">
+                                   style="width: 100%; margin-top: 5px; margin-right: 0px; margin-bottom: 5px; margin-left: 0px; max-width: 120px;">
                             {% endblock %}
                           </td>
                         </tr>
@@ -64,7 +64,7 @@
         </tr>
       </tbody>
     </table>
-    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 0px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid #D8D8D8; font-family: Roboto, sans-serif; color: #616161;"
+    <table style="box-sizing: border-box; width: 100%; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; height: 0px; min-height: 30px; margin-top: 10px; margin-right: auto; margin-bottom: 20px; margin-left: auto; border-collapse: separate; max-width: 580px; background-color:{% block bg_color_body %}white{% endblock %}; border: 1px solid #D8D8D8; font-family: {% block body_font_family %}Roboto, sans-serif{% endblock %}; color: #000;"
            width="100%" height="0">
       <tbody style="box-sizing: border-box;background:white">
         {% block body %}
@@ -111,5 +111,6 @@
         {% block second_extra_body %}{% endblock %}
       </tbody>
     </table>
+    {% block address_footer %}{% endblock %}
   </body>
 </html>
