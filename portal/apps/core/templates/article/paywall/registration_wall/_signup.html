@@ -1,13 +1,18 @@
 {% comment %}
   Registration wall, signup step: reached when the submitted email does not have an account yet.
 
-  The email arrives prefilled from the email step, but the form still has no action: the signup view sends the reader
-  into the sms wizard, so wiring it waits until validating the phone stops being a requirement to finish the signup.
-  The reveal-password button does nothing and the terms link does not open the terms modal either (signup.html wires
-  that one with js).
+  The email arrives prefilled from the email step. Posts to the signup view carrying the article, the same way the
+  login step does, so a form with errors comes back on the hard paywall page showing that article instead of on a bare
+  signup page. On success the reader is sent to check their email: the account is activated from there, and only
+  afterwards is the phone offered, as a step that can be skipped.
+
+  There is no phone field, on purpose: the signup form takes it as optional, and asking for it here would put back the
+  barrier that was just removed from the registration flow.
 
   Field names match the signup form, so its crispy render can replace this markup without touching the styles.
-  There is no phone field on purpose, for the same reason the action is missing.
+
+  Still pending: the reveal-password button does nothing, and the terms link does not open the terms modal either
+  (signup.html wires that one with js).
 {% endcomment %}
 
 <div class="registration-wall__intro">
@@ -18,7 +23,8 @@
   </p>
 </div>
 
-<form class="registration-wall__form registration-wall__form--signup" method="post">
+<form class="registration-wall__form registration-wall__form--signup" method="post"
+      action="{% url 'account-signup' %}?article={{ article.id }}">
   {% csrf_token %}
 
   <div class="registration-wall__fields">
