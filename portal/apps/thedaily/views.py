@@ -530,31 +530,16 @@ def login(request, product_slug=None, product_variant=None):
                                     pass
                             response = HttpResponseRedirect(next_page)
                         else:
-                            # CASO 3: User/pass login - CUENTA NO ACTIVA - Detectar qué falta
-                            subscriber = getattr(existing_user, 'subscriber', None)
-
-                            # 3a. Si falta teléfono → redirigir a pantalla de teléfono
-                            if subscriber and not subscriber.phone:
-                                # Configurar sesión para flujo SMS como registro normal
-                                from django.utils import timezone
-                                request.session['signup_data'] = {
-                                    'user_created': True,
-                                    'user_id': existing_user.id,
-                                    'email': existing_user.email,
-                                    'google_flow': False,  # Es flujo normal email/pass
-                                    'sms_verified': False,
-                                    'session_created': timezone.now().isoformat(),  # Required by step 3 validation
-                                }
-                                request.session.modified = True
-                                response = HttpResponseRedirect('/usuarios/registrate/?step=2')
-
-                            # 3b. Si falta activar email → mostrar mensaje con enlace para reenviar
-                            else:
-                                confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
-                                login_error = (
-                                    'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
-                                    '<a href="{}">Reenviar mail</a>'.format(confirm_url)
-                                )
+                            # CASO 3: User/pass login - CUENTA NO ACTIVA
+                            # An account that is still inactive at this point is only ever waiting on the email
+                            # verification, so there is a single case to handle: offer to send that email again.
+                            # (There used to be a branch here for subscribers without a phone, which routed them to a
+                            # phone verification wizard. The phone no longer gates activation.)
+                            confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
+                            login_error = (
+                                'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
+                                '<a href="{}">Reenviar mail</a>'.format(confirm_url)
+                            )
 
                     # Si contraseña incorrecta
                     else:
@@ -1349,25 +1334,23 @@ def password_change(request, user_id=None, hash=None):
         user.set_password(password_change_form.get_password())
         user.save(update_fields=["password"])
 
-        # If user is NOT active (account not fully verified)
-        # they must verify phone before activation
-        if not user.is_active:
-            from django.utils import timezone
-            # Create signup_data for phone verification flow
-            request.session['signup_data'] = {
-                'user_id': user.id,
-                'email': user.email,
-                'user_created': True,
-                'from_password_reset': True,  # Flag to identify this flow
-                'session_created': timezone.now().isoformat(),
-            }
-            request.session.modified = True
-            # Redirect to step 2 (verify phone) - user is NOT logged in
-            return HttpResponseRedirect(reverse('account-signup') + '?step=2')
+        # Reaching this form means the reader followed the link sent to their address, which is the very thing
+        # activation was waiting for, so an inactive account can be activated right here.
+        was_inactive = not user.is_active
+        if was_inactive:
+            user.is_active = True
+            user.save(update_fields=["is_active"])
 
-        # Active user: normal flow (login and redirect)
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         do_login(request, user)
+
+        if was_inactive:
+            # Installations that ask for something else right after an activation (a phone number, for instance)
+            # point this setting at that view. Left unset, the account lands on the regular "password changed" page.
+            post_activation_url_name = getattr(settings, "THEDAILY_POST_ACTIVATION_URL_NAME", None)
+            if post_activation_url_name:
+                return HttpResponseRedirect(reverse(post_activation_url_name))
+
         return HttpResponseRedirect(reverse(request.session.get('welcome') or 'account-password_change-done'))
     return render(
         request,
