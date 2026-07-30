@@ -145,6 +145,47 @@ def qparamstr(qparams):
     return ('?%s' % qparams_str) if qparams_str else ''
 
 
+def find_user_by_contact_email(email):
+    """
+    Finds the site account that corresponds to a CRM contact email, for both CRM->CMS sync
+    channels (the update_subscribers command and the sync API view).
+
+    The CMS validates a new email against three places (User.email, User.username and
+    UserSocialAuth.uid), but the sync used to look it up by User.email alone. Looking up
+    narrower than it validates made the sync conclude "this contact has no account", try to
+    create one, and get rejected by its own validation, leaving people who had paid without
+    access and failing again every night.
+
+    Returns (user, matched_by), where matched_by is one of:
+      "email" / "username"    -> same person, safe to link
+      "social_auth_conflict"  -> user is None, see below. Do NOT link, report it instead
+      None                    -> user is None, no account anywhere, safe to create
+    """
+    if not email:
+        return None, None
+
+    # .filter().first() instead of .get(): a duplicate would raise MultipleObjectsReturned,
+    # which no caller catches
+    user = User.objects.filter(email__iexact=email).first()
+    if user:
+        return user, "email"
+
+    # username is unique and holds the exact CRM address, so this is the same person
+    user = User.objects.filter(username__iexact=email).first()
+    if user:
+        return user, "username"
+
+    if UserSocialAuth.objects.filter(uid=email).exists():
+        # Reaching this point means no account carries this address in email or username, so the
+        # Google association belongs to an account registered under a *different* address. That
+        # is either the same person with two addresses or somebody else's account, and the data
+        # cannot tell which: both shapes exist in production. Linking on a wrong guess would give
+        # the subscription this contact paid for to another person, so it is left for a human.
+        return None, "social_auth_conflict"
+
+    return None, None
+
+
 def get_or_create_user_profile(user):
     try:
         profile = user.subscriber

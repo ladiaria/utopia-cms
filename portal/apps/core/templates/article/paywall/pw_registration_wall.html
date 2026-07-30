@@ -1,3 +1,4 @@
+{% load thedaily_tags %}
 {% comment %}
   Registration wall shown inline in the article to anonymous users that ran out of free credits.
 
@@ -20,4 +21,21 @@
       {% include "article/paywall/registration_wall/_email.html" %}
     {% endif %}
   </div>
+
+  {% comment %}
+    Terms of use, same modal the signup page shows. It lives outside __box, and is rendered whatever the current step
+    is, because the signup step usually arrives by ajax into __box: putting it inside would mean it only exists after
+    that swap, and swapping it away again on the way back to the email step.
+  {% endcomment %}
+  {% terms_and_conditions as terms_content %}
+  {% if terms_content %}
+    <div class="modal registration-wall__terms-modal" id="registration-wall-terms-modal" aria-hidden="true">
+      <div class="content">
+        {% autoescape off %}{{ terms_content }}{% endautoescape %}
+        <div class="align-center">
+          <a class="btn btn__dark" id="registration-wall-terms-accept">Aceptar</a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 </div>

@@ -289,3 +289,69 @@ $registration-wall-mobile-inset: 20px;
     cursor: pointer;
   }
 }
+
+// Terms of use modal of the signup step. The access pages style their own copy of this modal, but that stylesheet is
+// not loaded on an article, so the wall carries what it needs.
+.registration-wall__terms-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  &.modal--open {
+    display: flex;
+  }
+
+  // The card is 491px of text plus its 24px padding on each side
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: px-to-rem(539px);
+    max-width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 24px;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    font-family: $sans;
+    color: #000;
+  }
+
+  // Both come from the terms flatpage, which writes the heading as an h1
+  h1 {
+    align-self: stretch;
+    margin: 0 0 24px;
+    font-size: px-to-rem(24px);
+    font-weight: 500;
+    letter-spacing: px-to-rem(0.24px); // 0.01em
+    line-height: normal;
+  }
+
+  p {
+    align-self: stretch;
+    font-size: px-to-rem(16px);
+    font-weight: 400;
+    letter-spacing: px-to-rem(0.16px); // 0.01em
+  }
+
+  .align-center {
+    margin-top: 24px;
+  }
+
+  .btn {
+    font-weight: 500;
+    font-size: px-to-rem(16px);
+    letter-spacing: px-to-rem(0.16px); // 0.01em
+  }
+}
+
+// Set by modal.js while a modal is open, to stop the article scrolling behind it
+body.modal-open {
+  overflow: hidden;
+}

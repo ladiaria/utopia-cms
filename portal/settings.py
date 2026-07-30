@@ -490,6 +490,9 @@ THEDAILY_SUBSCRIPTION_TYPE_CHOICES = ()
 THEDAILY_WELCOME_EMAIL_TEMPLATES = {}
 THEDAILY_PROVINCE_CHOICES = []
 THEDAILY_DEFAULT_CATEGORY_NEWSLETTERS = []  # category slugs for add default category newsletters in new accounts
+# url name to send a reader to right after their account is activated from the password form, for installations that
+# collect something else at that point (a phone number, for instance). Unset means no extra step.
+THEDAILY_POST_ACTIVATION_URL_NAME = None
 THEDAILY_DEBUG_SIGNALS = None  # will be assigned after local settings import
 
 # photologue
