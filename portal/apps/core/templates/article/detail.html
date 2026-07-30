@@ -860,6 +860,27 @@
     {% compress js %}
       <script src="{% static 'js/registration_wall.js' %}"></script>
     {% endcompress %}
+    <script type="module">
+      // Terms of use link of the signup step, wired the same way the signup page does it. Delegated on the wall
+      // because that step usually arrives by ajax, so the link does not exist when this runs.
+      import { openModal, closeModal } from "{% static 'js/modal.js' %}";
+
+      const wall = document.querySelector(".registration-wall");
+      const MODAL_ID = "registration-wall-terms-modal";
+
+      wall?.addEventListener("click", function (event) {
+        if (!event.target.closest(".registration-wall__terms a")) return;
+        event.preventDefault();
+        openModal(MODAL_ID);
+      });
+
+      document.getElementById("registration-wall-terms-accept")?.addEventListener("click", function () {
+        closeModal(MODAL_ID);
+        // Accepting in the modal is what ticks the checkbox, same as in the signup page
+        const checkbox = document.getElementById("registration-wall-signup-terms");
+        if (checkbox) checkbox.checked = true;
+      });
+    </script>
   {% endif %}
 {% endblock %}
 

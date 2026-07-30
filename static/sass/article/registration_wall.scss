@@ -289,3 +289,44 @@ $registration-wall-mobile-inset: 20px;
     cursor: pointer;
   }
 }
+
+// Terms of use modal of the signup step. The access pages style their own copy of this modal, but that stylesheet is
+// not loaded on an article, so the wall carries what it needs.
+.registration-wall__terms-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  &.modal--open {
+    display: flex;
+  }
+
+  .content {
+    background-color: #fff;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    padding: 24px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    font-family: $sans;
+
+    p {
+      font-size: px-to-rem(16px);
+    }
+
+    .btn {
+      margin-top: 16px;
+    }
+  }
+}
+
+// Set by modal.js while a modal is open, to stop the article scrolling behind it
+body.modal-open {
+  overflow: hidden;
+}
