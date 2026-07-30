@@ -75,14 +75,12 @@ body.user-newsletters {
     .welcome-btns {
       padding-top: 40px;
       flex-direction: column-reverse;
-      align-items: flex-start;
+      // The pair is as wide as its widest label, and both buttons take that width: stacked one over the other,
+      // different widths read as a mistake. Replaces a rule that sized the primary button through an "ut-btn" class
+      // the markup no longer uses, so it had stopped applying.
+      align-items: stretch;
       width: max-content;
       align-self: flex-start;
-
-      a.ut-btn:not(.ut-btn-outline) {
-        width: 100%;
-        justify-content: center;
-      }
     }
 
     .grid-nl-cards {
