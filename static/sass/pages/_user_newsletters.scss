@@ -20,7 +20,6 @@ body.user-newsletters {
   }
 
   p.deck {
-    color: #4f4f4f;
     font-size: px-to-rem(18px);
   }
 
@@ -56,16 +55,16 @@ body.user-newsletters {
   }
 
   @media #{$medium-and-down} {
-    .container {
-      padding: 40px 30px;
+    main#main-content {
+      padding-top: 0;
     }
 
-    h1 {
-      font-size: px-to-rem(26px);
+    .container {
+      padding: 32px 20px;
     }
 
     p.deck {
-      font-size: px-to-rem(15px);
+      font-size: px-to-rem(16px);
     }
 
     .welcome-page-header {
@@ -73,7 +72,7 @@ body.user-newsletters {
     }
 
     .welcome-btns {
-      padding-top: 40px;
+      padding-top: 32px;
       flex-direction: column-reverse;
       // The pair is as wide as its widest label, and both buttons take that width: stacked one over the other,
       // different widths read as a mistake. Replaces a rule that sized the primary button through an "ut-btn" class
@@ -84,7 +83,7 @@ body.user-newsletters {
     }
 
     .grid-nl-cards {
-      padding-top: 40px;
+      padding-top: 32px;
     }
   }
   @media only screen and (min-width: 992px) and (max-width: 1132px) {
