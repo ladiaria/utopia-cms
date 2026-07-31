@@ -6,6 +6,8 @@
 $registration-wall-width: px-to-rem(332px);
 $registration-wall-required: #81898b;
 $registration-wall-bg: #b3efff;
+$registration-wall-error-bg: #ea4444;
+$registration-wall-error-border: #d50000;
 $registration-wall-mobile-inset: 20px;
 
 // Faded end of the teaser. The body is already cut to its first words server-side (see core.utils
@@ -158,8 +160,18 @@ $registration-wall-mobile-inset: 20px;
 
   // --- login step ---------------------------------------------------------------------------------------------
 
+  // the error sits closer to the form (24px) than the submit button does to the fields (48px), so the gap between the
+  // fields and the button belongs to __form-body and not to the form itself
   &__form--login {
+    gap: 24px;
+  }
+
+  &__form-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 48px;
+    width: 100%;
   }
 
   &__fields {
@@ -269,11 +281,24 @@ $registration-wall-mobile-inset: 20px;
   }
 
   &__error {
+    box-sizing: border-box;
+    width: 100%;
     margin: 0;
+    padding: 16px;
+    border: 1px solid $registration-wall-error-border;
+    border-radius: 5px;
+    background-color: $registration-wall-error-bg;
     font-family: $sans;
-    font-size: px-to-rem(14px);
-    color: #d50000;
-    text-align: center;
+    letter-spacing: px-to-rem(0.16px); // 0.01em
+    color: #fff;
+    text-align: left;
+
+    // the login step error can carry a link ("resend the activation mail")
+    a {
+      color: inherit;
+      font-weight: 500;
+      text-decoration: underline;
+    }
   }
 
   &__submit {

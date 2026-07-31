@@ -1,9 +1,7 @@
 {% load crispy_forms_tags %}
 
 {% if login_form %}
-  {% for error in login_form.non_field_errors %}
-    <p class="alert-box">{{ error }}</p>
-  {% endfor %}
+  {# non field errors are not rendered here: the crispy render of the form below already prints them #}
   <form id="hardpw-login" method="post" class="{% if 'password' in login_form.fields %}password-login{% endif %}">
     {% crispy login_form %}
     {% if 'password' in login_form.fields %}

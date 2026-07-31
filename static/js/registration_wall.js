@@ -1,12 +1,13 @@
-// Registration wall — ajax for the email step.
+// Registration wall — ajax for the email and login steps.
 //
-// The email form (step A) resolves to the login (existing account) or signup (new account) step. Submitting it over
-// ajax swaps the wall content in place, so the reader keeps their scroll position instead of the article reloading
-// from the top. Without this script the form posts normally and the server reloads the article on the resolved step,
-// so the flow still works (progressive enhancement).
+// The email form (step A) resolves to the login (existing account) or signup (new account) step, and the login form
+// (step B) either logs the reader in or comes back with an error. Submitting them over ajax swaps the wall content in
+// place, so the reader keeps their scroll position instead of the article reloading from the top, and a rejected
+// login is answered inside the article instead of on the full hard paywall page. Without this script both forms post
+// normally and the server answers with a page load, so the flow still works (progressive enhancement).
 //
-// Only the email step is intercepted. The login and signup steps post to the real views and do reload the page, which
-// is fine: that is the end of the flow (the reader ends up logged in, or on the signup flow).
+// The signup step is not intercepted: it is the end of the flow, and it leaves the article anyway (the reader is sent
+// to check their email).
 (function () {
   "use strict";
 
@@ -15,14 +16,19 @@
 
   var box = wall.querySelector(".registration-wall__box");
 
-  // Only the email step posts to the resolver; login/signup post to the real login/signup views.
+  // The email step posts to the resolver, which always answers with html. The login step posts to the login view,
+  // which answers with html when it rejects the attempt and with json when it succeeds.
   function isEmailStep(form) {
-    return form && /registration-wall\/email/.test(form.getAttribute("action") || "");
+    return /registration-wall\/email/.test(form.getAttribute("action") || "");
+  }
+
+  function isLoginStep(form) {
+    return form.classList.contains("registration-wall__form--login");
   }
 
   function bind() {
     var form = box.querySelector(".registration-wall__form");
-    if (!isEmailStep(form)) return;
+    if (!form || !(isEmailStep(form) || isLoginStep(form))) return;
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -38,13 +44,19 @@
         body: new FormData(form),
       })
         .then(function (response) {
-          if (!response.ok) throw new Error("registration wall email step failed");
-          return response.text();
-        })
-        .then(function (html) {
-          box.innerHTML = html;
-          // the email step can come back (an invalid email or too many attempts), so rebind it
-          bind();
+          if (!response.ok) throw new Error("registration wall step failed");
+          if ((response.headers.get("Content-Type") || "").indexOf("application/json") !== -1) {
+            // logged in: the view hands over where to go instead of a 302, which fetch would have followed itself,
+            // leaving the script with the article's html and no way to tell it apart from a step partial
+            return response.json().then(function (data) {
+              window.location.assign(data.redirect);
+            });
+          }
+          return response.text().then(function (html) {
+            box.innerHTML = html;
+            // the step can come back on itself (an invalid email, too many attempts, a rejected login), so rebind
+            bind();
+          });
         })
         .catch(function () {
           // fall back to a normal submit (full reload) if the request could not be completed
