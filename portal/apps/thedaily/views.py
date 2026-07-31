@@ -62,7 +62,7 @@ from django.views.decorators.cache import never_cache, cache_control, cache_page
 from django.template import Engine, TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.html import strip_tags
+from django.utils.html import format_html, strip_tags
 
 from apps import mongo_db, bouncer_blocklisted
 from libs.utils import set_amp_cors_headers, decode_hashid, crm_rest_api_kwargs, get_site_name
@@ -199,6 +199,17 @@ REGISTRATION_WALL_PARTIALS = {
     "login": "article/paywall/registration_wall/_login.html",
     "signup": "article/paywall/registration_wall/_signup.html",
 }
+
+
+def first_form_error(form):
+    """
+    One error to show in the registration wall, which has room for a single line and no per field slots.
+
+    Non field errors win because they carry the reason a login was rejected; the field ones are only reached when the
+    form did not even validate.
+    """
+    errors = form.errors.get("__all__") or [e for field_errors in form.errors.values() for e in field_errors]
+    return errors[0] if errors else "No pudimos ingresar con esos datos. Revisá el email y la contraseña."
 
 
 def render_registration_wall_step(request, article, state, email, error=""):
@@ -464,17 +475,25 @@ def login(request, product_slug=None, product_variant=None):
         article_id = request.GET.get('article')
         template = get_app_template('login.html')
 
-    if article_id and settings.SIGNUPWALL_RISE_REDIRECT:
+    article = None
+    if article_id:
         try:
             article = Article.objects.get(id=article_id)
         except (ValueError, Article.DoesNotExist):
             pass
-        else:
-            next_page = article.get_absolute_url()
-            if "prelogin" not in request.POST:
-                login_formclass = get_formclass(request, "PreLogin")
-            template = hard_paywall_template()
-            context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
+
+    # The login step of the registration wall submits here over ajax so a failed attempt can be answered with the step
+    # partial and shown inside the wall, in the article, instead of sending the reader to the full hard paywall page.
+    registration_wall_ajax = bool(
+        article and request.method == 'POST' and request.headers.get("x-requested-with") == "XMLHttpRequest"
+    )
+
+    if article and (settings.SIGNUPWALL_RISE_REDIRECT or registration_wall_ajax):
+        next_page = article.get_absolute_url()
+        if "prelogin" not in request.POST:
+            login_formclass = get_formclass(request, "PreLogin")
+        template = hard_paywall_template()
+        context.update({"signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS, "article": article})
 
     context.update({'next_page': next_page, 'next': pathname2url(next_page.encode('utf8').decode())})
 
@@ -537,9 +556,12 @@ def login(request, product_slug=None, product_variant=None):
                             # (There used to be a branch here for subscribers without a phone, which routed them to a
                             # phone verification wizard. The phone no longer gates activation.)
                             confirm_url = reverse('account-confirm_email') + '?email=' + existing_user.email
-                            login_error = (
+                            # format_html marks the result safe, so whoever renders this error does not have to know
+                            # that it carries a link (and the url is escaped on the way in)
+                            login_error = format_html(
                                 'Tu cuenta no está activada. Revisá tu correo y seguí el enlace para activarla. '
-                                '<a href="{}">Reenviar mail</a>'.format(confirm_url)
+                                '<a href="{}">Reenviar mail</a>',
+                                confirm_url,
                             )
 
                     # Si contraseña incorrecta
@@ -584,6 +606,19 @@ def login(request, product_slug=None, product_variant=None):
                 login_form.errors['__all__'].append(login_error)
             else:
                 login_form.errors['__all__'] = [login_error]
+
+        if registration_wall_ajax:
+            if response:
+                # nothing to swap in: hand the destination over to the wall script, which navigates there. The redirect
+                # cannot travel as a 302 because fetch would follow it and the script would get the article's html.
+                return JsonResponse({"redirect": response["Location"]})
+            return render_registration_wall_step(
+                request,
+                article,
+                "login",
+                request.POST.get("name_or_mail", ""),
+                error=login_error or first_form_error(login_form),
+            )
     else:
         login_form = login_formclass(initial=initial)
 
