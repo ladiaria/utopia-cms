@@ -1,4 +1,4 @@
-// Registration wall — ajax for the email and login steps.
+// Registration wall — ajax for the email and login steps, and the reveal button on the password fields.
 //
 // The email form (step A) resolves to the login (existing account) or signup (new account) step, and the login form
 // (step B) either logs the reader in or comes back with an error. Submitting them over ajax swaps the wall content in
@@ -15,6 +15,20 @@
   if (!wall) return;
 
   var box = wall.querySelector(".registration-wall__box");
+
+  // Reveal button on the password fields (login and signup steps). Delegated on the wall instead of bound to each
+  // button, because the step markup inside __box is replaced over ajax and a bound handler would not survive it.
+  wall.addEventListener("click", function (event) {
+    var button = event.target.closest && event.target.closest(".registration-wall__reveal");
+    if (!button) return;
+    var input = document.getElementById(button.getAttribute("data-reveal-target"));
+    if (!input) return;
+    var reveal = input.getAttribute("type") === "password";
+    input.setAttribute("type", reveal ? "text" : "password");
+    button.classList.toggle("registration-wall__reveal--revealed", reveal);
+    button.setAttribute("aria-pressed", reveal ? "true" : "false");
+    button.setAttribute("aria-label", reveal ? "Ocultar contraseña" : "Mostrar contraseña");
+  });
 
   // The email step posts to the resolver, which always answers with html. The login step posts to the login view,
   // which answers with html when it rejects the attempt and with json when it succeeds.

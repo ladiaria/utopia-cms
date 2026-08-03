@@ -193,7 +193,9 @@ $registration-wall-mobile-inset: 20px;
     position: relative;
     display: flex;
 
-    input[type="password"] {
+    // not keyed on [type="password"]: the reveal button flips the input to type="text", and the revealed password
+    // would then run under the button
+    input {
       padding-right: 40px;
     }
   }
@@ -210,6 +212,31 @@ $registration-wall-mobile-inset: 20px;
     background: none;
     color: $registration-wall-required;
     cursor: pointer;
+  }
+
+  // both icons are in the markup (see _reveal_password.html) and only one is shown at a time
+  &__reveal-icon {
+    display: block;
+
+    &--off {
+      display: none;
+    }
+  }
+
+  &__reveal--revealed {
+    .registration-wall__reveal-icon--on {
+      display: none;
+    }
+
+    .registration-wall__reveal-icon--off {
+      display: block;
+    }
+  }
+
+  // the slash is drawn twice: this one underneath in the input's background color, so it reads as a gap in the eye
+  // instead of a line lying on top of it
+  &__reveal-slash-cut {
+    stroke: #fff;
   }
 
   &__forgot {
