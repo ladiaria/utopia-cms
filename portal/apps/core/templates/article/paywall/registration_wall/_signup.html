@@ -11,8 +11,7 @@
 
   Field names match the signup form, so its crispy render can replace this markup without touching the styles.
 
-  Still pending: the reveal-password button does nothing, and the terms link does not open the terms modal either
-  (signup.html wires that one with js).
+  Still pending: the terms link does not open the terms modal (signup.html wires that one with js).
 {% endcomment %}
 
 <div class="registration-wall__intro">
@@ -45,9 +44,7 @@
       <div class="registration-wall__password-input">
         <input type="password" id="registration-wall-signup-password" name="password" required
                autocomplete="new-password" autocapitalize="none">
-        <button type="button" class="registration-wall__reveal" aria-label="Mostrar contraseña" aria-pressed="false">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="11" fill="none" aria-hidden="true" viewBox="0 0 16 11"><path fill="currentColor" d="M8 0C4.727 0 1.932 2.02.667 4.87a.66.66 0 0 0 0 .534C1.932 8.253 4.727 10.273 8 10.273s6.068-2.02 7.333-4.87a.66.66 0 0 0 0-.533C14.068 2.02 11.273 0 8 0m0 9.09c-2.673 0-5.008-1.6-6.121-3.953C2.992 2.784 5.327 1.182 8 1.182s5.008 1.602 6.121 3.955C13.008 7.49 10.673 9.09 8 9.09M8 2.5a2.636 2.636 0 1 0 0 5.273A2.636 2.636 0 0 0 8 2.5m0 4.09a1.455 1.455 0 1 1 0-2.908 1.455 1.455 0 0 1 0 2.909"/></svg>
-        </button>
+        {% include "article/paywall/registration_wall/_reveal_password.html" with target="registration-wall-signup-password" %}
       </div>
     </div>
 
