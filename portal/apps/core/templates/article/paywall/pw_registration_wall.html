@@ -3,8 +3,8 @@
   Registration wall shown inline in the article to anonymous users that ran out of free credits.
 
   It has three states: the email step, and the login / signup steps reached after submitting an email that does or
-  does not have an account. Right now the state comes from the "?register_wall=" preview switch and the forms are
-  static markup, so nothing is submitted anywhere. The email step will eventually resolve the state server-side.
+  does not have an account. The wall opens on the email step, which resolves the next one server-side (see
+  thedaily.views.registration_wall_email); registration_wall.js swaps the step in place over ajax.
 
   The outer element takes its width from .article-container and insets the box from the viewport edges with padding
   (never a margin: .article-container is width:100%, and a margin there would overflow instead of shrinking).

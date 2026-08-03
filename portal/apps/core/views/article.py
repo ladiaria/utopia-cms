@@ -248,17 +248,13 @@ def article_detail(request, year, month, slug, domain_slug=None):
     # No comments_count in the context: fetching it here meant a blocking call to Coral on every
     # article render. Templates now get it from the coral-comment-count endpoint via ld.js.
     publication = article.main_section.edition.publication if article.main_section else None
-    register_wall_param = request.GET.get("register_wall")
-    register_wall_state = {"1": "email", "login": "login", "signup": "signup"}.get(register_wall_param)
-    register_wall_email = ""
-    if register_wall_state is None:
-        # step resolved by the email form of the wall, left in the session by thedaily.views.registration_wall_email
-        register_wall_state, register_wall_email = pop_registration_wall_state(request, article)
+    # step resolved by the email form of the wall, left in the session by thedaily.views.registration_wall_email
+    register_wall_state, register_wall_email = pop_registration_wall_state(request, article)
     if register_wall_state is None and getattr(request, "registration_wall", False):
         # raised by the signupwall middleware for an anonymous reader that ran out of credits
         register_wall_state = "email"
-    # whatever raised the wall (middleware, the email step in session, or the ?register_wall= preview switch), let the
-    # context processor know so it truncates the body teaser the same way in every case
+    # whatever raised the wall (the middleware or the email step in session), let the context processor know so it
+    # truncates the body teaser the same way in either case
     request.registration_wall = register_wall_state is not None
     context = {
         "DEBUG": settings.DEBUG,
@@ -288,11 +284,8 @@ def article_detail(request, year, month, slug, domain_slug=None):
             and publication.slug in getattr(settings, 'CORE_ARTICLE_DETAIL_DATE_PUBLISHED_USE_MAIN_PUBLICATIONS', ())
         ),
         "enable_amp": settings.CORE_ARTICLE_DETAIL_ENABLE_AMP and not article.extensions_have_invalid_amp_tags(),
-        # TEMPORARY: preview switch to render the registration wall without going through the signupwall middleware,
-        # so the work in progress can be reviewed in any environment. It only swaps the article body for a teaser plus
-        # the wall, no access is granted or denied by it. Remove once the wall is wired to the middleware (anon user
-        # without credits). It takes precedence over the state resolved by the email step, to keep working as a
-        # design tool: "1" is the email step, "login" and "signup" the states reached after submitting the email.
+        # the wall replaces the article body with a teaser; the step it opens on is "email", unless the reader already
+        # submitted one and came back to the article on the login or signup step
         "registration_wall": register_wall_state is not None,
         "registration_wall_state": register_wall_state,
         "registration_wall_email": register_wall_email,
