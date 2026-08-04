@@ -200,43 +200,28 @@ $registration-wall-mobile-inset: 20px;
     }
   }
 
+  // Same icon pair as the login page (see .toggle-password in _utopia_base.scss): plain eye while the password is
+  // hidden, crossed-out eye while it is shown. Absolute path because relative ones resolve against this file's
+  // directory once compressor rewrites them, and this file is one level deeper than sass/.
+  // The button spans the full height of the input so the tap target is not just the 20px of the icon.
   &__reveal {
     position: absolute;
     top: 0;
     right: 12px;
     bottom: 0;
-    display: flex;
-    align-items: center;
+    width: 20px;
     padding: 0;
     border: none;
-    background: none;
-    color: $registration-wall-required;
+    background-color: transparent;
+    background-image: url("/static/img/icon-visibility_on.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20px 20px;
     cursor: pointer;
   }
 
-  // both icons are in the markup (see _reveal_password.html) and only one is shown at a time
-  &__reveal-icon {
-    display: block;
-
-    &--off {
-      display: none;
-    }
-  }
-
   &__reveal--revealed {
-    .registration-wall__reveal-icon--on {
-      display: none;
-    }
-
-    .registration-wall__reveal-icon--off {
-      display: block;
-    }
-  }
-
-  // the slash is drawn twice: this one underneath in the input's background color, so it reads as a gap in the eye
-  // instead of a line lying on top of it
-  &__reveal-slash-cut {
-    stroke: #fff;
+    background-image: url("/static/img/icon-visibility_off.svg");
   }
 
   &__forgot {
@@ -272,8 +257,11 @@ $registration-wall-mobile-inset: 20px;
       background-color: #fff;
       cursor: pointer;
 
+      // checked inverts the box: black fill with a white tick, so the accepted state reads at a glance against the
+      // light blue of the wall
       &:checked {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath fill='none' stroke='%23000' stroke-width='2' d='M1 5l3.5 3.5L11 1.5'/%3E%3C/svg%3E");
+        background-color: #000;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath fill='none' stroke='%23fff' stroke-width='2' d='M1 5l3.5 3.5L11 1.5'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: center;
         background-size: 12px 10px;
