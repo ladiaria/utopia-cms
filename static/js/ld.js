@@ -332,22 +332,29 @@
 
     // Article breadcrumb (mobile): hides when scrolling down and reappears pinned
     // below the header when scrolling up. The CSS only applies on mobile
-    // (body.article-detail); here we set the offset = header height and toggle the
-    // class based on the scroll direction.
+    // (body.article-detail); here we set the offset = where the header ends and
+    // toggle the class based on the scroll direction.
     const mobileBreadcrumb = qs(".article-mobile-breadcrumb");
+    // exposed to the counter block below, which moves the header and so the point
+    // the breadcrumb pins to
+    let refreshBreadcrumbOffset = null;
     if (mobileBreadcrumb && headerElement) {
       let lastBreadcrumbScrollY = window.scrollY || 0;
       const breadcrumbThreshold = 5; // ignore micro-scrolls
 
       const setBreadcrumbOffset = function () {
+        // The breadcrumb pins where the header ends, which is its height plus
+        // whatever the header itself is offset by (the remaining-articles counter
+        // above it, when there is one) — so take its bottom edge and not its
+        // height. Both are the same number here and once the header is stuck.
         // offsetHeight rounds up the header's 0.5px border-bottom (64.5 -> 65),
-        // leaving an extra pixel; flooring the rect gives the real height (64).
-        const headerHeight = Math.floor(
-          headerElement.getBoundingClientRect().height
+        // leaving an extra pixel; flooring the rect gives the real edge (64).
+        const headerBottom = Math.floor(
+          headerElement.getBoundingClientRect().bottom
         );
         mobileBreadcrumb.style.setProperty(
           "--breadcrumb-offset",
-          headerHeight + "px"
+          headerBottom + "px"
         );
       };
 
@@ -363,9 +370,38 @@
         lastBreadcrumbScrollY = currentY;
       };
 
+      refreshBreadcrumbOffset = setBreadcrumbOffset;
       setBreadcrumbOffset();
       window.addEventListener("scroll", updateBreadcrumbReveal, { passive: true });
       window.addEventListener("resize", setBreadcrumbOffset, { passive: true });
+    }
+
+    // Remaining-articles counter (article detail): sticky at the top of the viewport
+    // with the header sticking below it, so the header needs its height (see
+    // `header` in utopia_header.scss). It is not a fixed value: the content comes
+    // from the admin (signupwall.RemainingContent), the message can wrap on narrow
+    // screens, and the close button takes the counter out of the flow.
+    const articleCounter = qs(".article-counter-container");
+    if (articleCounter) {
+      const setArticleCounterHeight = function () {
+        document.documentElement.style.setProperty(
+          "--article-counter-height",
+          articleCounter.offsetHeight + "px"
+        );
+        // the header moved with it, and the breadcrumb pins to where it ends
+        if (refreshBreadcrumbOffset) refreshBreadcrumbOffset();
+      };
+
+      setArticleCounterHeight();
+      if (window.ResizeObserver) {
+        // also catches the counter being closed (reported as height 0) and the
+        // reflow when the fonts finish loading
+        new ResizeObserver(setArticleCounterHeight).observe(articleCounter);
+      } else {
+        window.addEventListener("resize", setArticleCounterHeight, {
+          passive: true,
+        });
+      }
     }
 
     function initCategoryNavbarGradients() {

@@ -25,7 +25,12 @@ header {
   flex-direction: column;
   z-index: 1001;
   position: sticky;
-  top: 0;
+  // Normally 0, but the article detail can show the remaining-articles counter above the header, sticky at the top
+  // of the viewport too (see .article-counter-container). The header has to stick below it or it slides over the
+  // counter while the page scrolls past its height. The counter's content is editable from the admin
+  // (signupwall.RemainingContent) so its height is not fixed: ld.js measures it into --article-counter-height,
+  // which is 0 on every page without a counter.
+  top: var(--article-counter-height, 0px);
 
   &.category-pub-header,
   &.home-header {
@@ -417,15 +422,17 @@ header {
     justify-content: center;
 
     // Reveal-on-scroll-up: on the article detail the breadcrumb is pinned below the
-    // sticky header. JS (ld.js) sets --breadcrumb-offset = header height and toggles
-    // .is-hidden based on the scroll direction. Its height is reserved by
+    // sticky header. JS (ld.js) sets --breadcrumb-offset = where the header ends
+    // and toggles .is-hidden based on the scroll direction. Its height is reserved by
     // .header-nav-wrapper (below) to avoid the layout shift when it leaves the flow.
     body.article-detail & {
       position: fixed;
       top: var(--breadcrumb-offset, px-to-rem(56px));
       left: 0;
       right: 0;
-      z-index: 1000; // below the header (z-index: 1001)
+      // below the header (1001) and the remaining-articles counter (1000): while
+      // it slides in and out it travels over where the counter is stuck
+      z-index: 999;
       background-color: white;
       padding: 0 20px;
       transition: transform 0.25s ease;
