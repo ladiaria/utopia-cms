@@ -217,7 +217,14 @@ def render_registration_wall_step(request, article, state, email, error=""):
     return render(
         request,
         REGISTRATION_WALL_PARTIALS[state],
-        {"article": article, "registration_wall_email": email, "registration_wall_email_error": error},
+        {
+            "article": article,
+            "registration_wall_email": email,
+            "registration_wall_email_error": error,
+            # The step partials render the free articles count from this; without it the ajax-swapped step (the usual
+            # path) shows the count blank, unlike the full-page render which gets it from the article view context.
+            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+        },
     )
 
 
