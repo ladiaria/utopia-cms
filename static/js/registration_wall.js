@@ -30,6 +30,38 @@
     button.setAttribute("aria-label", reveal ? "Ocultar contraseña" : "Mostrar contraseña");
   });
 
+  // "Editar" next to the locked email of the signup step. The button is tied to #registration-wall-back with the
+  // form attribute, so without this it posts on its own and the article reloads on the email step; here it is sent
+  // over ajax instead, to swap the step in place like the other two do. Delegated for the same reason as the reveal
+  // button: the markup inside __box is replaced over ajax.
+  wall.addEventListener("click", function (event) {
+    var edit = event.target.closest && event.target.closest(".registration-wall__email-edit");
+    if (!edit) return;
+    var form = document.getElementById(edit.getAttribute("form"));
+    if (!form) return;
+    event.preventDefault();
+
+    fetch(form.getAttribute("action"), {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+      },
+      body: new FormData(form),
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("registration wall step failed");
+        return response.text().then(function (html) {
+          box.innerHTML = html;
+          bind();
+        });
+      })
+      .catch(function () {
+        // same fallback as the forms: let the browser do it, which reloads the article on the email step
+        form.submit();
+      });
+  });
+
   // The email step posts to the resolver, which always answers with html. The login step posts to the login view,
   // which answers with html when it rejects the attempt and with json when it succeeds.
   function isEmailStep(form) {
