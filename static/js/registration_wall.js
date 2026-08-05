@@ -2,7 +2,7 @@
 //
 // The email form (step A) resolves to the login (existing account) or signup (new account) step, and the login form
 // (step B) either logs the reader in or comes back with an error. Submitting them over ajax swaps the wall content in
-// place, so the reader keeps their scroll position instead of the article reloading from the top, and a rejected
+// place, so the reader stays where they were instead of the article reloading from the top, and a rejected
 // login is answered inside the article instead of on the full hard paywall page. Without this script both forms post
 // normally and the server answers with a page load, so the flow still works (progressive enhancement).
 //
@@ -16,6 +16,42 @@
 
   var box = wall.querySelector(".registration-wall__box");
 
+  // Height the sticky header takes at the top of the viewport, so a scroll does not leave the wall under it.
+  function stickyHeaderHeight() {
+    var header = document.querySelector("header");
+    if (!header) return 0;
+    var position = window.getComputedStyle(header).position;
+    if (position !== "sticky" && position !== "fixed") return 0;
+    return header.getBoundingClientRect().height;
+  }
+
+  // Steps have different heights (signup is much taller than email), and the reader submits from the bottom of the
+  // form: after the swap the new step often starts above the viewport, which on mobile means landing mid-form with
+  // the title and the first fields out of sight. Keeping the scroll position is only right while the content stays
+  // the same size, so put the wall back in view: align its top under the header when it does not fit on screen or
+  // already starts above it, and otherwise scroll just enough to uncover its bottom.
+  function revealWall() {
+    // more air on mobile, where the wall sits right under the header and the box would otherwise look glued to it
+    // (992px is the $medium-and-down breakpoint the stylesheets use)
+    var margin = window.matchMedia("(max-width: 992px)").matches ? 40 : 16;
+    var offset = stickyHeaderHeight() + margin;
+    var rect = wall.getBoundingClientRect();
+    var top;
+
+    if (rect.top < offset || rect.height > window.innerHeight - offset) {
+      top = window.scrollY + rect.top - offset;
+    } else if (rect.bottom > window.innerHeight) {
+      top = window.scrollY + rect.bottom - window.innerHeight + margin;
+    } else {
+      return;
+    }
+
+    window.scrollTo({
+      top: Math.max(top, 0),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
+  }
+
   // Reveal button on the password fields (login and signup steps). Delegated on the wall instead of bound to each
   // button, because the step markup inside __box is replaced over ajax and a bound handler would not survive it.
   wall.addEventListener("click", function (event) {
@@ -28,6 +64,39 @@
     button.classList.toggle("registration-wall__reveal--revealed", reveal);
     button.setAttribute("aria-pressed", reveal ? "true" : "false");
     button.setAttribute("aria-label", reveal ? "Ocultar contraseña" : "Mostrar contraseña");
+  });
+
+  // "Editar" next to the locked email of the signup step. The button is tied to #registration-wall-back with the
+  // form attribute, so without this it posts on its own and the article reloads on the email step; here it is sent
+  // over ajax instead, to swap the step in place like the other two do. Delegated for the same reason as the reveal
+  // button: the markup inside __box is replaced over ajax.
+  wall.addEventListener("click", function (event) {
+    var edit = event.target.closest && event.target.closest(".registration-wall__email-edit");
+    if (!edit) return;
+    var form = document.getElementById(edit.getAttribute("form"));
+    if (!form) return;
+    event.preventDefault();
+
+    fetch(form.getAttribute("action"), {
+      method: "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+      },
+      body: new FormData(form),
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("registration wall step failed");
+        return response.text().then(function (html) {
+          box.innerHTML = html;
+          bind();
+          revealWall();
+        });
+      })
+      .catch(function () {
+        // same fallback as the forms: let the browser do it, which reloads the article on the email step
+        form.submit();
+      });
   });
 
   // The email step posts to the resolver, which always answers with html. The login step posts to the login view,
@@ -70,6 +139,7 @@
             box.innerHTML = html;
             // the step can come back on itself (an invalid email, too many attempts, a rejected login), so rebind
             bind();
+            revealWall();
           });
         })
         .catch(function () {
