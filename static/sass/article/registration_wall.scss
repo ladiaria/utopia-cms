@@ -21,13 +21,13 @@ $registration-wall-mobile-inset: 20px;
 }
 
 // Excerpt from further down the article, under the wall (see core.utils.registration_wall_tail_words). Decoration:
-// it tells the reader the article goes on. Fades out faster than the teaser above because it is not there to be
-// read, and starts mid-sentence.
+// it tells the reader the article goes on. Runs the opposite way to the teaser above: it fades in, hidden where it
+// meets the wall and legible towards the bottom of the page.
 .article-body--registration-wall-tail {
   user-select: none;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
 
   p {
     margin: 0;
