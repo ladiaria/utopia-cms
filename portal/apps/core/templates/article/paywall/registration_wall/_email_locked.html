@@ -1,0 +1,23 @@
+{% comment %}
+  The email, shown but not editable, on the two steps that follow the email one.
+
+  Changing it here would defeat what the previous step resolved: on the signup step it lets the reader submit an
+  address that does have an account, and on the login step one that does not, and either way the form can only answer
+  with an error. "Editar" goes back to the email step, which is where changing it belongs.
+
+  It is a caption and a value, not a disabled input: a disabled input is not submitted, and the form still has to post
+  the address. Hence the hidden one, whose name each step passes in, because the login view takes it as "name_or_mail"
+  and the signup one as "email".
+
+      {% include "article/paywall/registration_wall/_email_locked.html" with field_name="name_or_mail" %}
+
+  The button is tied to the form of _email_back_form.html, which the including template renders outside its own form.
+{% endcomment %}
+<div class="registration-wall__field">
+  <span class="registration-wall__field-label">Email <span class="registration-wall__required">*</span></span>
+  <div class="registration-wall__email-locked">
+    <span class="registration-wall__email-value">{{ registration_wall_email }}</span>
+    <button type="submit" form="registration-wall-back" class="registration-wall__email-edit">Editar</button>
+  </div>
+  <input type="hidden" name="{{ field_name }}" value="{{ registration_wall_email|default:'' }}">
+</div>

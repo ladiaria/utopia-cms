@@ -1,0 +1,14 @@
+{% comment %}
+  Target of the "Editar" button of _email_locked.html. It has to be rendered by the step template outside its own
+  form, because forms cannot be nested and posting from the step's one would send the password along.
+
+  It goes to the same resolver as the email step, with "back" so it hands that step back instead of resolving the
+  address again. registration_wall.js swaps the answer in place; without js this posts on its own and the resolver
+  falls back to the session + reload, landing on the email step with the address still filled in.
+{% endcomment %}
+<form id="registration-wall-back" method="post" action="{% url 'registration-wall-email' %}">
+  {% csrf_token %}
+  <input type="hidden" name="article" value="{{ article.id }}">
+  <input type="hidden" name="email" value="{{ registration_wall_email|default:'' }}">
+  <input type="hidden" name="back" value="1">
+</form>

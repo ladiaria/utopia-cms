@@ -241,14 +241,19 @@ def registration_wall_email(request):
     article = get_object_or_404(Article, id=request.POST.get("article"))
     email = request.POST.get("email", "").strip().lower()
 
-    error_msg, error_code = email_extra_validations(None, email)
-    if error_code == EmailValidationError.INVALID:
-        state = "email"
-    elif error_msg:
-        # taken by a user, a google account or a username: ask for the password
-        state = "login"
+    if request.POST.get("back"):
+        # "Editar" on the signup step, where the address is shown but not editable: hand the email step back with it
+        # still filled in, without resolving it again. There is nothing to resolve, and no error to report either.
+        state, error_msg = "email", ""
     else:
-        state = "signup"
+        error_msg, error_code = email_extra_validations(None, email)
+        if error_code == EmailValidationError.INVALID:
+            state = "email"
+        elif error_msg:
+            # taken by a user, a google account or a username: ask for the password
+            state = "login"
+        else:
+            state = "signup"
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return render_registration_wall_step(

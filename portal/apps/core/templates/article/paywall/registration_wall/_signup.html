@@ -1,9 +1,9 @@
 {% comment %}
   Registration wall, signup step: reached when the submitted email does not have an account yet.
 
-  The email arrives prefilled from the email step. Posts to the signup view carrying the article, the same way the
-  login step does, so a form with errors comes back on the hard paywall page showing that article instead of on a bare
-  signup page. On success the reader is sent to check their email: the account is activated from there, and only
+  The email arrives from the email step and is shown locked, with a way back to it (see _email_locked.html). Posts to
+  the signup view carrying the article, the same way the login step does, so a form with errors comes back on the hard
+  paywall page showing that article instead of on a bare signup page. On success the reader is sent to check their email: the account is activated from there, and only
   afterwards is the phone offered, as a step that can be skipped.
 
   There is no phone field, on purpose: the signup form takes it as optional, and asking for it here would put back the
@@ -33,11 +33,7 @@
       <input type="text" id="registration-wall-signup-name" name="first_name" required autocomplete="name">
     </div>
 
-    <div class="registration-wall__field">
-      <label for="registration-wall-signup-email">Email <span class="registration-wall__required">*</span></label>
-      <input type="email" id="registration-wall-signup-email" name="email" required autocomplete="email"
-             placeholder="nombre@ejemplo.com" value="{{ registration_wall_email|default:'' }}">
-    </div>
+    {% include "article/paywall/registration_wall/_email_locked.html" with field_name="email" %}
 
     <div class="registration-wall__field registration-wall__field--password">
       <label for="registration-wall-signup-password">Contraseña <span class="registration-wall__required">*</span></label>
@@ -58,3 +54,5 @@
 
   <button type="submit" class="registration-wall__submit">Crear cuenta</button>
 </form>
+
+{% include "article/paywall/registration_wall/_email_back_form.html" %}
