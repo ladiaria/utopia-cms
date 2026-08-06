@@ -2,7 +2,7 @@ from apps import bouncer_blocklisted
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 
-from thedaily.utils import unsubscribed_newsletters, get_app_template
+from thedaily.utils import ONBOARDING_ARTICLE_SESSION_KEY, unsubscribed_newsletters, get_app_template
 
 
 @never_cache
@@ -47,10 +47,18 @@ def index(request):
     # a session that ends mid-onboarding leaves the reader on this page with a button that cannot work.
     show_welcome_buttons = request.GET.get('welcome') == '1' and user.is_authenticated
 
+    # When the signup started at the registration wall of an article, that article is what the reader wanted in the
+    # first place, so the way out of the onboarding leads back to it instead of to the home page. Read and not
+    # consumed: this is a link the reader may never click, the screen that closes the onboarding offers the article
+    # again, and popping it here would leave that one with nothing. Empty for every other way in (an account created
+    # from the signup page, a reader who came from the home page), and those keep offering the home page.
+    onboarding_article_url = request.session.get(ONBOARDING_ARTICLE_SESSION_KEY) if show_welcome_buttons else None
+
     context = {
         "unsubscribed_newsletters": unsubscribed_list,
         "show_newsletters_pill": True,
         "show_welcome_buttons": show_welcome_buttons,
+        "onboarding_article_url": onboarding_article_url,
         "current_unsubscribed_nl": request.GET.get("nl", "")
     }
 

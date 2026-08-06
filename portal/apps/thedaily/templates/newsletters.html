@@ -33,7 +33,16 @@
         </div>
         {% if show_welcome_buttons %}
           <div class="welcome-btns">
-            <a href="{% url 'home' %}" class="btn">Ir a la portada</a>
+            {% comment %}
+              The way out of the onboarding. When the signup started at the registration wall of an article, it leads
+              back to that article, which is what the reader was after; every other way in has none to return to and
+              offers the home page. "Continuar" is untouched either way: whoever wants to finish the onboarding still
+              can, and the last screen offers the article again.
+            {% endcomment %}
+            {% url 'home' as home_url %}
+            <a href="{% firstof onboarding_article_url home_url %}" class="btn">
+              {% if onboarding_article_url %}Ir al artículo{% else %}Ir a la portada{% endif %}
+            </a>
             <a href="{% url 'welcome-page' %}?welcome=1" class="btn btn__dark">
               <span>Continuar</span>
               <svg width="10" height="16" viewBox="0 0 10 16" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -35,6 +35,13 @@ from signupwall.utils import get_ip
 from .models import Subscriber, SentMail, OAuthState, SubscriberEvent, MailtrainList
 
 
+# Session key carrying the url of the article the reader was in when the signup started, when it started at the
+# registration wall. Whatever drives the onboarding parks it here, and the screens that close the onboarding offer it
+# instead of the home page, so the reader lands back on what they were reading. The writer is responsible for
+# validating it (same host, and an article): it ends up as an href.
+ONBOARDING_ARTICLE_SESSION_KEY = "onboarding_article_url"
+
+
 subscribe_logfile, subscribe_logger = getattr(settings, 'THEDAILY_SUBSCRIBE_LOGFILE', None), None
 if subscribe_logfile:
     subscribe_logger = logging.getLogger(__name__)
