@@ -1,6 +1,7 @@
 // Registration wall — ajax for the email and login steps, and the reveal button on the password fields.
 //
-// The email form (step A) resolves to the login (existing account) or signup (new account) step, and the login form
+// The email form (step A) resolves to the login (existing account), signup (new account) or google (account that can
+// only be entered with Google, so there is no password to ask for) step, and the login form
 // (step B) either logs the reader in or comes back with an error. Submitting them over ajax swaps the wall content in
 // place, so the reader stays where they were instead of the article reloading from the top, and a rejected
 // login is answered inside the article instead of on the full hard paywall page. Without this script both forms post

@@ -2,8 +2,9 @@
 {% comment %}
   Registration wall shown inline in the article to anonymous users that ran out of free credits.
 
-  It has three states: the email step, and the login / signup steps reached after submitting an email that does or
-  does not have an account. The wall opens on the email step, which resolves the next one server-side (see
+  It has four states: the email step, the login / signup steps reached after submitting an email that does or does not
+  have an account, and the google one, which takes the place of login when that account can only be entered with
+  Google. The wall opens on the email step, which resolves the next one server-side (see
   thedaily.views.registration_wall_email); registration_wall.js swaps the step in place over ajax.
 
   The outer element takes its width from .article-container and insets the box from the viewport edges with padding
@@ -17,6 +18,8 @@
       {% include "article/paywall/registration_wall/_login.html" %}
     {% elif registration_wall_state == 'signup' %}
       {% include "article/paywall/registration_wall/_signup.html" %}
+    {% elif registration_wall_state == 'google' %}
+      {% include "article/paywall/registration_wall/_google.html" %}
     {% else %}
       {% include "article/paywall/registration_wall/_email.html" %}
     {% endif %}
