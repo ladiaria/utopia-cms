@@ -118,6 +118,26 @@ $registration-wall-mobile-inset: 20px;
     gap: 24px;
   }
 
+  // Google button of the google step, inverted from the shared .ld-btn-google (_utopia_global.scss): black instead
+  // of white with a black border. Only that step gets it — there Google is the only way in, so it carries the
+  // weight the submit button carries elsewhere, while on the email step it is one of two options offered side by
+  // side and stays outlined. Everything else of the shared component already matches the design (5px radius, 12/24
+  // padding, 8px gap, 24px icon), so only the colours and the letter-spacing are set here. Hover and active swap
+  // the two colours back, which is the shared button's default state: the feedback stays inside those two colours.
+  .registration-wall__google-primary {
+    background-color: $off-black;
+    color: white;
+    letter-spacing: px-to-rem(0.16px); // 0.01em
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: white;
+      color: $off-black;
+      border-color: $off-black; // the shared button greys the border on :active; the wall keeps it black
+    }
+  }
+
   &__separator {
     width: 100%;
     margin: 0;
