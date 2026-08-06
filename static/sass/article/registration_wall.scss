@@ -38,6 +38,15 @@ $registration-wall-mobile-inset: 20px;
   // width comes from the .article-container class also set on this element
   margin-bottom: 48px;
 
+  // Room to leave above the wall when registration_wall.js scrolls it back into view after an ajax step swap.
+  // html sets scroll-padding-top: 80px (_utopia_base.scss), which already clears the 64px desktop header with air
+  // to spare. On mobile the article detail also pins the breadcrumb (44px, utopia_header.scss) under the 56px
+  // header, so 100px of the viewport is taken and that 80px falls 20px short; add them plus 24px of air, or the
+  // title lands glued to the breadcrumb.
+  @media #{$medium-and-down} {
+    scroll-margin-top: 44px;
+  }
+
   // .article-container is full-bleed on mobile, so inset __box from the viewport edges. This has to be padding here
   // and not a margin on __box: .article-container sets width:100%, and a margin on a full-width box pushes it past
   // the viewport instead of shrinking it, which yields horizontal scroll.
@@ -85,6 +94,13 @@ $registration-wall-mobile-inset: 20px;
 
     @media #{$medium-and-down} {
       font-size: px-to-rem(23px);
+    }
+
+    // registration_wall.js focuses this heading after an ajax step swap, so a screen reader announces the step that
+    // just arrived. It is a programmatic focus on a tabindex="-1" element, never reachable with the keyboard, so the
+    // ring the browser draws is noise: nobody moved the focus here on purpose.
+    &:focus {
+      outline: none;
     }
   }
 

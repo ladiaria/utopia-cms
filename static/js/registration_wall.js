@@ -19,40 +19,31 @@
 
   var box = wall.querySelector(".registration-wall__box");
 
-  // Height the sticky header takes at the top of the viewport, so a scroll does not leave the wall under it.
-  function stickyHeaderHeight() {
-    var header = document.querySelector("header");
-    if (!header) return 0;
-    var position = window.getComputedStyle(header).position;
-    if (position !== "sticky" && position !== "fixed") return 0;
-    return header.getBoundingClientRect().height;
-  }
-
   // Steps have different heights (signup is much taller than email), and the reader submits from the bottom of the
   // form: after the swap the new step often starts above the viewport, which on mobile means landing mid-form with
   // the title and the first fields out of sight. Keeping the scroll position is only right while the content stays
-  // the same size, so put the wall back in view: align its top under the header when it does not fit on screen or
-  // already starts above it, and otherwise scroll just enough to uncover its bottom.
+  // the same size, so put the wall back in view and move the focus into the new step.
+  //
+  // block:"nearest" scrolls the minimum needed: nothing while the wall already fits on screen, its top up under the
+  // header when it does not or when it starts above it, and otherwise just enough to uncover its bottom. How much
+  // room to leave at the top of the viewport is CSS, not a number here: scroll-padding-top (_utopia_base.scss) plus
+  // the scroll-margin-top of .registration-wall (article/registration_wall.scss), which is what clears the sticky
+  // header and, on the article detail, the breadcrumb pinned under it.
   function revealWall() {
-    // more air on mobile, where the wall sits right under the header and the box would otherwise look glued to it
-    // (992px is the $medium-and-down breakpoint the stylesheets use)
-    var margin = window.matchMedia("(max-width: 992px)").matches ? 40 : 16;
-    var offset = stickyHeaderHeight() + margin;
-    var rect = wall.getBoundingClientRect();
-    var top;
-
-    if (rect.top < offset || rect.height > window.innerHeight - offset) {
-      top = window.scrollY + rect.top - offset;
-    } else if (rect.bottom > window.innerHeight) {
-      top = window.scrollY + rect.bottom - window.innerHeight + margin;
-    } else {
-      return;
-    }
-
-    window.scrollTo({
-      top: Math.max(top, 0),
+    wall.scrollIntoView({
+      block: "nearest",
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     });
+
+    // The swap destroys whatever had the focus, dropping it on the body: without this a screen reader is told
+    // nothing about the step that just arrived (a rejected password, the signup form) and the next Tab restarts
+    // from the top of the document. The title is only a focus target once the step can be swapped, so the tabindex
+    // is set here instead of in the markup, which without this script is never swapped at all.
+    var title = box.querySelector(".registration-wall__title");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.focus({ preventScroll: true }); // the scroll above already placed the whole wall, not just the title
+    }
   }
 
   // Reveal button on the password fields (login and signup steps). Delegated on the wall instead of bound to each
