@@ -212,20 +212,33 @@ def first_form_error(form):
     return errors[0] if errors else "No pudimos ingresar con esos datos. Revisá el email y la contraseña."
 
 
-def render_registration_wall_step(request, article, state, email, error=""):
+def all_form_errors(form):
+    """
+    Every error of the form, for the steps that show more than one line.
+
+    The signup step is the case: a rejected password usually fails several validators at once (too short, too common,
+    all numeric) and the reader needs to see all of them at once to pick a valid one, which is what the full signup
+    page already did.
+    """
+    return list(form.errors.get("__all__", [])) + [
+        error for field, field_errors in form.errors.items() if field != "__all__" for error in field_errors
+    ]
+
+
+def render_registration_wall_step(request, article, state, email, error="", **extra_context):
     """Render one registration wall step partial, to swap into the wall over ajax without reloading the article."""
-    return render(
-        request,
-        REGISTRATION_WALL_PARTIALS[state],
-        {
-            "article": article,
-            "registration_wall_email": email,
-            "registration_wall_email_error": error,
-            # The step partials render the free articles count from this; without it the ajax-swapped step (the usual
-            # path) shows the count blank, unlike the full-page render which gets it from the article view context.
-            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-        },
-    )
+    context = {
+        "article": article,
+        "registration_wall_email": email,
+        "registration_wall_email_error": error,
+        # The step partials render the free articles count from this; without it the ajax-swapped step (the usual
+        # path) shows the count blank, unlike the full-page render which gets it from the article view context.
+        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+    }
+    # What only one step needs travels here, so the shared context above stays the same for the three of them: the
+    # signup step sends back its own error list and the name already typed, which it must not lose on a rejection.
+    context.update(extra_context)
+    return render(request, REGISTRATION_WALL_PARTIALS[state], context)
 
 
 @never_cache

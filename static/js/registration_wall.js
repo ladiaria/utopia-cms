@@ -6,8 +6,10 @@
 // login is answered inside the article instead of on the full hard paywall page. Without this script both forms post
 // normally and the server answers with a page load, so the flow still works (progressive enhancement).
 //
-// The signup step is not intercepted: it is the end of the flow, and it leaves the article anyway (the reader is sent
-// to check their email).
+// The signup step (step C) is intercepted for the same reason: a password that does not meet the requirements used to
+// answer with the full signup page, throwing the reader out of the article; now the errors come back as this step and
+// are shown in place. When it does succeed there is nothing to swap in, so the view answers with the destination and
+// the script navigates there (the reader is sent to check their email).
 (function () {
   "use strict";
 
@@ -99,8 +101,8 @@
       });
   });
 
-  // The email step posts to the resolver, which always answers with html. The login step posts to the login view,
-  // which answers with html when it rejects the attempt and with json when it succeeds.
+  // The email step posts to the resolver, which always answers with html. The login and signup steps post to their
+  // views, which answer with html when they reject the attempt and with json when they succeed.
   function isEmailStep(form) {
     return /registration-wall\/email/.test(form.getAttribute("action") || "");
   }
@@ -109,9 +111,13 @@
     return form.classList.contains("registration-wall__form--login");
   }
 
+  function isSignupStep(form) {
+    return form.classList.contains("registration-wall__form--signup");
+  }
+
   function bind() {
     var form = box.querySelector(".registration-wall__form");
-    if (!form || !(isEmailStep(form) || isLoginStep(form))) return;
+    if (!form || !(isEmailStep(form) || isLoginStep(form) || isSignupStep(form))) return;
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
