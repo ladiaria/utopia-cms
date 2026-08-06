@@ -198,7 +198,23 @@ REGISTRATION_WALL_PARTIALS = {
     "email": "article/paywall/registration_wall/_email.html",
     "login": "article/paywall/registration_wall/_login.html",
     "signup": "article/paywall/registration_wall/_signup.html",
+    "google": "article/paywall/registration_wall/_google.html",
 }
+
+
+def google_only_account(user):
+    """
+    True when the account can only be entered with Google: it came from the social pipeline and never got a password
+    of its own.
+
+    Worth telling apart because a login attempt on one of these is answered with 'Usuario y/o contraseña incorrectos',
+    which is false twice over: the account exists, and there is no password to get wrong. Whoever signed in with
+    Google and later set a password is not included here, they can log in either way and their password can indeed be
+    typed wrong.
+    """
+    return not user.has_usable_password() and UserSocialAuth.objects.filter(
+        user=user, provider='google-oauth2'
+    ).exists()
 
 
 def first_form_error(form):
@@ -212,20 +228,33 @@ def first_form_error(form):
     return errors[0] if errors else "No pudimos ingresar con esos datos. Revisá el email y la contraseña."
 
 
-def render_registration_wall_step(request, article, state, email, error=""):
+def all_form_errors(form):
+    """
+    Every error of the form, for the steps that show more than one line.
+
+    The signup step is the case: a rejected password usually fails several validators at once (too short, too common,
+    all numeric) and the reader needs to see all of them at once to pick a valid one, which is what the full signup
+    page already did.
+    """
+    return list(form.errors.get("__all__", [])) + [
+        error for field, field_errors in form.errors.items() if field != "__all__" for error in field_errors
+    ]
+
+
+def render_registration_wall_step(request, article, state, email, error="", **extra_context):
     """Render one registration wall step partial, to swap into the wall over ajax without reloading the article."""
-    return render(
-        request,
-        REGISTRATION_WALL_PARTIALS[state],
-        {
-            "article": article,
-            "registration_wall_email": email,
-            "registration_wall_email_error": error,
-            # The step partials render the free articles count from this; without it the ajax-swapped step (the usual
-            # path) shows the count blank, unlike the full-page render which gets it from the article view context.
-            "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
-        },
-    )
+    context = {
+        "article": article,
+        "registration_wall_email": email,
+        "registration_wall_email_error": error,
+        # The step partials render the free articles count from this; without it the ajax-swapped step (the usual
+        # path) shows the count blank, unlike the full-page render which gets it from the article view context.
+        "signupwall_max_credits": settings.SIGNUPWALL_MAX_CREDITS,
+    }
+    # What only one step needs travels here, so the shared context above stays the same for the three of them: the
+    # signup step sends back its own error list and the name already typed, which it must not lose on a rejection.
+    context.update(extra_context)
+    return render(request, REGISTRATION_WALL_PARTIALS[state], context)
 
 
 @never_cache
@@ -257,8 +286,11 @@ def registration_wall_email(request):
         if error_code == EmailValidationError.INVALID:
             state = "email"
         elif error_msg:
-            # taken by a user, a google account or a username: ask for the password
-            state = "login"
+            # taken by a user, a google account or a username: ask for the password. Unless there is no password to
+            # ask for, which is the case of an account created with Google that never got one: asking would only end
+            # in "usuario y/o contraseña incorrectos", so the Google step is offered right away instead.
+            taken_by = User.objects.filter(email=email).first()
+            state = "google" if taken_by and google_only_account(taken_by) else "login"
         else:
             state = "signup"
 
@@ -499,6 +531,9 @@ def login(request, product_slug=None, product_variant=None):
     registration_wall_ajax = bool(
         article and request.method == 'POST' and request.headers.get("x-requested-with") == "XMLHttpRequest"
     )
+    # Which step comes back on a failed attempt. Normally the login one carrying the error, but an account that can
+    # only be entered with Google gets that step instead: asking again for a password it does not have is a dead end.
+    wall_state = "login"
 
     if article and (settings.SIGNUPWALL_RISE_REDIRECT or registration_wall_ajax):
         next_page = article.get_absolute_url()
@@ -577,6 +612,17 @@ def login(request, product_slug=None, product_variant=None):
                             )
 
                     # Si contraseña incorrecta
+                    elif google_only_account(existing_user):
+                        # There is no password on this account, so saying it was typed wrong sends the reader to
+                        # reset a password that does not exist. Name what happened and give the two ways out: the
+                        # wall swaps in the Google step, and the full login page shows this message over its own
+                        # Google button.
+                        wall_state = "google"
+                        login_error = format_html(
+                            'Esta cuenta fue creada con Google. Ingresá con Google o <a href="{}">creá una '
+                            'contraseña</a> para entrar con mail y contraseña.',
+                            reverse('account-password_reset'),
+                        )
                     else:
                         login_error = 'Usuario y/o contraseña incorrectos.'
 
@@ -627,9 +673,10 @@ def login(request, product_slug=None, product_variant=None):
             return render_registration_wall_step(
                 request,
                 article,
-                "login",
+                wall_state,
                 request.POST.get("name_or_mail", ""),
-                error=login_error or first_form_error(login_form),
+                # the Google step says what happened in its own copy, it has no error line to fill
+                error="" if wall_state == "google" else (login_error or first_form_error(login_form)),
             )
     else:
         login_form = login_formclass(initial=initial)

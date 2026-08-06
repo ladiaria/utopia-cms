@@ -2,9 +2,10 @@
   Registration wall, signup step: reached when the submitted email does not have an account yet.
 
   The email arrives from the email step and is shown locked, with a way back to it (see _email_locked.html). Posts to
-  the signup view carrying the article, the same way the login step does, so a form with errors comes back on the hard
-  paywall page showing that article instead of on a bare signup page. On success the reader is sent to check their email: the account is activated from there, and only
-  afterwards is the phone offered, as a step that can be skipped.
+  the signup view carrying the article, the same way the login step does, and over ajax that view answers a rejected
+  form with this same partial, so the errors are shown here without taking the reader out of the article. On success
+  the reader is sent to check their email: the account is activated from there, and only afterwards is the phone
+  offered, as a step that can be skipped.
 
   There is no phone field, on purpose: the signup form takes it as optional, and asking for it here would put back the
   barrier that was just removed from the registration flow.
@@ -26,11 +27,24 @@
       action="{% url 'account-signup' %}?article={{ article.id }}">
   {% csrf_token %}
 
+  {% comment %}
+    Above the fields, the same way the login step shows its error (registration-wall__error, so no new styles are
+    needed). A rejected password usually breaks several rules at once and the reader needs all of them to pick a valid
+    one, so they go inside a single box, one line each: three stacked boxes take over the step.
+  {% endcomment %}
+  {% if registration_wall_errors %}
+    <div class="registration-wall__error" role="alert">
+      {% for error in registration_wall_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
   <div class="registration-wall__fields">
 
     <div class="registration-wall__field">
       <label for="registration-wall-signup-name">Nombre <span class="registration-wall__required">*</span></label>
-      <input type="text" id="registration-wall-signup-name" name="first_name" required autocomplete="name">
+      {# bound so a rejected form does not come back with the name blank: only the password has to be typed again #}
+      <input type="text" id="registration-wall-signup-name" name="first_name" required autocomplete="name"
+             value="{{ registration_wall_first_name|default:'' }}">
     </div>
 
     {% include "article/paywall/registration_wall/_email_locked.html" with field_name="email" %}
@@ -47,7 +61,9 @@
   </div>
 
   <div class="registration-wall__terms">
-    <input type="checkbox" id="registration-wall-signup-terms" name="terms_and_conds_accepted" required>
+    {# kept ticked when the step comes back with errors: it was already accepted and unticking it silently is a trap #}
+    <input type="checkbox" id="registration-wall-signup-terms" name="terms_and_conds_accepted" required
+           {% if registration_wall_terms_accepted %}checked{% endif %}>
     {# TODO: Link terms and condition page #}
     <label for="registration-wall-signup-terms">Leí y acepto los <a>términos y condiciones</a></label>
   </div>

@@ -1,0 +1,40 @@
+{% load static %}
+
+{% comment %}
+  Registration wall, Google step: reached when the submitted email has an account that was created with Google and
+  never got a password of its own (thedaily.views.google_only_account).
+
+  It replaces the login step for those readers, both when the email step resolves the address and when one of them
+  reaches the password field anyway and the attempt fails. Asking them for a password ends in "usuario y/o contraseña
+  incorrectos", which is false: the account exists and there is no password to get wrong. So instead of an error this
+  step names what happened and offers the two ways in.
+
+  There is no form and no error line: the copy is the message. The email is shown locked with its "Editar" back to
+  the email step, the same way the login and signup steps show it.
+{% endcomment %}
+
+<div class="registration-wall__intro">
+  <h2 class="registration-wall__title">Ingresar</h2>
+  <p class="registration-wall__lead">
+    Esta cuenta fue creada con Google. También podés crear una contraseña para entrar con mail y contraseña.
+  </p>
+</div>
+
+<div class="registration-wall__actions">
+
+  <div class="registration-wall__fields">
+    {% include "article/paywall/registration_wall/_email_locked.html" with field_name="name_or_mail" %}
+  </div>
+
+  {# back to the article once Google answers, so the reader lands on what they were reading #}
+  <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ article.get_absolute_url }}" class="ld-btn-google">
+    <img src="{% static 'img/icon-google.svg' %}" alt="" aria-hidden="true">
+    <span>Ingresá con Google</span>
+  </a>
+
+  {# the reset flow is what sets a password; for these readers it is the first one, hence the wording #}
+  <a href="{% url 'account-password_reset' %}" class="registration-wall__forgot">O creá una contraseña</a>
+
+</div>
+
+{% include "article/paywall/registration_wall/_email_back_form.html" %}
