@@ -64,9 +64,10 @@
     $(function(){
       $('#ad-container').load("{% url 'adzone_ad_content' %}?publication={{ publication.slug }}");
       {% if request.signupwall_header %}
+        // ld.js watches the counter's height and moves the header down by it, so hiding it is enough to
+        // put the header back at the top of the viewport
         $("#close-article-alert").on("click", function(){
           $(this).parent().hide();
-          $("header").removeClass("with-article-counter-container");
         });
       {% endif %}
     });
