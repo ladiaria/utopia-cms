@@ -41,8 +41,11 @@ def index(request):
         # TypeError: when 'name' exists but isn't a string (e.g.: None, 123, etc.)
         pass
 
-    # Check if user just registered (from welcome URL parameter)
-    show_welcome_buttons = request.GET.get('welcome') == '1'
+    # Check if user just registered (from welcome URL parameter). Being logged in is part of it: these buttons belong
+    # to the onboarding of somebody who just created an account, and "Continuar" goes to a page that turns anonymous
+    # visitors away, so offering it to one is a dead end. The parameter alone survives a shared or bookmarked url, and
+    # a session that ends mid-onboarding leaves the reader on this page with a button that cannot work.
+    show_welcome_buttons = request.GET.get('welcome') == '1' and user.is_authenticated
 
     context = {
         "unsubscribed_newsletters": unsubscribed_list,
