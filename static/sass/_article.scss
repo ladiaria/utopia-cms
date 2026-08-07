@@ -1723,10 +1723,8 @@ article .article-body .collection-articles {
   margin: 0 auto 16px;
 }
 
-header.with-article-counter-container {
-  top: 56px;
-}
-
+// Sticky at the top of the viewport, above the header, which sticks below it (see the top of `header` in
+// utopia_header.scss). Rendered before the header on the article detail, so both are stuck to the top at once.
 .article-counter-container {
   display: flex;
   justify-content: center;
@@ -1735,7 +1733,9 @@ header.with-article-counter-container {
   padding: 16px;
   position: sticky;
   top: 0;
-  z-index: 2;
+  // above the article breadcrumb (999), which slides over the counter on its way
+  // in and out, and below the header (1001), which is the topmost of the three
+  z-index: 1000;
   background: #8ebbff;
 
   button {
