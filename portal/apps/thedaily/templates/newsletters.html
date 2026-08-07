@@ -41,7 +41,7 @@
             {% endcomment %}
             {% url 'home' as home_url %}
             <a href="{% firstof onboarding_article_url home_url %}" class="btn">
-              {% if onboarding_article_url %}Ir al artículo{% else %}Ir a la portada{% endif %}
+              {% if onboarding_article_url %}Volver al artículo{% else %}Ir a la portada{% endif %}
             </a>
             <a href="{% url 'welcome-page' %}?welcome=1" class="btn btn__dark">
               <span>Continuar</span>
