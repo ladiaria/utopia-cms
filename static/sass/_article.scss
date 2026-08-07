@@ -142,9 +142,12 @@ article#main-article {
       }
     }
 
-    // Arrow of the anonymous "Guardar" tooltip, drawn on the trigger itself so
-    // it stays centered under the button at any breakpoint.
-    .action-bar-read-later-anon {
+    // Arrow of the action bar tooltips ("Guardar", "Escuchar" and "Comentar"),
+    // drawn on the trigger itself so it stays centered under the button that
+    // opened it at any breakpoint.
+    .action-bar-read-later-anon,
+    .action-bar__audio[data-help-tooltip-trigger],
+    .action-bar-comment-btn[data-help-tooltip-trigger] {
       position: relative;
       // Buttons in this bar clip their content, which would eat the arrow.
       overflow: visible;
@@ -167,6 +170,13 @@ article#main-article {
     .right-buttons {
       position: relative;
 
+      // Same as .left-buttons: the arrow is drawn on the trigger (see the action
+      // bar tooltip block above), the only element that knows where the button
+      // sits, so the one the tooltip carries by default is dropped.
+      .help-tooltip::before {
+        display: none;
+      }
+
       @media #{$medium-and-down} {
         button {
           padding: 8px;
@@ -177,6 +187,21 @@ article#main-article {
         // Keep the comment count visible on mobile (only the text label hides).
         button > span.comment-count {
           display: inline;
+        }
+
+        // Same as .left-buttons: a fixed-width tooltip anchored to this button
+        // group overflows the viewport on mobile, so the positioning context is
+        // dropped and the tooltip resolves against .article-action-bar instead.
+        &[data-help-tooltip-host] {
+          position: static;
+        }
+
+        .help-tooltip {
+          left: 0;
+          right: 0;
+          width: auto;
+          max-width: none;
+          margin-top: -8px;
         }
       }
     }

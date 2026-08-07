@@ -1,3 +1,23 @@
+{% if user.is_anonymous %}
+  {% comment %}
+    Anonymous readers get a tooltip instead of the player: the audio file is only served to logged in users, so there
+    is nothing here for them to play. The button keeps its looks (.action-bar__audio) and only swaps its behaviour,
+    the same way the "Guardar" button of the action bar does.
+  {% endcomment %}
+  <button type="button" class="action-bar__audio" data-help-tooltip-trigger aria-label="Escuchar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><g fill="#000" clip-path="url(#clip0_1960_11979)"><path d="M7.917 12.987V7.013a.417.417 0 0 1 .641-.35l4.647 2.986a.418.418 0 0 1 0 .702l-4.647 2.986a.418.418 0 0 1-.641-.35"/><path d="M.833 10a9.167 9.167 0 1 1 18.334 0A9.167 9.167 0 0 1 .833 10M10 2.083a7.917 7.917 0 1 0 0 15.834 7.917 7.917 0 0 0 0-15.834"/></g><defs><clipPath id="clip0_1960_11979"><path fill="#fff" d="M0 0h20v20H0z"/></clipPath></defs></svg>
+    <span>Escuchar</span>
+  </button>
+  <div class="help-tooltip" role="tooltip" hidden>
+    <h4 class="help-tooltip__title">Ingresá para escuchar este artículo</h4>
+    <p class="help-tooltip__body">
+      Para escuchar este artículo,
+      <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">ingresá</a>
+      o
+      <a href="{% url 'account-signup' %}?next={{ request.path|urlencode }}">creá una cuenta</a>.
+    </p>
+  </div>
+{% else %}
 <button id="ld-audio__action-bar-play-button" class="action-bar__audio">
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><g fill="#000" clip-path="url(#clip0_1960_11979)"><path d="M7.917 12.987V7.013a.417.417 0 0 1 .641-.35l4.647 2.986a.418.418 0 0 1 0 .702l-4.647 2.986a.418.418 0 0 1-.641-.35"/><path d="M.833 10a9.167 9.167 0 1 1 18.334 0A9.167 9.167 0 0 1 .833 10M10 2.083a7.917 7.917 0 1 0 0 15.834 7.917 7.917 0 0 0 0-15.834"/></g><defs><clipPath id="clip0_1960_11979"><path fill="#fff" d="M0 0h20v20H0z"/></clipPath></defs></svg>
   <span>Escuchar</span>
@@ -48,7 +68,7 @@
       preload="metadata"
       controls
       controlsList="nodownload"
-      src="{% if not user.is_anonymous %}{{ SITE_URL }}{{ article.audio.file.url }}{% else %}{{ STATIC_URL }}blank.mp3{% endif %}">
+      src="{{ SITE_URL }}{{ article.audio.file.url }}">
       Tu navegador no soporta este elemento de <code>audio</code>.
     </audio>
   </div>
@@ -212,3 +232,4 @@
     }
 });
 </script>
+{% endif %}

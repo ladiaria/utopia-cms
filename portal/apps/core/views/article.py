@@ -300,6 +300,15 @@ def article_detail(request, year, month, slug, domain_slug=None):
         } if user_is_authenticated else {"signupwall_remaining_banner": settings.SIGNUPWALL_ENABLED}
     )  # NOTE: banner is rendered despite of setting for anon users
 
+    # The comments panel is rendered under the same conditions as the article body, so a walled or restricted article
+    # has no panel for the "Comentar" button of the action bar to open: it offers a tooltip instead. Computed here
+    # because the template would need parentheses to group the three terms, and Django {% if %} has none.
+    context["comments_blocked_by_wall"] = (
+        getattr(request, "signupwall", False)
+        or context["registration_wall"]
+        or (context["article_restricted_cf"] and not context.get("restricted_access", False))
+    )
+
     # This is for adding extra context to the article detail template. For now it's only for logged users
     extra_context = get_article_detail_extra_context(request)
     if extra_context:

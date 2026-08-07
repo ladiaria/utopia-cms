@@ -340,7 +340,7 @@
             {% include "article/custom_audio_component.html" %}
           {% endif %}
         </div>
-        <div class="right-buttons">
+        <div class="right-buttons"{% if comments_blocked_by_wall %} data-help-tooltip-host{% endif %}>
           <button id="action-bar__share-button" class="" aria-label="Compartir">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path fill="#000" fill-rule="evenodd" d="M15.667 6.833h-2.334v-1h2.501c.459 0 .833.372.833.83v10.84a.833.833 0 0 1-.83.83H4.163a.834.834 0 0 1-.83-.83V6.663a.833.833 0 0 1 .833-.83h2.5v1H4.334v10.5h11.334zM10.5 3.552v7.698h-1V3.552L7.76 5.29l-.707-.708 2.358-2.356a.833.833 0 0 1 1.178 0l2.358 2.356-.708.708z" clip-rule="evenodd"/></svg>
             <span>Compartir</span>
@@ -380,16 +380,37 @@
               </ul>
             </div>
           </button>
-          <button class="action-bar-comment-btn" aria-label="Comentar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
+          {% if not comments_blocked_by_wall %}
+            <button class="action-bar-comment-btn" aria-label="Comentar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
+              {% comment %}
+                The count is not available server-side: fetchCommentCount() in ld.js fills the
+                count span and adds "has-count" to the button once Coral responds. The transition
+                between both labels lives entirely in the stylesheet.
+              {% endcomment %}
+              <span class="action-bar-comment-btn__label">Comentar</span>
+              <span class="comment-count"></span>
+            </button>
+          {% else %}
             {% comment %}
-              The count is not available server-side: fetchCommentCount() in ld.js fills the
-              count span and adds "has-count" to the button once Coral responds. The transition
-              between both labels lives entirely in the stylesheet.
+              No panel to open behind the wall (see comments_blocked_by_wall in the view), so the button would do
+              nothing: it gets a tooltip instead. No count span here either, fetchCommentCount() reads the article id
+              off #coral_talk_stream, which is not rendered on a walled article.
             {% endcomment %}
-            <span class="action-bar-comment-btn__label">Comentar</span>
-            <span class="comment-count"></span>
-          </button>
+            <button type="button" class="action-bar-comment-btn" data-help-tooltip-trigger aria-label="Comentar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20"><path stroke="#000" stroke-linecap="round" stroke-linejoin="round" d="M10 17.5a7.5 7.5 0 1 1 6.667-4.06l.833 4.06-4.06-.833c-1.03.532-2.2.833-3.44.833"/></svg>
+              <span class="action-bar-comment-btn__label">Comentar</span>
+            </button>
+            <div class="help-tooltip" role="tooltip" hidden>
+              <h4 class="help-tooltip__title">Exclusivo para suscriptores</h4>
+              <p class="help-tooltip__body">
+                Para comentar este artículo necesitás tener una cuenta de pago en {{ site.name }}.
+                <a href="{% url 'account-login' %}?next={{ request.path|urlencode }}">Ingresá</a>
+                o
+                <a href="{% url 'subscribe-default' %}?next={{ request.path|urlencode }}">suscribite</a>.
+              </p>
+            </div>
+          {% endif %}
         </div>
       </div>
 

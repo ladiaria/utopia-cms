@@ -833,25 +833,44 @@
     });
 
     // Help tooltip — generic click-triggered popover (used by the newsletter
-    // switches and the article "Guardar" button). Toggle on trigger click,
-    // close on outside click.
-    qsa("[data-help-tooltip-host]").forEach(function (host) {
-      const trigger = qs("[data-help-tooltip-trigger]", host);
-      const tooltip = qs(".help-tooltip", host);
-      if (!trigger || !tooltip) return;
+    // switches and by the "Guardar", "Escuchar" and "Comentar" buttons of the
+    // article action bar). Toggle on trigger click, close on outside click.
+    //
+    // A host can hold more than one pair (the action bar puts "Guardar" and
+    // "Escuchar" inside .left-buttons), so triggers and tooltips are matched by
+    // their order within the host instead of taking the first of each. Matching
+    // by position rather than by DOM proximity is what keeps the newsletter
+    // markups working, where the trigger sits one level deeper than its tooltip.
+    const helpTooltipPairs = [];
 
-      trigger.addEventListener("click", function (event) {
-        event.preventDefault();
-        tooltip.toggleAttribute("hidden");
+    qsa("[data-help-tooltip-host]").forEach(function (host) {
+      const triggers = qsa("[data-help-tooltip-trigger]", host);
+      const tooltips = qsa(".help-tooltip", host);
+
+      triggers.forEach(function (trigger, index) {
+        const tooltip = tooltips[index];
+        if (!tooltip) return;
+        helpTooltipPairs.push({ trigger: trigger, tooltip: tooltip });
+
+        trigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          // Only one open at a time: a second tooltip in the same host would
+          // otherwise sit on top of the one already showing.
+          helpTooltipPairs.forEach(function (other) {
+            if (other.tooltip !== tooltip) other.tooltip.setAttribute("hidden", "");
+          });
+          tooltip.toggleAttribute("hidden");
+        });
       });
     });
 
     document.addEventListener("click", function (event) {
-      qsa(".help-tooltip").forEach(function (tooltip) {
-        if (tooltip.hasAttribute("hidden")) return;
-        const host = tooltip.closest("[data-help-tooltip-host]");
-        if (host && !host.contains(event.target)) {
-          tooltip.setAttribute("hidden", "");
+      helpTooltipPairs.forEach(function (pair) {
+        if (pair.tooltip.hasAttribute("hidden")) return;
+        // The trigger closes it on its own listener above; anything else outside
+        // the tooltip dismisses it.
+        if (!pair.tooltip.contains(event.target) && !pair.trigger.contains(event.target)) {
+          pair.tooltip.setAttribute("hidden", "");
         }
       });
     });
