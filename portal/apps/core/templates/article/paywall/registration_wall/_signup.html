@@ -4,11 +4,11 @@
   The email arrives from the email step and is shown locked, with a way back to it (see _email_locked.html). Posts to
   the signup view carrying the article, the same way the login step does, and over ajax that view answers a rejected
   form with this same partial, so the errors are shown here without taking the reader out of the article. On success
-  the reader is sent to check their email: the account is activated from there, and only afterwards is the phone
-  offered, as a step that can be skipped.
+  the reader is sent to check their email, and the account is activated from there.
 
-  There is no phone field, on purpose: the signup form takes it as optional, and asking for it here would put back the
-  barrier that was just removed from the registration flow.
+  The phone is asked here, optional and never verified: no code is sent and Twilio is not involved. Decision of
+  2026-08-10, through QA. It is the only place this flow offers it, so leaving it out would mean a reader who
+  registers with mail and password is never asked for a phone at all.
 
   Field names match the signup form, so its crispy render can replace this markup without touching the styles.
 
@@ -56,6 +56,17 @@
                autocomplete="new-password" autocapitalize="none">
         {% include "article/paywall/registration_wall/_reveal_password.html" with target="registration-wall-signup-password" %}
       </div>
+    </div>
+
+    {% comment %}
+      Optional, and marked as such by the absence of the asterisk the required fields carry: it is not a gate and
+      submitting it empty has to work. type="tel" so a phone offers the numeric keypad; no "required".
+    {% endcomment %}
+    <div class="registration-wall__field">
+      <label for="registration-wall-signup-phone">Teléfono</label>
+      {# bound like the name, so a rejected password does not cost the reader the phone they already typed #}
+      <input type="tel" id="registration-wall-signup-phone" name="phone" autocomplete="tel" inputmode="tel"
+             spellcheck="false" value="{{ registration_wall_phone|default:'' }}">
     </div>
 
   </div>
